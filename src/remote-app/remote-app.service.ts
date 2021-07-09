@@ -162,10 +162,10 @@ export class RemoteAppService implements OnApplicationShutdown {
     })
   }
 
-  async getServers(): Promise<APIContainersResponse> {
+  async getServers(uid: string): Promise<APIContainersResponse> {
     // this.logger.log('getServers');
     return {
-      data: this.containerServices.map(service => {
+      data: this.containerServices.filter(service => service.state.context.user === uid).map(service => {
         const { id, name, user, url, error, type, app, parentId } = service.state.context as Partial<ContainerContext & ContainerOptions>
         return ({ id, name, user, url, error, type, app, parentId, state: service.state.value as ContainerState })
       }),
@@ -217,6 +217,7 @@ export class RemoteAppService implements OnApplicationShutdown {
     }
     const sessionNamesArray = this.containerServices
       .filter(s => s.state.context.type === ContainerType.SERVER)
+      .filter(s => s.state.context.user === login)
       .map(s => s.state.context.name)
       .map(n => parseInt(n))
     const sessionNames = sessionNamesArray.length > 0 ? sessionNamesArray : [0]

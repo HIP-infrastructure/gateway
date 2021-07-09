@@ -12,11 +12,11 @@ export class RemoteAppController {
 
     private readonly logger = new Logger('RemoteAppController');
 
-    @Get('/servers')
-    async getServers() {
+    @Get('/servers/:uid')
+    async getServers(@Param('uid') uid) {
         this.logger.log('/servers')
 
-        return this.remoteAppService.getServers()
+        return this.remoteAppService.getServers(uid)
     }
 
     @Get('/servers/:id/stop')
