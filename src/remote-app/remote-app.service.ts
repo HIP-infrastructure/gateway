@@ -459,7 +459,7 @@ export class RemoteAppService implements OnApplicationShutdown {
       app: appName,
       parentId: serverId,
       hippass: password,
-      nc: process.env.WEBDAV_URL,
+      nc: process.env.PRIVATE_WEBDAV_URL,
     };
     const machine = createContainerMachine(context);
     appService = interpret(machine).start();
@@ -518,7 +518,7 @@ export class RemoteAppService implements OnApplicationShutdown {
       app: appName,
       parentId: serverId,
       hippass: serverService.state.context.password,
-      nc: process.env.WEBDAV_URL,
+      nc: process.env.COLLAB_WEBDAV_URL,
     };
     const machine = createContainerMachine(context);
     appService = interpret(machine).start();

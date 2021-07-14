@@ -2,8 +2,8 @@ import { HttpService, Logger } from '@nestjs/common';
 import { createMachine, assign, AnyEventObject } from 'xstate';
 import { ContainerType, ContainerAction, ContainerState, ContainerStateMachine, ContainerContext, ContainerOptions } from './remote-app.types'
 
-const config = { headers: { Authorization: process.env.APP_BASIC_AUTH, 'Cache-Control': 'no-cache' } };
-const remoteAppBaseURL = process.env.APP_HOST
+const config = { headers: { Authorization: process.env.REMOTE_APP_BASIC_AUTH, 'Cache-Control': 'no-cache' } };
+const remoteAppBaseURL = process.env.REMOTE_APP_API
 const httpService = new HttpService()
 const toParams = (data) => Object.keys(data).map(key => `${key}=${encodeURIComponent(data[key])}`).join('&')
 
