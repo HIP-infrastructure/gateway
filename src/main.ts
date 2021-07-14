@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as cookieParser from 'cookie-parser';
 
 const globalPrefix = '/api/v1'
 
@@ -9,6 +10,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
   app.setGlobalPrefix(globalPrefix);
   app.enableCors();
+  app.use(cookieParser());
 
   const options = new DocumentBuilder()
     .setTitle('API Gateway')
