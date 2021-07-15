@@ -12,9 +12,7 @@ import {
   ContainerType,
   ContainerAction,
   ContainerState,
-  ContainerStateMachine,
   ContainerContext,
-  Error,
   ContainerService,
   ContainerOptions,
 } from './remote-app.types';
@@ -22,8 +20,9 @@ import {
   createContainerMachine,
   invokeRemoteContainer,
 } from './remote-app.container-machine';
+import { CacheService } from './remote-app.cache.service';
 
-const fs = require('fs');
+// const fs = require('fs');
 const USER = { hipuser: 'hipuser', sid: 'myserver' };
 
 const CONTAINERS_FILE = 'servers';
@@ -39,18 +38,13 @@ export class RemoteAppService implements OnApplicationShutdown {
   private readonly logger = new Logger('RemoteAppService');
   private containerServices: ContainerService[] = [];
 
-  constructor(private httpService: HttpService) {
-    fs.readFile(CONTAINERS_FILE, 'utf8', (err, data) => {
-      //if (err) throw err;
-      if (!err && data) {
-        try {
-          const containers: ContainerContext[] = JSON.parse(data) || [];
-          this.restoreState({ containers });
-        } catch (e) {
-          // this.logger.log(e, 'readFile')
-        }
-      }
-    });
+  constructor(
+    private httpService: HttpService,
+    private readonly cacheService: CacheService,
+  ) {
+    this.cacheService
+      .get('containers')
+      .then((containers) => this.restoreState({ containers }));
   }
 
   /**
@@ -63,9 +57,7 @@ export class RemoteAppService implements OnApplicationShutdown {
     // // this.logger.log(JSON.stringify({ containers }), 'saveState')
 
     if (containers) {
-      fs.writeFile(CONTAINERS_FILE, JSON.stringify(containers), () => {
-        // this.logger.log('writeFile done')
-      });
+      this.cacheService.set('containers', containers);
     }
   };
 
@@ -106,7 +98,8 @@ export class RemoteAppService implements OnApplicationShutdown {
           const containers: ContainerContext[] = this.containerServices.map(
             (s) => ({ ...s.state.context, state: state.value }),
           );
-          this.saveState({ containers });
+          // this.saveState({ containers });
+          this.cacheService.set('containers', containers);
         }
       }
     });
@@ -134,7 +127,8 @@ export class RemoteAppService implements OnApplicationShutdown {
       state: s.state.value,
     }));
 
-    this.saveState({ containers });
+    // this.saveState({ containers });
+    this.cacheService.set('containers', containers);
   };
 
   onApplicationShutdown(signal: string) {
@@ -428,7 +422,7 @@ export class RemoteAppService implements OnApplicationShutdown {
     // this.logger.log(serverId, 'startApp');
 
     // check existing server
-    let serverService = this.containerServices.find(
+    const serverService = this.containerServices.find(
       (s) => s.machine.id === serverId,
     );
     if (!serverService) {
@@ -487,7 +481,7 @@ export class RemoteAppService implements OnApplicationShutdown {
     // this.logger.log(serverId, 'startApp');
 
     // check existing server
-    let serverService = this.containerServices.find(
+    const serverService = this.containerServices.find(
       (s) => s.machine.id === serverId,
     );
     if (!serverService) {
