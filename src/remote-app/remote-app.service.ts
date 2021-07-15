@@ -226,7 +226,7 @@ export class RemoteAppService implements OnApplicationShutdown {
     });
   }
 
-  async getServers(uid: string): Promise<APIContainersResponse> {
+  async getContainers(uid: string): Promise<APIContainersResponse> {
     // this.logger.log('getServers');
     return {
       data: this.containerServices
@@ -293,7 +293,7 @@ export class RemoteAppService implements OnApplicationShutdown {
     };
   }
 
-  async startServerWithUserId(
+  async startSessionWithUserId(
     id: string,
     uid: string,
   ): Promise<APIContainerResponse> {
@@ -340,8 +340,8 @@ export class RemoteAppService implements OnApplicationShutdown {
     };
   }
 
-  async destroyServer(id: string): Promise<APIContainerResponse> {
-    this.logger.log(id, 'destroyServer');
+  async destroyAppsAndSession(id: string): Promise<APIContainerResponse> {
+    this.logger.log(id, 'destroyAppsAndSession');
     const service = this.containerServices.find((s) => s.machine.id === id);
     const appServices = this.containerServices.filter(
       (s) => s.state.context.parentId === service.machine.id,
