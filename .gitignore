@@ -2,6 +2,8 @@
 /dist
 /node_modules
 
+# dbs
+redis
 package-lock.json
 
 # Logs

@@ -3,24 +3,20 @@ import { AppController } from './app.controller';
 import { FilesModule } from './files/files.module';
 import { RemoteAppModule } from './remote-app/remote-app.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { TypeOrmModule } from '@nestjs/typeorm';
-
-
+import { RedisModule } from 'nestjs-redis';
 @Module({
   imports: [
     FilesModule,
     RemoteAppModule,
     ScheduleModule.forRoot(),
-    // TypeOrmModule.forRoot({
-    //   type: 'mongodb',
-    //   host: process.env.HOSTNAME,
-    //   port: 27017,
-    //   database: 'test',
-    //   entities: [],
-    //   synchronize: true,
-    // }),
+    RedisModule.register({
+      name: 'containers',
+      url: 'redis://cache',
+      port: 6379,
+      db: 1,
+    }),
   ],
   controllers: [AppController],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {}
