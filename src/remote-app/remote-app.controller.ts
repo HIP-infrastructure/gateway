@@ -6,11 +6,12 @@ import {
   Logger,
   Param,
   Post,
-  Request,
-  Response,
+  Request as Req,
+  Response as Res,
   HttpStatus,
 } from '@nestjs/common';
 import { RemoteAppService } from './remote-app.service';
+import { Request, Response } from 'express';
 
 @Controller('remote-app')
 export class RemoteAppController {
@@ -19,7 +20,11 @@ export class RemoteAppController {
   private readonly logger = new Logger('RemoteAppController');
 
   @Get('/containers/:uid')
-  async getContainers(@Param('uid') uid, @Request() req, @Response() res) {
+  async getContainers(
+    @Param('uid') uid: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     // this.logger.log(JSON.stringify(req.cookies, null, 2), '/containers');
 
     if (uid !== req.cookies.nc_username) {
@@ -33,10 +38,10 @@ export class RemoteAppController {
 
   @Post('/containers/:id/start')
   async startSessionWithUserId(
-    @Param('id') id,
-    @Body('uid') uid,
-    @Request() req,
-    @Response() res,
+    @Param('id') id: string,
+    @Body('uid') uid: string,
+    @Req() req: Request,
+    @Res() res: Response,
   ) {
     this.logger.log('/startSessionWithUserId', id);
 
@@ -51,13 +56,13 @@ export class RemoteAppController {
 
   @Post('/containers/:sid/apps/:aid/start')
   async startAppWithWebdav(
-    @Param('sid') sid,
-    @Param('aid') aid,
-    @Body('app') app,
-    @Body('uid') uid,
-    @Body('password') password,
-    @Request() req,
-    @Response() res,
+    @Param('sid') sid: string,
+    @Param('aid') aid: string,
+    @Body('app') app: string,
+    @Body('uid') uid: string,
+    @Body('password') password: string,
+    @Req() req: Request,
+    @Res() res: Response,
   ) {
     this.logger.log('/startAppWithWebdav', sid);
 
@@ -78,15 +83,11 @@ export class RemoteAppController {
 
   @Put('/containers/:id/destroy')
   async destroyAppsAndSession(
-    @Param('id') id,
-    @Body('uid') uid,
-    @Request() req,
-    @Response() res,
+    @Param('id') id: string,
+    @Body('uid') uid: string,
+    @Req() req: Request,
+    @Res() res: Response,
   ) {
-    this.logger.log(id, '/destroyAppsAndSession');
-    this.logger.log(JSON.stringify(req.cookies, null, 2), '/containers');
-    this.logger.log(uid, '/containers');
-
     if (uid !== req.cookies.nc_username) {
       return res.status(HttpStatus.FORBIDDEN).send();
     }

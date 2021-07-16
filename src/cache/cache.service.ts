@@ -40,7 +40,7 @@ export class CacheService {
       await this.getClient();
     }
 
-    let data = await this.client.get(key);
+    const data = await this.client.get(key);
 
     if (data) {
       return JSON.parse(data);

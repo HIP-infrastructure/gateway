@@ -20,16 +20,11 @@ import {
   createContainerMachine,
   invokeRemoteContainer,
 } from './remote-app.container-machine';
-import { CacheService } from './remote-app.cache.service';
+import { CacheService } from '../cache/cache.service';
 
-// const fs = require('fs');
-const USER = { hipuser: 'hipuser', sid: 'myserver' };
-
-const CONTAINERS_FILE = 'servers';
 const INTERVAL = 5;
 
 // TODO:
-// database state management:
 // websockets
 // Reducers for immutable state
 
@@ -53,13 +48,15 @@ export class RemoteAppService implements OnApplicationShutdown {
    * @returns void
    */
 
-  saveState = ({ containers }: { containers?: ContainerContext[] }) => {
-    // // this.logger.log(JSON.stringify({ containers }), 'saveState')
-
-    if (containers) {
-      this.cacheService.set('containers', containers);
-    }
+  dispatch = (action, nextState) => {
+    return nextState;
   };
+
+  saveState = async ({
+    containers,
+  }: {
+    containers: ContainerContext[];
+  }): Promise<any> => this.cacheService.set('containers', containers);
 
   private restoreState = ({
     containers,
@@ -105,7 +102,6 @@ export class RemoteAppService implements OnApplicationShutdown {
     });
   };
 
-  // TODO: Reduce immutable state
   private removeService = (service: ContainerService) => {
     const servicesToRemove =
       this.containerServices.filter(
@@ -134,6 +130,7 @@ export class RemoteAppService implements OnApplicationShutdown {
   onApplicationShutdown(signal: string) {
     this.containerServices.forEach((s) => s.stop());
     const containers = this.containerServices.map((s) => s.state.context);
+    this.cacheService.set('containers', containers);
     // this.logger.log(containers)
   }
 
@@ -244,49 +241,6 @@ export class RemoteAppService implements OnApplicationShutdown {
     };
   }
 
-  async startServer(id: string): Promise<APIContainerResponse> {
-    // this.logger.log(id, 'startServer');
-
-    // check for existing
-    let service = this.containerServices.find((s) => s.machine.id === id);
-    if (service) {
-      // this.logger.log(`${id} exists`, 'startServer');
-
-      return service.state.context;
-    }
-    const sessionNamesArray = this.containerServices
-      .filter((s) => s.state.context.type === ContainerType.SERVER)
-      .map((s) => s.state.context.name)
-      .map((n) => parseInt(n));
-    const sessionNames = sessionNamesArray.length > 0 ? sessionNamesArray : [0];
-    const name = `${Math.max(...sessionNames) + 1}`;
-    const context: ContainerContext = {
-      id,
-      name,
-      user: USER.hipuser,
-      url: '',
-      state: ContainerState.UNINITIALIZED,
-      error: null,
-      type: ContainerType.SERVER,
-    };
-    const serverMachine = createContainerMachine(context);
-    service = interpret(serverMachine).start();
-    this.handleTransitionFor(service);
-    // this.logger.log(`${id} ${ContainerAction.START}`, 'startServer');
-    service.send({ type: ContainerAction.START });
-    this.containerServices.push(service);
-
-    const nextContext: ContainerContext = {
-      ...service.state.context,
-      state: service.state.value,
-    };
-
-    return {
-      data: nextContext,
-      error: undefined,
-    };
-  }
-
   async startSessionWithUserId(
     id: string,
     uid: string,
@@ -332,85 +286,6 @@ export class RemoteAppService implements OnApplicationShutdown {
       data: nextContext,
       error: undefined,
     };
-  }
-
-  async destroyAppsAndSession(id: string): Promise<APIContainerResponse> {
-    this.logger.log(id, 'destroyAppsAndSession');
-    const service = this.containerServices.find((s) => s.machine.id === id);
-    const appServices = this.containerServices.filter(
-      (s) => s.state.context.parentId === service.machine.id,
-    );
-    if (service) {
-      if (service.state.value === ContainerState.EXITED) {
-        appServices.forEach((s) => {
-          s.send({ type: ContainerAction.DESTROY });
-        });
-        service.send({ type: ContainerAction.DESTROY });
-      } else {
-        this.logger.log(`${id} alive`, 'destroyServer');
-        appServices.forEach((s) => {
-          s.send({
-            type: ContainerAction.STOP,
-            data: { ...s.state.context, nextAction: ContainerAction.DESTROY },
-          });
-        });
-        service.send({
-          type: ContainerAction.STOP,
-          data: {
-            ...service.state.context,
-            nextAction: ContainerAction.DESTROY,
-          },
-        });
-      }
-
-      const nextContext: ContainerContext = {
-        ...service.state.context,
-        state: service.state.value,
-      };
-
-      return {
-        data: nextContext,
-        error: undefined,
-      };
-    }
-  }
-
-  async restartServer(id: string): Promise<APIContainerResponse> {
-    // this.logger.log(id, 'restartServer');
-    const service = this.containerServices.find((s) => s.machine.id === id);
-    if (service) {
-      // this.logger.log(`${id} ${ContainerAction.RESTART}`, 'restartServer');
-      service.send({ type: ContainerAction.RESTART });
-
-      const nextContext: ContainerContext = {
-        ...service.state.context,
-        state: service.state.value,
-      };
-
-      return {
-        data: nextContext,
-        error: undefined,
-      };
-    }
-  }
-
-  async stopServer(id: string): Promise<APIContainerResponse> {
-    // this.logger.log(id, 'stopServer');
-    const service = this.containerServices.find((s) => s.machine.id === id);
-    if (service) {
-      // this.logger.log(`${id} ${ContainerAction.STOP}`, 'stopServer');
-      service.send({ type: ContainerAction.STOP });
-
-      const nextContext: ContainerContext = {
-        ...service.state.context,
-        state: service.state.value,
-      };
-
-      return {
-        data: nextContext,
-        error: undefined,
-      };
-    }
   }
 
   async startAppWithWebdav(
@@ -473,62 +348,44 @@ export class RemoteAppService implements OnApplicationShutdown {
     };
   }
 
-  async startApp(
-    serverId: string,
-    appId: string,
-    appName: string,
-  ): Promise<APIContainerResponse> {
-    // this.logger.log(serverId, 'startApp');
-
-    // check existing server
-    const serverService = this.containerServices.find(
-      (s) => s.machine.id === serverId,
+  async destroyAppsAndSession(id: string): Promise<APIContainerResponse> {
+    this.logger.log(id, 'destroyAppsAndSession');
+    const service = this.containerServices.find((s) => s.machine.id === id);
+    const appServices = this.containerServices.filter(
+      (s) => s.state.context.parentId === service.machine.id,
     );
-    if (!serverService) {
-      // this.logger.log(`${serverId} exists`, 'startApp');
+    if (service) {
+      if (service.state.value === ContainerState.EXITED) {
+        appServices.forEach((s) => {
+          s.send({ type: ContainerAction.DESTROY });
+        });
+        service.send({ type: ContainerAction.DESTROY });
+      } else {
+        this.logger.log(`${id} alive`, 'destroyServer');
+        appServices.forEach((s) => {
+          s.send({
+            type: ContainerAction.STOP,
+            data: { ...s.state.context, nextAction: ContainerAction.DESTROY },
+          });
+        });
+        service.send({
+          type: ContainerAction.STOP,
+          data: {
+            ...service.state.context,
+            nextAction: ContainerAction.DESTROY,
+          },
+        });
+      }
+
+      const nextContext: ContainerContext = {
+        ...service.state.context,
+        state: service.state.value,
+      };
 
       return {
-        ...serverService.state.context,
-        error: { message: 'Server is not ready', code: '' },
+        data: nextContext,
+        error: undefined,
       };
     }
-
-    // check for existing
-    let appService = this.containerServices.find((s) => s.machine.id === appId);
-    if (appService) {
-      // this.logger.log(`${serverId} exists`, 'startApp');
-
-      return appService.state.context;
-    }
-
-    const context: ContainerContext & ContainerOptions = {
-      id: appId,
-      name: appId,
-      user: serverService.state.context.user,
-      url: '',
-      state: ContainerState.UNINITIALIZED,
-      error: null,
-      type: ContainerType.APP,
-      app: appName,
-      parentId: serverId,
-      hippass: serverService.state.context.password,
-      nc: process.env.COLLAB_WEBDAV_URL,
-    };
-    const machine = createContainerMachine(context);
-    appService = interpret(machine).start();
-    this.handleTransitionFor(appService);
-    // this.logger.log(`${appId} ${ContainerAction.START}`, 'startApp');
-    appService.send({ type: ContainerAction.START });
-    this.containerServices.push(appService); // TODO, immutable state by reducer
-
-    const nextContext: ContainerContext = {
-      ...appService.state.context,
-      state: appService.state.value,
-    };
-
-    return {
-      data: nextContext,
-      error: null,
-    };
   }
 }

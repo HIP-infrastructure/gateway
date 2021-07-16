@@ -1,207 +1,233 @@
 import { HttpService, Logger } from '@nestjs/common';
 import { createMachine, assign, AnyEventObject } from 'xstate';
-import { ContainerType, ContainerAction, ContainerState, ContainerStateMachine, ContainerContext, ContainerOptions } from './remote-app.types'
+import {
+  ContainerType,
+  ContainerAction,
+  ContainerState,
+  ContainerStateMachine,
+  ContainerContext,
+  ContainerOptions,
+} from './remote-app.types';
 
-const config = { headers: { Authorization: process.env.REMOTE_APP_BASIC_AUTH, 'Cache-Control': 'no-cache' } };
-const remoteAppBaseURL = process.env.REMOTE_APP_API
-const httpService = new HttpService()
-const toParams = (data) => Object.keys(data).map(key => `${key}=${encodeURIComponent(data[key])}`).join('&')
+const config = {
+  headers: {
+    Authorization: process.env.REMOTE_APP_BASIC_AUTH,
+    'Cache-Control': 'no-cache',
+  },
+};
+const remoteAppBaseURL = process.env.REMOTE_APP_API;
+const httpService = new HttpService();
+const toParams = (data) =>
+  Object.keys(data)
+    .map((key) => `${key}=${encodeURIComponent(data[key])}`)
+    .join('&');
 
 const logger = new Logger('Container Machine');
 
-export const invokeRemoteContainer = (context: ContainerContext & ContainerOptions, event: AnyEventObject) => {
-    const { type: action } = event;
-    const { id, user, type, parentId } = context;
+export const invokeRemoteContainer = (
+  context: ContainerContext & ContainerOptions,
+  event: AnyEventObject,
+) => {
+  const { type: action } = event;
+  const { id, user, type, parentId } = context;
 
-    const params = type === ContainerType.APP ? {
-        sid: parentId,
-        aid: id,
-        hipuser: user,
-        action: action,
-        nc: context.nc,
-        hippass: context.hippass,
-        app: context.app
-    } : {
-        sid: id,
-        hipuser: user,
-        action: action,
-    }
-
-    const url = `${remoteAppBaseURL}/control/${type}?${toParams(params)}`
-    logger.debug(url, 'invokeRemoteContainer')
-
-    return httpService.get(url, config).toPromise()
-        .then(axiosResponse => {
-            if (axiosResponse.status === 200 && axiosResponse.data) {
-
-                const data = axiosResponse.data;
-                const stdout = data?.output?.stdout;
-                const stderr = data?.output?.stderr;
-                // logger.debug(JSON.stringify({ data }), 'invokeRemoteContainer')
-                let nextState: ContainerState;
-
-                if (stderr) {
-                    // API returns stderr || stdout inconsistantly
-                    // logger.debug(stderr, 'stderr')
-                    // throw new Error(stderr)
-                }
-
-                switch (true) {
-                    case (/Creating/.test(stderr)):
-                        nextState = ContainerState.LOADING
-                        break;
-
-                    case (/Stopping/.test(stderr)):
-                        nextState = ContainerState.STOPPING
-                        break;
-
-                    case (/Exited/.test(stdout)):
-                        nextState = ContainerState.EXITED
-                        break;
-
-                    case (/healthy/.test(stdout)):
-                        nextState = ContainerState.RUNNING
-                        break;
-
-                    case (/starting/.test(stdout)):
-                    case (/unhealthy/.test(stdout)):
-                        nextState = ContainerState.CREATED
-                        break;
-
-                    default:
-                        nextState = ContainerState.UNINITIALIZED
-                }
-
-                const nextContext = {
-                    url: `${data.location.url}`,
-                    state: nextState,
-                    error: null
-                }
-                // logger.debug(`${JSON.stringify({ nextContext })}`, 'invokeRemoteContainer');
-
-                return nextContext;
-            }
-
-            // logger.error(`Response data is not ok.`, 'invokeRemoteContainer');
-            throw new Error("Container API failed to response")
-        })
-        .catch(error => {
-            const { code, message } = error;
-            // logger.error(JSON.stringify({ code, message }), 'invokeRemoteContainer');
-
-            return Promise.reject({ error: { message, code } });
-        });
-}
-
-export const createContainerMachine = (context: ContainerContext): ContainerStateMachine => {
-    return createMachine({
-        id: context.id,
-        initial: context.state,
-        context,
-        states: {
-            [ContainerState.UNINITIALIZED]: {
-                on: {
-                    [ContainerAction.START]: ContainerState.CREATED,
-                    [ContainerAction.REMOTE_STARTED]: {
-                        target: ContainerState.RUNNING,
-                        actions: ['updateContext']
-                    },
-                }
-            },
-            [ContainerState.CREATED]: {
-                invoke: {
-                    id: 'startRemoteServer',
-                    src: invokeRemoteContainer,
-                    onDone: {
-                        target: ContainerState.LOADING,
-                        actions: ['updateContext']
-                    },
-                    onError: {
-                        target: ContainerState.EXITED,
-                        actions: ['updateContext']
-                    }
-                },
-            },
-            [ContainerState.LOADING]: {
-                on: {
-                    [ContainerAction.REMOTE_STARTED]: {
-                        target: ContainerState.RUNNING,
-                        actions: 'updateContext'
-                    },
-                    [ContainerAction.REMOTE_STOPPED]: {
-                        target: ContainerState.EXITED,
-                        actions: 'updateContext'
-                    },
-                }
-            },
-            [ContainerState.RUNNING]: {
-                on: {
-                    [ContainerAction.REMOTE_STOPPED]: {
-                        target: ContainerState.EXITED,
-                        actions: 'updateContext'
-                    },
-                    [ContainerAction.STOP]: {
-                        target: ContainerState.STOPPING,
-                        actions: 'updateContext'
-                    },
-                    [ContainerAction.RESTART]: {
-                        target: ContainerState.CREATED,
-                        actions: 'updateContext'
-                    },
-                }
-            },
-            [ContainerState.STOPPING]: {
-                invoke: {
-                    id: 'stopRemoteServer',
-                    src: invokeRemoteContainer,
-                    onDone: {
-                        target: ContainerState.EXITED,
-                        actions: ['updateContext']
-                    },
-                    onError: {
-                        target: ContainerState.RUNNING,
-                        actions: ['updateContext']
-                    }
-                },
-            },
-            [ContainerState.EXITED]: {
-                on: {
-                    [ContainerAction.REMOTE_STARTED]: {
-                        target: ContainerState.RUNNING,
-                        actions: ['updateContext']
-                    },
-                    [ContainerAction.REMOTE_CREATED]: {
-                        target: ContainerState.LOADING,
-                        actions: ['updateContext']
-                    },
-                    [ContainerAction.DESTROY]: ContainerState.DESTROYED,
-                    [ContainerAction.RESTART]: ContainerState.CREATED
-                }
-            },
-            [ContainerState.DESTROYED]: {
-                invoke: {
-                    id: 'destroyRemoteServer',
-                    src: invokeRemoteContainer,
-                    onDone: {
-                        target: ContainerState.DESTROYED,
-                        actions: ['updateContext']
-                    },
-                    onError: {
-                        target: ContainerState.DESTROYED,
-                        actions: ['updateContext']
-                    }
-                },
-            }
+  const params =
+    type === ContainerType.APP
+      ? {
+          sid: parentId,
+          aid: id,
+          hipuser: user,
+          action: action,
+          nc: context.nc,
+          hippass: context.hippass,
+          app: context.app,
         }
-    }, {
-        actions: {
-            updateContext: assign((context: ContainerContext, event) => {
-                const nextContext: ContainerContext = event.data;
-                // logger.log(`${context.name} state: ${context.state}, nextState: ${nextContext.state}`, 'updateContext')
+      : {
+          sid: id,
+          hipuser: user,
+          action: action,
+        };
 
-                return { ...context, ...nextContext }
-            })
+  const url = `${remoteAppBaseURL}/control/${type}?${toParams(params)}`;
+  logger.debug(url, 'invokeRemoteContainer');
+
+  return httpService
+    .get(url, config)
+    .toPromise()
+    .then((axiosResponse) => {
+      if (axiosResponse.status === 200 && axiosResponse.data) {
+        const data = axiosResponse.data;
+        const stdout = data?.output?.stdout;
+        const stderr = data?.output?.stderr;
+        // logger.debug(JSON.stringify({ data }), 'invokeRemoteContainer')
+        let nextState: ContainerState;
+
+        if (stderr) {
+          // API returns stderr || stdout inconsistantly
+          // logger.debug(stderr, 'stderr')
+          // throw new Error(stderr)
         }
-    }
-    )
-}
+
+        switch (true) {
+          case /Creating/.test(stderr):
+            nextState = ContainerState.LOADING;
+            break;
+
+          case /Stopping/.test(stderr):
+            nextState = ContainerState.STOPPING;
+            break;
+
+          case /Exited/.test(stdout):
+            nextState = ContainerState.EXITED;
+            break;
+
+          case /healthy/.test(stdout):
+            nextState = ContainerState.RUNNING;
+            break;
+
+          case /starting/.test(stdout):
+          case /unhealthy/.test(stdout):
+            nextState = ContainerState.CREATED;
+            break;
+
+          default:
+            nextState = ContainerState.UNINITIALIZED;
+        }
+
+        const nextContext = {
+          url: `${data.location.url}`,
+          state: nextState,
+          error: null,
+        };
+        // logger.debug(`${JSON.stringify({ nextContext })}`, 'invokeRemoteContainer');
+
+        return nextContext;
+      }
+
+      // logger.error(`Response data is not ok.`, 'invokeRemoteContainer');
+      throw new Error('Container API failed to response');
+    })
+    .catch((error) => {
+      const { code, message } = error;
+      // logger.error(JSON.stringify({ code, message }), 'invokeRemoteContainer');
+
+      return Promise.reject({ error: { message, code } });
+    });
+};
+
+export const createContainerMachine = (
+  context: ContainerContext,
+): ContainerStateMachine => {
+  return createMachine(
+    {
+      id: context.id,
+      initial: context.state,
+      context,
+      states: {
+        [ContainerState.UNINITIALIZED]: {
+          on: {
+            [ContainerAction.START]: ContainerState.CREATED,
+            [ContainerAction.REMOTE_STARTED]: {
+              target: ContainerState.RUNNING,
+              actions: ['updateContext'],
+            },
+          },
+        },
+        [ContainerState.CREATED]: {
+          invoke: {
+            id: 'startRemoteServer',
+            src: invokeRemoteContainer,
+            onDone: {
+              target: ContainerState.LOADING,
+              actions: ['updateContext'],
+            },
+            onError: {
+              target: ContainerState.EXITED,
+              actions: ['updateContext'],
+            },
+          },
+        },
+        [ContainerState.LOADING]: {
+          on: {
+            [ContainerAction.REMOTE_STARTED]: {
+              target: ContainerState.RUNNING,
+              actions: 'updateContext',
+            },
+            [ContainerAction.REMOTE_STOPPED]: {
+              target: ContainerState.EXITED,
+              actions: 'updateContext',
+            },
+          },
+        },
+        [ContainerState.RUNNING]: {
+          on: {
+            [ContainerAction.REMOTE_STOPPED]: {
+              target: ContainerState.EXITED,
+              actions: 'updateContext',
+            },
+            [ContainerAction.STOP]: {
+              target: ContainerState.STOPPING,
+              actions: 'updateContext',
+            },
+            [ContainerAction.RESTART]: {
+              target: ContainerState.CREATED,
+              actions: 'updateContext',
+            },
+          },
+        },
+        [ContainerState.STOPPING]: {
+          invoke: {
+            id: 'stopRemoteServer',
+            src: invokeRemoteContainer,
+            onDone: {
+              target: ContainerState.EXITED,
+              actions: ['updateContext'],
+            },
+            onError: {
+              target: ContainerState.RUNNING,
+              actions: ['updateContext'],
+            },
+          },
+        },
+        [ContainerState.EXITED]: {
+          on: {
+            [ContainerAction.REMOTE_STARTED]: {
+              target: ContainerState.RUNNING,
+              actions: ['updateContext'],
+            },
+            [ContainerAction.REMOTE_CREATED]: {
+              target: ContainerState.LOADING,
+              actions: ['updateContext'],
+            },
+            [ContainerAction.DESTROY]: ContainerState.DESTROYED,
+            [ContainerAction.RESTART]: ContainerState.CREATED,
+          },
+        },
+        [ContainerState.DESTROYED]: {
+          invoke: {
+            id: 'destroyRemoteServer',
+            src: invokeRemoteContainer,
+            onDone: {
+              target: ContainerState.DESTROYED,
+              actions: ['updateContext'],
+            },
+            onError: {
+              target: ContainerState.DESTROYED,
+              actions: ['updateContext'],
+            },
+          },
+        },
+      },
+    },
+    {
+      actions: {
+        updateContext: assign((context: ContainerContext, event) => {
+          const nextContext: ContainerContext = event.data;
+          // logger.log(`${context.name} state: ${context.state}, nextState: ${nextContext.state}`, 'updateContext')
+
+          return { ...context, ...nextContext };
+        }),
+      },
+    },
+  );
+};
