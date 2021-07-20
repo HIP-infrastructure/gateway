@@ -3,14 +3,14 @@ import { FilesService } from './files.service';
 
 @Controller('files')
 export class FilesController {
-  constructor(private fileService: FilesService) { }
+  constructor(private fileService: FilesService) {}
 
   private logger = new Logger('FilesService');
 
   @Get('/*')
-  async getFiles( @Param() params) {
+  async getFiles(@Param() params) {
     const path = `/${params[0]}`;
-    this.logger.debug(path, 'getFiles')
+    this.logger.debug(path, 'getFiles');
 
     return this.fileService.getFiles(path);
   }

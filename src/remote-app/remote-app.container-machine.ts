@@ -34,22 +34,24 @@ export const invokeRemoteContainer = (
   const params =
     type === ContainerType.APP
       ? {
-          sid: parentId,
-          aid: id,
-          hipuser: user,
-          action: action,
-          nc: context.nc,
-          hippass: context.hippass,
-          app: context.app,
-        }
+        sid: parentId,
+        aid: id,
+        hipuser: user,
+        action: action,
+        nc: context.nc,
+        hippass: context.hippass,
+        app: context.app,
+      }
       : {
-          sid: id,
-          hipuser: user,
-          action: action,
-        };
+        sid: id,
+        hipuser: user,
+        action: action,
+      };
 
   const url = `${remoteAppBaseURL}/control/${type}?${toParams(params)}`;
+  // if (params.action === ContainerAction.STOP) {
   logger.debug(url, 'invokeRemoteContainer');
+  // }
 
   return httpService
     .get(url, config)
@@ -223,7 +225,7 @@ export const createContainerMachine = (
       actions: {
         updateContext: assign((context: ContainerContext, event) => {
           const nextContext: ContainerContext = event.data;
-          // logger.log(`${context.name} state: ${context.state}, nextState: ${nextContext.state}`, 'updateContext')
+          logger.log(`${JSON.stringify(nextContext, null, 2)}`, 'updateContext')
 
           return { ...context, ...nextContext };
         }),

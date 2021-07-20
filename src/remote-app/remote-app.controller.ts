@@ -15,7 +15,7 @@ import { Request, Response } from 'express';
 
 @Controller('remote-app')
 export class RemoteAppController {
-  constructor(private readonly remoteAppService: RemoteAppService) {}
+  constructor(private readonly remoteAppService: RemoteAppService) { }
 
   private readonly logger = new Logger('RemoteAppController');
 
