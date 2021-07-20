@@ -74,4 +74,18 @@ export class CacheService {
 
     await this.client.flushall();
   }
+
+  // TODO: containers Redis cache
+  public async setContainers(containers: any[]): Promise<any> {
+    if (!this.client) {
+      await this.getClient();
+    }
+
+    for (const container of containers) {
+      this.client.incr('id:containers');
+      this.client.set(`container:${container.id}`, JSON.stringify(container));
+      this.client.set(`container:${container.id}:state`, container.state);
+      this.client.sadd(`zcontainers`, container.id);
+    }
+  }
 }
