@@ -19,6 +19,11 @@ export class RemoteAppController {
 
   private readonly logger = new Logger('RemoteAppController');
 
+  @Get('/containers/fetch')
+  pollRemoteState() {
+    this.remoteAppService.pollRemoteState()
+  }
+
   @Get('/containers/:uid')
   async getContainers(
     @Param('uid') uid: string,

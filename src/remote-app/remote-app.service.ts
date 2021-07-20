@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  HttpService,
-  OnApplicationShutdown,
-} from '@nestjs/common';
+import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { interpret } from 'xstate';
 import { Interval } from '@nestjs/schedule';
 import {
@@ -33,13 +28,10 @@ export class RemoteAppService implements OnApplicationShutdown {
   private readonly logger = new Logger('RemoteAppService');
   private containerServices: ContainerService[] = [];
 
-  constructor(
-    private httpService: HttpService,
-    private readonly cacheService: CacheService,
-  ) {
-    this.cacheService
-      .get('containers')
-      .then((containers) => this.restoreState({ containers }));
+  constructor(private readonly cacheService: CacheService) {
+    this.cacheService.get('containers').then((containers) => {
+      this.restoreState({ containers });
+    });
   }
 
   /**
@@ -48,15 +40,30 @@ export class RemoteAppService implements OnApplicationShutdown {
    * @returns void
    */
 
-  dispatch = (action, nextState) => {
-    return nextState;
+  // https://dev.to/bnevilleoneill/state-management-pattern-in-javascript-sharing-data-across-components-2gkj
+  dispatch = (action, state, nextState) => {
+    switch (action) {
+      case 'CREATE':
+        state = nextState;
+        break;
+      case 'KILL':
+        state = nextState;
+        break;
+
+      default:
+        state = nextState;
+    }
+    return state;
   };
 
   saveState = async ({
     containers,
   }: {
     containers: ContainerContext[];
-  }): Promise<any> => this.cacheService.set('containers', containers);
+  }): Promise<any> => {
+    this.cacheService.setContainers(containers);
+    this.cacheService.set('containers', containers);
+  };
 
   private restoreState = ({
     containers,
@@ -66,8 +73,8 @@ export class RemoteAppService implements OnApplicationShutdown {
     // // this.logger.log(JSON.stringify({ containers }), 'restoreMachines')
     if (containers) {
       this.containerServices =
-        containers.map((server) => {
-          const service = interpret(createContainerMachine(server)).start();
+        containers.map((container) => {
+          const service = interpret(createContainerMachine(container)).start();
           this.handleTransitionFor(service);
 
           return service;
@@ -84,10 +91,10 @@ export class RemoteAppService implements OnApplicationShutdown {
   private handleTransitionFor = (service: ContainerService) => {
     service.onTransition((state) => {
       if (state.changed) {
-        this.logger.log(
-          `${service.state.context.name} ${service.state.context.id} ${state.value}`,
-          'onTransition',
-        );
+        // this.logger.log(
+        //   `${JSON.stringify(state.context, null, 2)}`,
+        //   'onTransition',
+        // );
 
         if (state.value === ContainerState.DESTROYED) {
           this.removeService(service);
@@ -95,8 +102,7 @@ export class RemoteAppService implements OnApplicationShutdown {
           const containers: ContainerContext[] = this.containerServices.map(
             (s) => ({ ...s.state.context, state: state.value }),
           );
-          // this.saveState({ containers });
-          this.cacheService.set('containers', containers);
+          this.saveState({ containers });
         }
       }
     });
@@ -123,15 +129,13 @@ export class RemoteAppService implements OnApplicationShutdown {
       state: s.state.value,
     }));
 
-    // this.saveState({ containers });
-    this.cacheService.set('containers', containers);
+    this.saveState({ containers });
   };
 
-  onApplicationShutdown(signal: string) {
+  onApplicationShutdown() {
     this.containerServices.forEach((s) => s.stop());
     const containers = this.containerServices.map((s) => s.state.context);
-    this.cacheService.set('containers', containers);
-    // this.logger.log(containers)
+    this.saveState({ containers });
   }
 
   /**
@@ -144,44 +148,72 @@ export class RemoteAppService implements OnApplicationShutdown {
     const services = [...this.containerServices];
     services?.forEach(async (service) => {
       try {
-        const nextContext = await invokeRemoteContainer(service.state.context, {
+        // this.logger.debug(
+        //   `${JSON.stringify(service.state.context, null, 2)}`,
+        //   'pollRemoteState',
+        // );
+        const context = await invokeRemoteContainer(service.state.context, {
           type: ContainerAction.STATUS,
         });
-        // this.logger.debug(`${JSON.stringify({ nextContext })}`, 'pollRemoteState');
-        this.logger.debug(
-          `${service.state.context.name} - ${service.machine.id} | local: ${service.state.value}, remote: ${nextContext.state}, nextAction: ${service.state.context.nextAction}`,
-          'pollRemoteState',
-        );
+        // this.logger.debug(`${JSON.stringify(context, null, 2)}`, 'pollRemoteState');
 
-        if (nextContext.error) {
+        if (context.error) {
           // this.logger.debug(ContainerAction.SYNC_STOPPED, 'pollRemoteState');
           service.send({
             type: ContainerAction.REMOTE_STOPPED,
-            data: nextContext,
+            data: context,
           });
 
           return;
         }
 
-        switch (nextContext.state) {
+        const childApps = this.containerServices.filter(
+          (s) => s.state.context.parentId === service.machine.id,
+        );
+
+        switch (service.state.context.nextAction) {
+          case ContainerAction.STOP:
+            if (childApps.length === 0) {
+              service.state.context = {
+                ...service.state.context,
+                nextAction: ContainerAction.DESTROY,
+              };
+              service.send({
+                type: ContainerAction.STOP,
+                nextAction: ContainerAction.DESTROY,
+              });
+            }
+            break;
+
+          case ContainerAction.DESTROY:
+            if (childApps.length === 0) {
+              service.send({ type: ContainerAction.DESTROY });
+            }
+            break;
+
+          default:
+        }
+
+        switch (context.state) {
           case ContainerState.EXITED:
           case ContainerState.UNINITIALIZED:
             if (service.state.context.nextAction === ContainerAction.DESTROY) {
-              const childApps = this.containerServices.filter(
-                (s) => s.state.context.parentId === service.machine.id,
-              );
               if (service.state.context.type === ContainerType.APP) {
                 service.send({ type: ContainerAction.DESTROY });
               } else if (childApps.length === 0) {
-                service.send({ type: ContainerAction.DESTROY });
+                service.send({
+                  type: ContainerAction.STOP,
+                  nextAction: ContainerAction.DESTROY,
+                });
               }
+
               break;
             }
 
             service.send({
               type: ContainerAction.REMOTE_STOPPED,
               data: {
-                ...nextContext,
+                ...context,
                 error: { message: 'Container is not reachable' },
               },
             });
@@ -191,7 +223,7 @@ export class RemoteAppService implements OnApplicationShutdown {
             // this.logger.debug(ContainerAction.SYNC_STARTED, 'pollRemoteState');
             service.send({
               type: ContainerAction.REMOTE_STARTED,
-              data: nextContext,
+              data: context,
               error: undefined,
             });
             break;
@@ -199,18 +231,18 @@ export class RemoteAppService implements OnApplicationShutdown {
           case ContainerState.CREATED:
             service.send({
               type: ContainerAction.REMOTE_CREATED,
-              data: nextContext,
+              data: context,
               error: undefined,
             });
             break;
         }
       } catch (error) {
-        this.logger.debug(
-          `${service.machine.id} | local: ${
-            service.state.value
-          }, ${JSON.stringify(error)}`,
-          'pollRemoteState',
-        );
+        // this.logger.debug(
+        //   `${service.machine.id} | local: ${
+        //     service.state.value
+        //   }, ${JSON.stringify(error)}`,
+        //   'pollRemoteState',
+        // );
         //this.logger.debug(ContainerAction.SYNC_STOPPED, 'pollRemoteState');
         service.send({ type: ContainerAction.REMOTE_STOPPED, data: error });
       }
@@ -348,6 +380,20 @@ export class RemoteAppService implements OnApplicationShutdown {
     };
   }
 
+  // async createSessionWithApp(
+  //   id: string,
+  //   uid: string,
+  //   appId: string,
+  //   appName: string,
+  //   password: string): Promise<void> {
+  //   this.startSessionWithUserId(id, uid).catch().then(({ data, error }) => {
+  //     const session = data
+  //   }
+
+  //   )
+
+  // }
+
   async destroyAppsAndSession(id: string): Promise<APIContainerResponse> {
     this.logger.log(id, 'destroyAppsAndSession');
     const service = this.containerServices.find((s) => s.machine.id === id);
@@ -355,19 +401,30 @@ export class RemoteAppService implements OnApplicationShutdown {
       (s) => s.state.context.parentId === service.machine.id,
     );
     if (service) {
+      // remove already exited apps and session
       if (service.state.value === ContainerState.EXITED) {
         appServices.forEach((s) => {
           s.send({ type: ContainerAction.DESTROY });
         });
         service.send({ type: ContainerAction.DESTROY });
-      } else {
-        this.logger.log(`${id} alive`, 'destroyServer');
+
+      }
+      // Stop apps
+      else if (appServices.length > 0) {
+        // this.logger.log(`${id} alive`, 'destroyServer');
         appServices.forEach((s) => {
           s.send({
             type: ContainerAction.STOP,
             data: { ...s.state.context, nextAction: ContainerAction.DESTROY },
           });
         });
+        service.state.context = {
+          ...service.state.context,
+          nextAction: ContainerAction.STOP,
+        };
+      }
+      // stop service
+      else {
         service.send({
           type: ContainerAction.STOP,
           data: {
