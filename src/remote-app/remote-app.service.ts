@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { interpret } from 'xstate';
 import { Interval } from '@nestjs/schedule';
 import {
@@ -20,31 +20,13 @@ import { CacheService } from '../cache/cache.service';
 const INTERVAL = 5;
 
 @Injectable()
-export class RemoteAppService implements OnApplicationShutdown {
+export class RemoteAppService {
   private readonly logger = new Logger('RemoteAppService');
   private containerServices: ContainerService[] = [];
 
   constructor(private readonly cacheService: CacheService) {
     this.restoreCachedContainers();
   }
-
-  /**
-   * @Description: Persist all containers in cache
-   * @param containers: ContainerContext[]
-   * @return:
-   */
-
-  private cacheContainers = async ({
-    containers,
-  }: {
-    containers: ContainerContext[];
-  }): Promise<any> => {
-    this.cacheService.set('containers', containers);
-
-    for (const container of containers) {
-      this.cacheContainer({ container })
-    }
-  };
 
   /**
   * @Description: Persist a container in cache
@@ -138,18 +120,7 @@ export class RemoteAppService implements OnApplicationShutdown {
   };
 
   /**
-   * @Description: Stop all services and persist them in cache
-   * @return:
-   */
-
-  async onApplicationShutdown() {
-    this.containerServices.forEach((s) => s.stop());
-    const containers = this.containerServices.map((s) => s.state.context);
-    await this.cacheContainers({ containers });
-  }
-
-  /**
-   * @Description: Poll remote api to update status
+   * @Description: Poll remote api to update the status of all containers
    * @return:
    */
 
