@@ -129,8 +129,9 @@ export class RemoteAppService {
   pollRemoteState() {
     const services = [...this.containerServices];
     services?.forEach(async (service) => {
+      const currentContext = service.state.context;
       try {
-        const currentContext = service.state.context;
+
         const remoteContext = await invokeRemoteContainer(currentContext, {
           type: ContainerAction.STATUS,
         });
@@ -138,7 +139,7 @@ export class RemoteAppService {
         if (remoteContext.error) {
           service.send({
             type: ContainerAction.REMOTE_STOPPED,
-            data: remoteContext,
+            nextContext: remoteContext,
           });
 
           return;
@@ -155,7 +156,7 @@ export class RemoteAppService {
             case ContainerAction.STOP:
               service.send({
                 type: ContainerAction.STOP,
-                data: { ...currentContext, nextAction: ContainerAction.DESTROY },
+                nextContext: { ...currentContext, nextAction: ContainerAction.DESTROY },
               });
               break;
 
@@ -174,7 +175,7 @@ export class RemoteAppService {
 
             service.send({
               type: ContainerAction.REMOTE_STOPPED,
-              data: {
+              nextContext: {
                 ...remoteContext,
                 error: { message: 'Container is not reachable' },
               },
@@ -184,21 +185,27 @@ export class RemoteAppService {
           case ContainerState.RUNNING:
             service.send({
               type: ContainerAction.REMOTE_STARTED,
-              data: remoteContext,
-              error: undefined,
+              nextContext: {
+                ...remoteContext,
+                error: undefined,
+              }
             });
             break;
 
           case ContainerState.CREATED:
             service.send({
               type: ContainerAction.REMOTE_CREATED,
-              data: remoteContext,
+              ƒ: remoteContext,
               error: undefined,
             });
             break;
         }
       } catch (error) {
-        service.send({ type: ContainerAction.REMOTE_STOPPED, data: error });
+        this.logger.log(JSON.stringify(error), 'pollRemoteState error')
+        service.state.context = {
+          ...currentContext,
+          ...error
+        };
       }
     });
   }
@@ -395,7 +402,7 @@ export class RemoteAppService {
       appServices.forEach((s) => {
         s.send({
           type: ContainerAction.STOP,
-          data: { ...s.state.context, nextAction: ContainerAction.DESTROY },
+          nextContext: { ...s.state.context, nextAction: ContainerAction.DESTROY },
         });
       });
 
@@ -411,7 +418,7 @@ export class RemoteAppService {
     else {
       service.send({
         type: ContainerAction.STOP,
-        data: {
+        nextContext: {
           ...currentContext,
           nextAction: ContainerAction.DESTROY,
         },
