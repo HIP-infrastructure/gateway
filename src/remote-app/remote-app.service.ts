@@ -130,20 +130,15 @@ export class RemoteAppService {
     const services = [...this.containerServices];
     services?.forEach(async (service) => {
       try {
-        // this.logger.debug(
-        //   `${JSON.stringify(service.state.context, null, 2)}`,
-        //   'pollRemoteState',
-        // );
-        const context = await invokeRemoteContainer(service.state.context, {
+        const currentContext = service.state.context;
+        const remoteContext = await invokeRemoteContainer(currentContext, {
           type: ContainerAction.STATUS,
         });
-        // this.logger.debug(`${JSON.stringify(context, null, 2)}`, 'pollRemoteState');
 
-        if (context.error) {
-          // this.logger.debug(ContainerAction.SYNC_STOPPED, 'pollRemoteState');
+        if (remoteContext.error) {
           service.send({
             type: ContainerAction.REMOTE_STOPPED,
-            data: context,
+            data: remoteContext,
           });
 
           return;
@@ -153,59 +148,43 @@ export class RemoteAppService {
           (s) => s.state.context.parentId === service.machine.id,
         );
 
-        switch (service.state.context.nextAction) {
-          case ContainerAction.STOP:
-            if (childApps.length === 0) {
-              service.state.context = {
-                ...service.state.context,
-                nextAction: ContainerAction.DESTROY,
-              };
+        // Destroy server sequence
+        // Remove if there is no more apps inside
+        if (childApps.length === 0 && currentContext.type === ContainerType.SERVER) {
+          switch (currentContext.nextAction) {
+            case ContainerAction.STOP:
               service.send({
                 type: ContainerAction.STOP,
-                nextAction: ContainerAction.DESTROY,
+                data: { ...currentContext, nextAction: ContainerAction.DESTROY },
               });
-            }
-            break;
+              break;
 
-          case ContainerAction.DESTROY:
-            if (childApps.length === 0) {
-              service.send({ type: ContainerAction.DESTROY });
-            }
-            break;
-
-          default:
+            default:
+          }
         }
 
-        switch (context.state) {
+        switch (remoteContext.state) {
           case ContainerState.EXITED:
           case ContainerState.UNINITIALIZED:
-            if (service.state.context.nextAction === ContainerAction.DESTROY) {
-              if (service.state.context.type === ContainerType.APP) {
-                service.send({ type: ContainerAction.DESTROY });
-              } else if (childApps.length === 0) {
-                service.send({
-                  type: ContainerAction.STOP,
-                  nextAction: ContainerAction.DESTROY,
-                });
-              }
-
+            // finish the sequence of destroying servers and apps
+            if (currentContext.nextAction === ContainerAction.DESTROY) {
+              service.send({ type: ContainerAction.DESTROY });
               break;
             }
 
             service.send({
               type: ContainerAction.REMOTE_STOPPED,
               data: {
-                ...context,
+                ...remoteContext,
                 error: { message: 'Container is not reachable' },
               },
             });
             break;
 
           case ContainerState.RUNNING:
-            // this.logger.debug(ContainerAction.SYNC_STARTED, 'pollRemoteState');
             service.send({
               type: ContainerAction.REMOTE_STARTED,
-              data: context,
+              data: remoteContext,
               error: undefined,
             });
             break;
@@ -213,19 +192,12 @@ export class RemoteAppService {
           case ContainerState.CREATED:
             service.send({
               type: ContainerAction.REMOTE_CREATED,
-              data: context,
+              data: remoteContext,
               error: undefined,
             });
             break;
         }
       } catch (error) {
-        // this.logger.debug(
-        //   `${service.machine.id} | local: ${
-        //     service.state.value
-        //   }, ${JSON.stringify(error)}`,
-        //   'pollRemoteState',
-        // );
-        //this.logger.debug(ContainerAction.SYNC_STOPPED, 'pollRemoteState');
         service.send({ type: ContainerAction.REMOTE_STOPPED, data: error });
       }
     });
@@ -398,13 +370,12 @@ export class RemoteAppService {
 
   /**
   * @Description: Destroy server containers and apps sequentially
-  * @param id {String} The id of the server
+  * @param serverId {String} The id of the server
   * @return Promise<APIContainersResponse>
   */
 
-  destroyAppsAndSession(id: string): APIContainerResponse {
-    this.logger.log(id, 'destroyAppsAndSession');
-    const service = this.containerServices.find((s) => s.machine.id === id);
+  destroyAppsAndSession(serverId: string): APIContainerResponse {
+    const service = this.containerServices.find((s) => s.machine.id === serverId);
     const appServices = this.containerServices.filter(
       (s) => s.state.context.parentId === service.machine.id,
     );
@@ -418,40 +389,45 @@ export class RemoteAppService {
       };
     }
 
-    // remove already exited apps and session
+    const currentContext = service.state.context;
+    // stale: remove already exited apps and session
     if (service.state.value === ContainerState.EXITED) {
       appServices.forEach((s) => {
         s.send({ type: ContainerAction.DESTROY });
       });
       service.send({ type: ContainerAction.DESTROY });
     }
-    // Stop apps
+    // Stop child apps, schedule a destroy with next
+    // Schedule a stop server with nextAction
     else if (appServices.length > 0) {
-      // this.logger.log(`${id} alive`, 'destroyServer');
       appServices.forEach((s) => {
         s.send({
           type: ContainerAction.STOP,
           data: { ...s.state.context, nextAction: ContainerAction.DESTROY },
         });
       });
+
+      // set the server context, don't send a direct action
+      // Will be handled in polling, so server and apps get detroyed sequentially
+      // TODO: should not be set directly
       service.state.context = {
-        ...service.state.context,
+        ...currentContext,
         nextAction: ContainerAction.STOP,
       };
     }
-    // stop service
+    // stop service, schedule destroy
     else {
       service.send({
         type: ContainerAction.STOP,
         data: {
-          ...service.state.context,
+          ...currentContext,
           nextAction: ContainerAction.DESTROY,
         },
       });
     }
 
     const nextContext: ContainerContext = {
-      ...service.state.context,
+      ...currentContext,
       state: service.state.value,
     };
 
