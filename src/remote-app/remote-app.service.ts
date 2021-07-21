@@ -244,15 +244,12 @@ export class RemoteAppService {
     id: string,
     uid: string,
   ): Promise<APIContainerResponse> {
-    // this.logger.log(id, 'startServer');
-
     // check for existing
     let service = this.containerServices.find((s) => s.machine.id === id);
     if (service) {
-      // this.logger.log(`${id} exists`, 'startServer');
-
       return service.state.context;
     }
+
     const sessionNamesArray = this.containerServices
       .filter((s) => s.state.context.type === ContainerType.SERVER)
       .filter((s) => s.state.context.user === uid)
@@ -272,7 +269,6 @@ export class RemoteAppService {
     const serverMachine = createContainerMachine(context);
     service = interpret(serverMachine).start();
     this.handleTransitionFor(service);
-    // this.logger.log(`${id} ${ContainerAction.START}`, 'startServer');
     service.send({ type: ContainerAction.START });
     this.containerServices.push(service);
 
@@ -302,15 +298,11 @@ export class RemoteAppService {
     appName: string,
     password: string,
   ): Promise<APIContainerResponse> {
-    // this.logger.log(serverId, 'startApp');
-
     // check existing server
     const serverService = this.containerServices.find(
       (s) => s.machine.id === serverId,
     );
     if (!serverService) {
-      // this.logger.log(`${serverId} exists`, 'startApp');
-
       return {
         ...serverService.state.context,
         error: { message: 'Server is not ready', code: '' },
@@ -318,10 +310,10 @@ export class RemoteAppService {
     }
 
     // check for existing
+    // TODO: should test if appName exists in server as for now it's not
+    // possible to have the same app twice
     let appService = this.containerServices.find((s) => s.machine.id === appId);
     if (appService) {
-      // this.logger.log(`${serverId} exists`, 'startApp');
-
       return appService.state.context;
     }
 
@@ -341,7 +333,6 @@ export class RemoteAppService {
     const machine = createContainerMachine(context);
     appService = interpret(machine).start();
     this.handleTransitionFor(appService);
-    // this.logger.log(`${appId} ${ContainerAction.START}`, 'startApp');
     appService.send({ type: ContainerAction.START });
     this.containerServices.push(appService); // TODO, immutable state by reducer
 
@@ -356,6 +347,7 @@ export class RemoteAppService {
     };
   }
 
+  // TODO: server side sequence off server + app
   // async createSessionWithApp(
   //   id: string,
   //   uid: string,
