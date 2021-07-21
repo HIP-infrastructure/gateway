@@ -25,6 +25,7 @@ export class RemoteAppService {
   private containerServices: ContainerService[] = [];
 
   constructor(private readonly cacheService: CacheService) {
+    // this.cacheService.flushall()
     this.restoreCachedContainers();
   }
 
@@ -34,12 +35,12 @@ export class RemoteAppService {
   * @return:
   */
 
-  private cacheContainer = async ({ container }: {
-    container: ContainerContext;
+  private setCacheContainer = async ({ context }: {
+    context: Partial<ContainerContext & WebdavOptions>;
   }): Promise<any> => {
-    this.cacheService.set(`container:${container.id}`, JSON.stringify(container));
-    this.cacheService.set(`container:${container.id}:state`, container.state);
-    this.cacheService.sadd(`containers`, container.id);
+    delete context.hippass;
+    this.cacheService.set(`container:${context.id}`, context);
+    this.cacheService.sadd(`containers`, context.id);
   }
 
   /**
@@ -50,7 +51,6 @@ export class RemoteAppService {
 
   private removeCacheContainer = (containerId) => {
     this.cacheService.del(`container:${containerId}`);
-    this.cacheService.del(`container:${containerId}:state`);
     this.cacheService.srem(`containers`, containerId);
   }
 
@@ -69,6 +69,7 @@ export class RemoteAppService {
       containerIds.map(async (containerId) =>
         await this.cacheService.get(`container:${containerId}`)))
 
+    this.logger.debug(JSON.stringify(containers, null, 2))
     this.containerServices = containers.map(container => {
       const service = interpret(createContainerMachine(container)).start();
       this.handleTransitionFor(service);
@@ -88,14 +89,15 @@ export class RemoteAppService {
         if (state.value === ContainerState.DESTROYED) {
           this.removeService(service);
         } else {
-          this.cacheService.set(`container:${service.machine.id}:state`, service.state.context);
+          this.setCacheContainer({ context: service.state.context })
         }
       }
     });
   };
 
   /**
-   * @Description: Remove and stop service from curent state and cache
+   * @Description: Remove and stop service and its apps services 
+   * from curent state and cache when ContainerState.DESTROYED
    * @return:
    */
 
@@ -115,7 +117,6 @@ export class RemoteAppService {
           s.state.context.parentId !== service.machine.id,
       ) || [];
     this.containerServices = nextServices;
-
     this.removeCacheContainer(service.machine.id)
   };
 
