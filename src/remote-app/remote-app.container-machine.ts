@@ -6,7 +6,7 @@ import {
   ContainerState,
   ContainerStateMachine,
   ContainerContext,
-  ContainerOptions,
+  WebdavOptions
 } from './remote-app.types';
 
 const config = {
@@ -25,7 +25,7 @@ const toParams = (data) =>
 const logger = new Logger('Container Machine');
 
 export const invokeRemoteContainer = (
-  context: ContainerContext & ContainerOptions,
+  context: ContainerContext & WebdavOptions,
   event: AnyEventObject,
 ) => {
   const { type: action } = event;

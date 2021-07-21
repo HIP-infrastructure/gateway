@@ -33,7 +33,7 @@ export interface ContainerContext {
   parentId?: string;
 }
 
-export interface ContainerOptions {
+export interface WebdavOptions {
   hippass: string;
   nc: string;
   app: string;

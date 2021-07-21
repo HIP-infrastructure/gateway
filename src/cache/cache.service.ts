@@ -48,6 +48,7 @@ export class CacheService {
       return null;
     }
   }
+
   /**
    * @Description: Delete redis cache data according to key
    * @param key {String}
@@ -61,6 +62,51 @@ export class CacheService {
 
     await this.client.del(key);
   }
+
+  /**
+  * @Description: Add the specified members to the set stored at key.
+  * @param key {String}
+  * @Param value {String} key value
+  * @return: Promise<any>
+  */
+
+  public async sadd(key: string, value: any): Promise<any> {
+    if (!this.client) {
+      await this.getClient();
+    }
+
+    await this.client.saad(key, value);
+  }
+
+  /**
+  * @Description: Returns all the members of the set value stored at key.
+  * @param key {String}
+  * @return: Promise<any>
+  */
+
+  public async smembers(key: string): Promise<any[]> {
+    if (!this.client) {
+      await this.getClient();
+    }
+
+    return await this.client.smembers(key);
+  }
+
+
+  /**
+  * @Description: Remove the specified members from the set stored at key. 
+  * @param key {String}
+  * @return: 
+  */
+
+  public async srem(key: string, value: any): Promise<any> {
+    if (!this.client) {
+      await this.getClient();
+    }
+
+    await this.client.srem(key, value);
+  }
+
   /**
    * @Description: Clear the redis cache
    * @param {type}
@@ -73,19 +119,5 @@ export class CacheService {
     }
 
     await this.client.flushall();
-  }
-
-  // TODO: containers Redis cache
-  public async setContainers(containers: any[]): Promise<any> {
-    if (!this.client) {
-      await this.getClient();
-    }
-
-    for (const container of containers) {
-      this.client.incr('id:containers');
-      this.client.set(`container:${container.id}`, JSON.stringify(container));
-      this.client.set(`container:${container.id}:state`, container.state);
-      this.client.sadd(`zcontainers`, container.id);
-    }
   }
 }
