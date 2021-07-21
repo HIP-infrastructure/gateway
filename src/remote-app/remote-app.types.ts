@@ -24,7 +24,6 @@ export interface ContainerContext {
   id: string;
   name: string;
   user: string;
-  password?: string;
   url: string;
   state: ContainerState;
   nextAction?: ContainerAction;
