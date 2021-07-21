@@ -31,27 +31,27 @@ export const invokeRemoteContainer = (
   const { type: action } = event;
   const { id, user, type, parentId } = context;
 
+  const startApp = action === ContainerAction.START && type === ContainerType.APP;
+
   const params =
     type === ContainerType.APP
       ? {
         sid: parentId,
         aid: id,
         hipuser: user,
-        action: action,
-        nc: context.nc,
-        hippass: context.hippass,
+        action,
+        ...(startApp && { nc: context.nc }),
+        ...(startApp && { hippass: context.hippass }),
         app: context.app,
       }
       : {
         sid: id,
         hipuser: user,
-        action: action,
+        action,
       };
 
   const url = `${remoteAppBaseURL}/control/${type}?${toParams(params)}`;
-  // if (params.action === ContainerAction.STOP) {
-  logger.debug(url, 'invokeRemoteContainer');
-  // }
+  //logger.debug(startApp ? 'startApp' : url, 'invokeRemoteContainer');
 
   return httpService
     .get(url, config)
@@ -61,7 +61,6 @@ export const invokeRemoteContainer = (
         const data = axiosResponse.data;
         const stdout = data?.output?.stdout;
         const stderr = data?.output?.stderr;
-        // logger.debug(JSON.stringify({ data }), 'invokeRemoteContainer')
         let nextState: ContainerState;
 
         if (stderr) {
@@ -101,17 +100,14 @@ export const invokeRemoteContainer = (
           state: nextState,
           error: null,
         };
-        // logger.debug(`${JSON.stringify({ nextContext })}`, 'invokeRemoteContainer');
 
         return nextContext;
       }
 
-      // logger.error(`Response data is not ok.`, 'invokeRemoteContainer');
       throw new Error('Container API failed to response');
     })
     .catch((error) => {
       const { code, message } = error;
-      // logger.error(JSON.stringify({ code, message }), 'invokeRemoteContainer');
 
       return Promise.reject({ error: { message, code } });
     });
