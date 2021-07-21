@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from 'nestjs-redis';
 
 @Injectable()
 export class CacheService {
   private client: any;
+  private readonly logger = new Logger('CacheService');
+
   constructor(private redisService: RedisService) {
     this.getClient();
   }
@@ -20,14 +22,15 @@ export class CacheService {
    */
 
   public async set(key: string, value: any, seconds?: number): Promise<any> {
-    value = JSON.stringify(value);
+    const jsonString = JSON.stringify(value);
+
     if (!this.client) {
       await this.getClient();
     }
     if (!seconds) {
-      await this.client.set(key, value);
+      await this.client.set(key, jsonString);
     } else {
-      await this.client.set(key, value, 'EX', seconds);
+      await this.client.set(key, jsonString, 'EX', seconds);
     }
   }
   /**
@@ -75,7 +78,7 @@ export class CacheService {
       await this.getClient();
     }
 
-    await this.client.saad(key, value);
+    await this.client.sadd(key, value);
   }
 
   /**
