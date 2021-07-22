@@ -76,6 +76,8 @@ export class RemoteAppService {
 
       return service;
     })
+
+    this.logger.log(`${JSON.stringify(this.containerServices, null, 2)}`, 'restoreCachedContainers')
   };
 
   /**
@@ -87,7 +89,7 @@ export class RemoteAppService {
     service.onTransition((state) => {
       if (state.changed) {
         if (state.value === ContainerState.DESTROYED) {
-          this.removeService(service);
+          this.removeService(service.machine.id);
         } else {
           this.setCacheContainer({ context: service.state.context })
         }
@@ -101,23 +103,26 @@ export class RemoteAppService {
    * @return:
    */
 
-  private removeService = (service: ContainerService) => {
+  private removeService = (id: string) => {
     const servicesToRemove =
       this.containerServices.filter(
         (s) =>
-          s.machine.id === service.machine.id ||
-          s.state.context.parentId === service.machine.id,
+          s.machine.id === id ||
+          s.state.context.parentId === id,
       ) || [];
-    servicesToRemove.forEach((s) => s.stop());
+    servicesToRemove.forEach((s) => {
+      s.stop()
+      this.removeCacheContainer(s.machine.id)
+    });
 
     const nextServices =
       this.containerServices.filter(
         (s) =>
-          s.machine.id !== service.machine.id &&
-          s.state.context.parentId !== service.machine.id,
+          s.machine.id !== id &&
+          s.state.context.parentId !== id,
       ) || [];
     this.containerServices = nextServices;
-    this.removeCacheContainer(service.machine.id)
+    this.removeCacheContainer(id)
   };
 
   /**
@@ -127,8 +132,8 @@ export class RemoteAppService {
 
   @Interval(INTERVAL * 1000)
   pollRemoteState() {
-    const services = [...this.containerServices];
-    services?.forEach(async (service) => {
+    // const services = [...this.containerServices];
+    this.containerServices?.forEach(async (service) => {
       const currentContext = service.state.context;
       try {
 
@@ -140,6 +145,7 @@ export class RemoteAppService {
           service.send({
             type: ContainerAction.REMOTE_STOPPED,
             nextContext: remoteContext,
+            error: remoteContext.error
           });
 
           return;
@@ -156,7 +162,7 @@ export class RemoteAppService {
             case ContainerAction.STOP:
               service.send({
                 type: ContainerAction.STOP,
-                nextContext: { ...currentContext, nextAction: ContainerAction.DESTROY },
+                nextContext: { ...currentContext, nextAction: ContainerAction.DESTROY, error: undefined },
               });
               break;
 
@@ -195,13 +201,15 @@ export class RemoteAppService {
           case ContainerState.CREATED:
             service.send({
               type: ContainerAction.REMOTE_CREATED,
-              ƒ: remoteContext,
-              error: undefined,
+              nextContext: {
+                ...remoteContext,
+                error: undefined,
+              },
             });
             break;
         }
       } catch (error) {
-        this.logger.log(JSON.stringify(error), 'pollRemoteState error')
+        this.logger.log(JSON.stringify({ currentContext, error }), 'pollRemoteState error')
         service.state.context = {
           ...currentContext,
           ...error
@@ -211,13 +219,41 @@ export class RemoteAppService {
   }
 
   /**
+   * @Description: Force Remove container from DB
+   * @param: id {String} id of the container
+   * @return Promise<APIContainersResponse>
+   */
+
+  async forceRemove(id: string): Promise<APIContainersResponse> {
+    this.removeService(id);
+    return {
+      data: this.containerServices
+        .map((service) => {
+          const { id, name, user, url, error, type, app, parentId } = service
+            .state.context as Partial<ContainerContext & WebdavOptions>;
+          return {
+            id,
+            name,
+            user,
+            url,
+            error,
+            type,
+            app,
+            parentId,
+            state: service.state.value as ContainerState,
+          };
+        }),
+      error: null,
+    };
+  }
+
+  /**
    * @Description: Get all containers from state
    * @param: uid {String} id of the user
    * @return Promise<APIContainersResponse>
    */
 
   async getContainers(uid: string): Promise<APIContainersResponse> {
-    // this.logger.log('getServers');
     return {
       data: this.containerServices
         .filter((service) => service.state.context.user === uid)
@@ -291,13 +327,13 @@ export class RemoteAppService {
   }
 
   /**
- * @Description: Start a new app container for a user with Webdav folder mounted
- * @param serverId {String} The id of the server
- * @param appId {String} The id of the app
- * @param appName {String} The name of the app to be started
- * @param password {String} The webdav password for the user
- * @return Promise<APIContainersResponse>
- */
+  * @Description: Start a new app container for a user with Webdav folder mounted
+  * @param serverId {String} The id of the server
+  * @param appId {String} The id of the app
+  * @param appName {String} The name of the app to be started
+  * @param password {String} The webdav password for the user
+  * @return Promise<APIContainersResponse>
+  */
 
   async startAppWithWebdav(
     serverId: string,
@@ -388,6 +424,9 @@ export class RemoteAppService {
       };
     }
 
+    this.logger.log(service, 'destroyAppsAndSession')
+    this.logger.log(`${JSON.stringify(appServices, null, 2)}`, 'destroyAppsAndSession')
+
     const currentContext = service.state.context;
     // stale: remove already exited apps and session
     if (service.state.value === ContainerState.EXITED) {
@@ -402,6 +441,7 @@ export class RemoteAppService {
       appServices.forEach((s) => {
         s.send({
           type: ContainerAction.STOP,
+          error: undefined,
           nextContext: { ...s.state.context, nextAction: ContainerAction.DESTROY },
         });
       });
@@ -421,6 +461,7 @@ export class RemoteAppService {
         nextContext: {
           ...currentContext,
           nextAction: ContainerAction.DESTROY,
+          error: undefined
         },
       });
     }

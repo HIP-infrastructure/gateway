@@ -24,6 +24,13 @@ export class RemoteAppController {
     this.remoteAppService.pollRemoteState()
   }
 
+  @Get('/containers/forceRemove/:id')
+  async forceRemove(
+    @Param('id') id: string,
+  ) {
+    this.remoteAppService.forceRemove(id)
+  }
+
   @Get('/containers/:uid')
   async getContainers(
     @Param('uid') uid: string,
