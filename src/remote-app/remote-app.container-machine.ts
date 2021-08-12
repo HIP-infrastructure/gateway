@@ -6,7 +6,7 @@ import {
   ContainerState,
   ContainerStateMachine,
   ContainerContext,
-  WebdavOptions
+  WebdavOptions,
 } from './remote-app.types';
 
 const config = {
@@ -31,27 +31,28 @@ export const invokeRemoteContainer = (
   const { type: action } = event;
   const { id, user, type, parentId } = context;
 
-  const startApp = action === ContainerAction.START && type === ContainerType.APP;
+  const startApp =
+    action === ContainerAction.START && type === ContainerType.APP;
 
   const params =
     type === ContainerType.APP
       ? {
-        sid: parentId,
-        aid: id,
-        hipuser: user,
-        action,
-        ...(startApp && { nc: context.nc }),
-        ...(startApp && { hippass: context.hippass }),
-        app: context.app,
-      }
+          sid: parentId,
+          aid: id,
+          hipuser: user,
+          action,
+          ...(startApp && { nc: context.nc }),
+          ...(startApp && { hippass: context.hippass }),
+          app: context.app,
+        }
       : {
-        sid: id,
-        hipuser: user,
-        action,
-      };
+          sid: id,
+          hipuser: user,
+          action,
+        };
 
   const url = `${remoteAppBaseURL}/control/${type}?${toParams(params)}`;
-  // logger.debug(url, 'invokeRemoteContainer');
+  logger.debug(url, 'invokeRemoteContainer');
 
   return httpService
     .get(url, config)
@@ -221,7 +222,10 @@ export const createContainerMachine = (
       actions: {
         updateContext: assign((context: ContainerContext, event) => {
           const { nextContext } = event;
-          logger.log(`${JSON.stringify(nextContext, null, 2)}`, 'updateContext')
+          logger.log(
+            `${JSON.stringify(nextContext, null, 2)}`,
+            'updateContext',
+          );
 
           return { ...context, ...nextContext };
         }),
