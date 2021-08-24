@@ -1,27 +1,27 @@
-import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import * as cookieParser from 'cookie-parser';
+import { NestFactory } from '@nestjs/core'
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { AppModule } from './app.module'
+import * as cookieParser from 'cookie-parser'
 
-const globalPrefix = '/api/v1';
+const globalPrefix = '/api/v1'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.enableShutdownHooks();
-  app.setGlobalPrefix(globalPrefix);
-  app.enableCors();
-  app.use(cookieParser());
+	const app = await NestFactory.create(AppModule)
+	app.enableShutdownHooks()
+	app.setGlobalPrefix(globalPrefix)
+	app.enableCors()
+	app.use(cookieParser())
 
-  const options = new DocumentBuilder()
-    .setTitle('API Gateway')
-    .setDescription('Human Intracerebral EEG Platform')
-    .setVersion('1.0')
-    .addTag('gateway')
-    .setBasePath(globalPrefix)
-    .build();
-  const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('doc', app, document);
+	const options = new DocumentBuilder()
+		.setTitle('API Gateway')
+		.setDescription('Human Intracerebral EEG Platform')
+		.setVersion('1.0')
+		.addTag('gateway')
+		.setBasePath(globalPrefix)
+		.build()
+	const document = SwaggerModule.createDocument(app, options)
+	SwaggerModule.setup('doc', app, document)
 
-  await app.listen(4000);
+	await app.listen(4000)
 }
-bootstrap();
+bootstrap()

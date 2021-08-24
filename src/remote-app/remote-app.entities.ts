@@ -1,47 +1,47 @@
 import {
-  Entity,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-} from 'typeorm';
-import { ContainerState, ContainerType } from './remote-app.types';
+	Entity,
+	Column,
+	CreateDateColumn,
+	UpdateDateColumn,
+	DeleteDateColumn,
+} from 'typeorm'
+import { ContainerState, ContainerType } from './remote-app.types'
 
 @Entity()
 export class Error {
-  @Column()
-  code: string;
+	@Column()
+	code: string
 
-  @Column()
-  message: string;
+	@Column()
+	message: string
 }
 
 @Entity()
 export class Container {
-  @CreateDateColumn()
-  created: Date;
+	@CreateDateColumn()
+	created: Date
 
-  @UpdateDateColumn()
-  updated: Date;
+	@UpdateDateColumn()
+	updated: Date
 
-  @DeleteDateColumn()
-  deleted: Date;
+	@DeleteDateColumn()
+	deleted: Date
 
-  @Column()
-  id: string;
+	@Column()
+	id: string
 
-  @Column()
-  user: string;
+	@Column()
+	user: string
 
-  @Column()
-  url: string;
+	@Column()
+	url: string
 
-  @Column()
-  state: ContainerState;
+	@Column()
+	state: ContainerState
 
-  @Column((type) => Error)
-  error: Error;
+	@Column(type => Error)
+	error: Error
 
-  @Column()
-  type: ContainerType;
+	@Column()
+	type: ContainerType
 }
