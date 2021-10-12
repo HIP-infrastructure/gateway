@@ -21,17 +21,17 @@ export class RemoteAppController {
 
 	@Get('/containers/:uid')
 	async getContainers(
-		@Param('uid') uid: string,
+		@Param('uid') userId: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
 		// this.logger.log(JSON.stringify(req.cookies, null, 2), '/containers');
 
-		if (uid !== req.cookies.nc_username) {
+		if (userId !== req.cookies.nc_username) {
 			return res.status(HttpStatus.FORBIDDEN).send()
 		}
 
-		const json = await this.remoteAppService.getContainers(uid)
+		const json = await this.remoteAppService.getContainers(userId)
 
 		return res.status(HttpStatus.OK).json(json)
 	}
@@ -123,24 +123,66 @@ export class RemoteAppController {
 
 	@Get('/apps')
 	availableApps() {
-		return [
+		const appItems = [
 			{
-				name: 'Brainstorm',
+				name: 'brainstorm',
+				label: 'Brainstorm',
 				description:
 					'Brainstorm is a collaborative, open-source application dedicated to the analysis of brain recordings: MEG, EEG, fNIRS, ECoG, depth electrodes and multiunit electrophysiology.',
-				status: 'running',
 				url: 'https: //neuroimage.usc.edu/brainstorm/Introduction',
-				icon: 'brainstorm__logo.png',
 			},
 			{
-				name: 'IntrAnat',
+				name: 'anywave',
+				label: 'AnyWave',
 				description:
-					'A software to visualize electrodes implantation on image data and prepare database for group studies',
-				status: 'running',
+					'AnyWave is a software designed to easily open and view data recorded by EEG or MEG acquisition systems.',
+				url: 'https://meg.univ-amu.fr/wiki/AnyWave',
+			},
+			{
+				name: 'hibop',
+				label: 'HiBoP',
+				description:
+					'HiBoP illustrates the possibility to render group-level activity dynamically at the cortical level, for several experimental conditions (columns) of the same cognitive paradigm.',
+				url: '',
+			},
+			{
+				name: 'localizer',
+				label: 'Localizer',
+				description:
+					'',
 				url: 'https://gin11-web.ujf-grenoble.fr/?page_id=228',
-				icon: 'intranat__logo.png',
+			},
+			{
+				name: 'mricrogl',
+				label: 'MRIcroGL',
+				description:
+					'MRIcroGL is a cross-platform tool for viewing DICOM and NIfTI format images. It provides a drag-and-drop user interface as well as a scripting language.',
+				url: 'https://github.com/rordenlab/MRIcroGL',
+			},
+			{
+				name: 'fsl',
+				label: 'FSL',
+				description:
+					'FSL is a comprehensive library of analysis tools for FMRI, MRI and DTI brain imaging data.',
+				url: 'https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL',
+			},
+			{
+				name: 'slicer',
+				label: '3D Slicer',
+				description:
+					'Desktop software to solve advanced image computing challenges with a focus on clinical and biomedical applications.',
+				url: 'https://www.slicer.org/',
+			},
+			{
+				name: 'freesurfer',
+				label: 'Freesurfer',
+				description:
+					'An open source software suite for processing and analyzing (human) brain MRI images.',
+				url: 'https://surfer.nmr.mgh.harvard.edu/',
 			},
 		]
+
+		return appItems
 	}
 
 	// DEBUG methods

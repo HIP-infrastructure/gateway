@@ -295,7 +295,7 @@ export class RemoteAppService {
 						parentId,
 						state: service.state.value as ContainerState,
 					}
-				}),
+				}) ?? [],
 			error: null,
 		}
 	}
