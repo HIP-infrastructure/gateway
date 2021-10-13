@@ -273,6 +273,34 @@ export class RemoteAppService {
 
 	/**
 	 * @Description: Get all containers from state
+	 * @return Promise<APIContainersResponse>
+	 */
+
+	async getAllContainers(): Promise<APIContainersResponse> {
+		return {
+			data: this.containerServices
+				.map(service => {
+					const { id, name, user, url, error, type, app, parentId } = service
+						.state.context as Partial<ContainerContext & WebdavOptions>
+					return {
+						id,
+						name,
+						user,
+						url,
+						error,
+						type,
+						app,
+						parentId,
+						state: service.state.value as ContainerState,
+					}
+				}) ?? [],
+			error: null,
+		}
+	}
+
+
+	/**
+	 * @Description: Get all containers from state
 	 * @param: uid {String} id of the user
 	 * @return Promise<APIContainersResponse>
 	 */

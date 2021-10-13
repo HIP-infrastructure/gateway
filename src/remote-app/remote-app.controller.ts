@@ -19,6 +19,23 @@ export class RemoteAppController {
 
 	private readonly logger = new Logger('RemoteAppController')
 
+	// Admin endpoint to see every containers
+	@Get('/containers')
+	async getAllContainers(
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		// this.logger.log(JSON.stringify(req.cookies, null, 2), '/containers');
+
+		if (req.cookies.nc_username !== 'hipadmin') {
+			return res.status(HttpStatus.FORBIDDEN).send()
+		}
+
+		const json = await this.remoteAppService.getAllContainers()
+
+		return res.status(HttpStatus.OK).json(json)
+	}
+
 	@Get('/containers/:userId')
 	async getContainers(
 		@Param('userId') userId: string,
