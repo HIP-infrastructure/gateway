@@ -43,6 +43,9 @@ export enum ContainerState {
 	CREATED = 'created',
 	LOADING = 'loading',
 	RUNNING = 'running',
+	PAUSING = 'pausing',
+	RESUMING = 'resuming',
+	PAUSED = 'paused',
 	STOPPING = 'stopping',
 	EXITED = 'exited',
 	DESTROYED = 'destroyed',
@@ -59,8 +62,11 @@ export enum ContainerAction {
 	STOP = 'stop',
 	DESTROY = 'destroy',
 	RESTART = 'restart',
+	PAUSE = 'pause',
+	RESUME = 'resume',
 	REMOTE_STARTED = 'sync-started',
 	REMOTE_STOPPED = 'sync-stopped',
+	REMOTE_PAUSED = 'sync-paused',
 	REMOTE_CREATED = 'sync-created',
 }
 

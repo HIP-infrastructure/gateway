@@ -121,6 +121,38 @@ export class RemoteAppController {
 		return res.status(HttpStatus.OK).json(json)
 	}
 
+	@Put('/containers/:id/pause')
+	async pauseAppsAndSession(
+		@Param('id') id: string,
+		@Body('uid') userId: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		if (userId !== req.cookies.nc_username) {
+			return res.status(HttpStatus.FORBIDDEN).send()
+		}
+
+		const json = this.remoteAppService.pauseAppsAndSession(id)
+
+		return res.status(HttpStatus.OK).json(json)
+	}
+
+	@Put('/containers/:id/resume')
+	async resumeAppsAndSession(
+		@Param('id') id: string,
+		@Body('uid') userId: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		if (userId !== req.cookies.nc_username) {
+			return res.status(HttpStatus.FORBIDDEN).send()
+		}
+
+		const json = this.remoteAppService.resumeAppsAndSession(id)
+
+		return res.status(HttpStatus.OK).json(json)
+	}
+
 	@Get('/apps')
 	availableApps() {
 		const appItems = [

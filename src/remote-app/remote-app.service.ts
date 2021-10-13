@@ -514,4 +514,72 @@ export class RemoteAppService {
 			error: undefined,
 		}
 	}
+
+	pauseAppsAndSession(serverId: string) {
+		const service = this.containerServices.find(s => s.machine.id === serverId)
+
+		if (!service) {
+			return {
+				data: undefined,
+				error: {
+					code: '',
+					message: 'Container is not available',
+				},
+			}
+		}
+
+		const currentContext = service.state.context
+		service.send({ type: ContainerAction.PAUSE })
+
+		this.containerServices.filter(
+			s => s.state.context.parentId === service.machine.id
+		).forEach(s => {
+			s.send({ type: ContainerAction.PAUSE })
+		})
+
+		const nextContext: ContainerContext = {
+			...currentContext,
+			state: service.state.value,
+		}
+
+		return {
+			data: nextContext,
+			error: undefined,
+		}
+	}
+
+	resumeAppsAndSession(serverId: string) {
+		const service = this.containerServices.find(s => s.machine.id === serverId)
+
+		if (!service) {
+			return {
+				data: undefined,
+				error: {
+					code: '',
+					message: 'Container is not available',
+				},
+			}
+		}
+
+		const currentContext = service.state.context
+		service.send({ type: ContainerAction.RESUME })
+
+		this.containerServices.filter(
+			s => s.state.context.parentId === service.machine.id
+		).forEach(s => {
+			s.send({ type: ContainerAction.RESUME })
+		})
+
+		const nextContext: ContainerContext = {
+			...currentContext,
+			state: service.state.value,
+		}
+
+		return {
+			data: nextContext,
+			error: undefined,
+		}
+	}
 }
+
+

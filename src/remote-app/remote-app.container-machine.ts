@@ -38,19 +38,19 @@ export const invokeRemoteContainer = (
 	const params =
 		type === ContainerType.APP
 			? {
-					sid: parentId,
-					aid: id,
-					hipuser: user,
-					action,
-					...(startApp && { nc: context.nc }),
-					...(startApp && { hippass: context.hippass }),
-					app: context.app,
-			  }
+				sid: parentId,
+				aid: id,
+				hipuser: user,
+				action,
+				...(startApp && { nc: context.nc }),
+				...(startApp && { hippass: context.hippass }),
+				app: context.app,
+			}
 			: {
-					sid: id,
-					hipuser: user,
-					action,
-			  }
+				sid: id,
+				hipuser: user,
+				action,
+			}
 
 	const url = `${remoteAppBaseURL}/control/${type}?${toParams(params)}`
 
@@ -74,6 +74,9 @@ export const invokeRemoteContainer = (
 					// throw new Error(stderr)
 				}
 
+				// logger.debug(data, `invokeRemoteContainer-${id}`)
+				// logger.debug(stdout, `invokeRemoteContainer-${id}`)
+
 				switch (true) {
 					case /Creating/.test(stderr):
 						nextState = ContainerState.LOADING
@@ -81,6 +84,10 @@ export const invokeRemoteContainer = (
 
 					case /Stopping/.test(stderr):
 						nextState = ContainerState.STOPPING
+						break
+
+					case /Paused/.test(stdout):
+						nextState = ContainerState.PAUSED
 						break
 
 					case /Exited/.test(stdout):
@@ -105,6 +112,8 @@ export const invokeRemoteContainer = (
 					state: nextState,
 					error: null,
 				}
+
+				// logger.debug(nextState, `nextState-${id}`)
 
 				return nextContext
 			}
@@ -172,9 +181,53 @@ export const createContainerMachine = (
 							target: ContainerState.STOPPING,
 							actions: 'updateContext',
 						},
+						[ContainerAction.PAUSE]: {
+							target: ContainerState.PAUSING,
+							actions: 'updateContext',
+						},
 						[ContainerAction.RESTART]: {
 							target: ContainerState.CREATED,
 							actions: 'updateContext',
+						},
+					},
+				},
+				[ContainerState.PAUSING]: {
+					invoke: {
+						id: 'startRemoteServer',
+						src: invokeRemoteContainer,
+						onDone: {
+							target: ContainerState.PAUSED,
+							actions: ['updateContext'],
+						},
+						onError: {
+							target: ContainerState.EXITED,
+							actions: ['updateContext'],
+						},
+					},
+				},
+				[ContainerState.PAUSED]: {
+					on: {
+						[ContainerAction.REMOTE_STOPPED]: {
+							target: ContainerState.EXITED,
+							actions: 'updateContext',
+						},
+						[ContainerAction.RESUME]: {
+							target: ContainerState.RESUMING,
+							actions: 'updateContext',
+						},
+					},
+				},
+				[ContainerState.RESUMING]: {
+					invoke: {
+						id: 'startRemoteServer',
+						src: invokeRemoteContainer,
+						onDone: {
+							target: ContainerState.RUNNING,
+							actions: ['updateContext'],
+						},
+						onError: {
+							target: ContainerState.EXITED,
+							actions: ['updateContext'],
 						},
 					},
 				},
