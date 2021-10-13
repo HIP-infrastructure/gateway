@@ -15,26 +15,9 @@ import { Request, Response } from 'express'
 
 @Controller('remote-app')
 export class RemoteAppController {
-	constructor(private readonly remoteAppService: RemoteAppService) {}
+	constructor(private readonly remoteAppService: RemoteAppService) { }
 
 	private readonly logger = new Logger('RemoteAppController')
-
-	// Admin endpoint to see every containers
-	@Get('/containers')
-	async getAllContainers(
-		@Req() req: Request,
-		@Res() res: Response
-	) {
-		// this.logger.log(JSON.stringify(req.cookies, null, 2), '/containers');
-
-		if (req.cookies.nc_username !== 'hipadmin') {
-			return res.status(HttpStatus.FORBIDDEN).send()
-		}
-
-		const json = await this.remoteAppService.getAllContainers()
-
-		return res.status(HttpStatus.OK).json(json)
-	}
 
 	@Get('/containers/:userId')
 	async getContainers(
@@ -46,6 +29,13 @@ export class RemoteAppController {
 
 		if (userId !== req.cookies.nc_username) {
 			return res.status(HttpStatus.FORBIDDEN).send()
+		}
+
+		// Admin endpoint to see every containers
+		if (req.cookies.nc_username === process.env.HIP_ADMIN) {
+			const json = await this.remoteAppService.getAllContainers()
+
+			return res.status(HttpStatus.OK).json(json)
 		}
 
 		const json = await this.remoteAppService.getContainers(userId)
