@@ -19,9 +19,9 @@ export class RemoteAppController {
 
 	private readonly logger = new Logger('RemoteAppController')
 
-	@Get('/containers/:uid')
+	@Get('/containers/:userId')
 	async getContainers(
-		@Param('uid') userId: string,
+		@Param('userId') userId: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
@@ -36,95 +36,95 @@ export class RemoteAppController {
 		return res.status(HttpStatus.OK).json(json)
 	}
 
-	@Post('/containers/:id/start')
+	@Post('/containers/:sessionId/start')
 	async startSessionWithUserId(
-		@Param('id') id: string,
-		@Body('uid') uid: string,
+		@Param('sessionId') sessionId: string,
+		@Body('userId') userId: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.logger.log('/startSessionWithUserId', id)
+		this.logger.log('/startSessionWithUserId', sessionId)
 
-		if (uid !== req.cookies.nc_username) {
+		if (userId !== req.cookies.nc_username) {
 			return res.status(HttpStatus.FORBIDDEN).send()
 		}
 
-		const json = await this.remoteAppService.startSessionWithUserId(id, uid)
+		const json = await this.remoteAppService.startSessionWithUserId(sessionId, userId)
 
 		return res.status(HttpStatus.CREATED).json(json)
 	}
 
-	@Post('/apps/:app/start')
+	@Post('/apps/:appId/start')
 	async startNewSessionAndAppWithWebdav(
-		@Param('app') app: string,
-		@Body('uid') uid: string,
+		@Param('appId') appId: string,
+		@Body('userId') userId: string,
 		@Body('password') password: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.logger.log('/startNewSessionAndAppWithWebdav', app)
+		this.logger.log('/startNewSessionAndAppWithWebdav', appId)
 
 		// Basic check against nc cookie
-		if (uid !== req.cookies.nc_username) {
+		if (userId !== req.cookies.nc_username) {
 			return res.status(HttpStatus.FORBIDDEN).send()
 		}
 
 		const json = await this.remoteAppService.startNewSessionAndAppWithWebdav(
-			uid,
-			app,
+			userId,
+			appId,
 			password
 		)
 
 		return res.status(HttpStatus.CREATED).json(json)
 	}
 
-	@Post('/containers/:sid/apps/:aid/start')
+	@Post('/containers/:sessionId/apps/:aid/start')
 	async startAppWithWebdav(
-		@Param('sid') sid: string,
-		@Param('aid') aid: string,
-		@Body('app') app: string,
-		@Body('uid') uid: string,
+		@Param('sessionId') sessionId: string,
+		@Param('appId') appId: string,
+		@Body('appName') appName: string,
+		@Body('userId') userId: string,
 		@Body('password') password: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.logger.log('/startAppWithWebdav', sid)
+		this.logger.log('/startAppWithWebdav', sessionId)
 
 		// Basic check against nc cookie
-		if (uid !== req.cookies.nc_username) {
+		if (userId !== req.cookies.nc_username) {
 			return res.status(HttpStatus.FORBIDDEN).send()
 		}
 
 		const json = await this.remoteAppService.startAppWithWebdav(
-			sid,
-			aid,
-			app,
+			sessionId,
+			appId,
+			appName,
 			password
 		)
 
 		return res.status(HttpStatus.CREATED).json(json)
 	}
 
-	@Put('/containers/:id/destroy')
-	async destroyAppsAndSession(
-		@Param('id') id: string,
-		@Body('uid') uid: string,
+	@Put('/containers/:sessionId/remove')
+	async removeAppsAndSession(
+		@Param('sessionId') sessionId: string,
+		@Body('userId') userId: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		if (uid !== req.cookies.nc_username) {
+		if (userId !== req.cookies.nc_username) {
 			return res.status(HttpStatus.FORBIDDEN).send()
 		}
 
-		const json = this.remoteAppService.destroyAppsAndSession(id)
+		const json = this.remoteAppService.removeAppsAndSession(sessionId)
 
 		return res.status(HttpStatus.OK).json(json)
 	}
 
-	@Put('/containers/:id/pause')
+	@Put('/containers/:sessionId/pause')
 	async pauseAppsAndSession(
-		@Param('id') id: string,
-		@Body('uid') userId: string,
+		@Param('sessionId') sessionId: string,
+		@Body('userId') userId: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
@@ -132,15 +132,15 @@ export class RemoteAppController {
 			return res.status(HttpStatus.FORBIDDEN).send()
 		}
 
-		const json = this.remoteAppService.pauseAppsAndSession(id)
+		const json = this.remoteAppService.pauseAppsAndSession(sessionId)
 
 		return res.status(HttpStatus.OK).json(json)
 	}
 
-	@Put('/containers/:id/resume')
+	@Put('/containers/:sessionId/resume')
 	async resumeAppsAndSession(
-		@Param('id') id: string,
-		@Body('uid') userId: string,
+		@Param('sessionId') sessionId: string,
+		@Body('userId') userId: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
@@ -148,7 +148,7 @@ export class RemoteAppController {
 			return res.status(HttpStatus.FORBIDDEN).send()
 		}
 
-		const json = this.remoteAppService.resumeAppsAndSession(id)
+		const json = this.remoteAppService.resumeAppsAndSession(sessionId)
 
 		return res.status(HttpStatus.OK).json(json)
 	}
@@ -223,8 +223,8 @@ export class RemoteAppController {
 		this.remoteAppService.pollRemoteState()
 	}
 
-	@Get('/containers/forceRemove/:id')
-	async forceRemove(@Param('id') id: string) {
-		this.remoteAppService.forceRemove(id)
+	@Get('/containers/forceRemove/:sessionId')
+	async forceRemove(@Param('sessionId') sessionId: string) {
+		this.remoteAppService.forceRemove(sessionId)
 	}
 }

@@ -441,7 +441,7 @@ export class RemoteAppService {
 	 * @return Promise<APIContainersResponse>
 	 */
 
-	destroyAppsAndSession(serverId: string): APIContainerResponse {
+	removeAppsAndSession(serverId: string): APIContainerResponse {
 		const service = this.containerServices.find(s => s.machine.id === serverId)
 		const appServices = this.containerServices.filter(
 			s => s.state.context.parentId === service.machine.id
