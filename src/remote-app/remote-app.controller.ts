@@ -61,15 +61,15 @@ export class RemoteAppController {
 		return res.status(HttpStatus.CREATED).json(json)
 	}
 
-	@Post('/apps/:appId/start')
+	@Post('/apps/:appName/start')
 	async startNewSessionAndAppWithWebdav(
-		@Param('appId') appId: string,
+		@Param('appName') appName: string,
 		@Body('userId') userId: string,
 		@Body('password') password: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.logger.log('/startNewSessionAndAppWithWebdav', appId)
+		this.logger.log('/startNewSessionAndAppWithWebdav', appName)
 
 		// Basic check against nc cookie
 		if (userId !== req.cookies.nc_username) {
@@ -78,7 +78,7 @@ export class RemoteAppController {
 
 		const json = await this.remoteAppService.startNewSessionAndAppWithWebdav(
 			userId,
-			appId,
+			appName,
 			password
 		)
 
