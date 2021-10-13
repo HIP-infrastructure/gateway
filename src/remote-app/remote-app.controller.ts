@@ -85,7 +85,7 @@ export class RemoteAppController {
 		return res.status(HttpStatus.CREATED).json(json)
 	}
 
-	@Post('/containers/:sessionId/apps/:aid/start')
+	@Post('/containers/:sessionId/apps/:appId/start')
 	async startAppWithWebdav(
 		@Param('sessionId') sessionId: string,
 		@Param('appId') appId: string,
