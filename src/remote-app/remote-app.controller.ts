@@ -164,6 +164,13 @@ export class RemoteAppController {
 	availableApps() {
 		const appItems = [
 			{
+				name: 'anywave',
+				label: 'AnyWave',
+				description:
+					'AnyWave is a software designed to easily open and view data recorded by EEG or MEG acquisition systems.',
+				url: 'https://meg.univ-amu.fr/wiki/AnyWave',
+			},
+			{
 				name: 'brainstorm',
 				label: 'Brainstorm',
 				description:
@@ -171,11 +178,24 @@ export class RemoteAppController {
 				url: 'https: //neuroimage.usc.edu/brainstorm/Introduction',
 			},
 			{
-				name: 'anywave',
-				label: 'AnyWave',
+				name: 'dcm2niix',
+				label: 'dcm2niix',
+				description: 'dcm2niix is designed to convert neuroimaging data from the DICOM format to the NIfTI format.',
+				url: 'https://github.com/rordenlab/dcm2niix'
+			},
+			{
+				name: 'freesurfer',
+				label: 'Freesurfer',
 				description:
-					'AnyWave is a software designed to easily open and view data recorded by EEG or MEG acquisition systems.',
-				url: 'https://meg.univ-amu.fr/wiki/AnyWave',
+					'An open source software suite for processing and analyzing (human) brain MRI images.',
+				url: 'https://surfer.nmr.mgh.harvard.edu/',
+			},
+			{
+				name: 'fsl',
+				label: 'FSL',
+				description:
+					'FSL is a comprehensive library of analysis tools for FMRI, MRI and DTI brain imaging data.',
+				url: 'https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL',
 			},
 			{
 				name: 'hibop',
@@ -199,25 +219,11 @@ export class RemoteAppController {
 				url: 'https://github.com/rordenlab/MRIcroGL',
 			},
 			{
-				name: 'fsl',
-				label: 'FSL',
-				description:
-					'FSL is a comprehensive library of analysis tools for FMRI, MRI and DTI brain imaging data.',
-				url: 'https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL',
-			},
-			{
 				name: 'slicer',
 				label: '3D Slicer',
 				description:
 					'Desktop software to solve advanced image computing challenges with a focus on clinical and biomedical applications.',
 				url: 'https://www.slicer.org/',
-			},
-			{
-				name: 'freesurfer',
-				label: 'Freesurfer',
-				description:
-					'An open source software suite for processing and analyzing (human) brain MRI images.',
-				url: 'https://surfer.nmr.mgh.harvard.edu/',
 			},
 		]
 
