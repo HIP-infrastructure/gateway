@@ -171,6 +171,13 @@ export class RemoteAppController {
 				url: 'https://meg.univ-amu.fr/wiki/AnyWave',
 			},
 			{
+				name: 'bidsmanager',
+				label: 'Bids Manager',
+				description:
+					'Package to collect, organise and manage neuroscience data in Brain Imaging Data Structure (BIDS) format.',
+				url: 'https://github.com/Dynamap/BIDS_Manager',
+			},
+			{
 				name: 'brainstorm',
 				label: 'Brainstorm',
 				description:
@@ -180,7 +187,8 @@ export class RemoteAppController {
 			{
 				name: 'dcm2niix',
 				label: 'dcm2niix',
-				description: 'dcm2niix is designed to convert neuroimaging data from the DICOM format to the NIfTI format.',
+				description:
+					'dcm2niix is designed to convert neuroimaging data from the DICOM format to the NIfTI format.',
 				url: 'https://github.com/rordenlab/dcm2niix'
 			},
 			{
@@ -207,8 +215,7 @@ export class RemoteAppController {
 			{
 				name: 'localizer',
 				label: 'Localizer',
-				description:
-					'',
+				description: '',
 				url: 'https://gin11-web.ujf-grenoble.fr/?page_id=228',
 			},
 			{
