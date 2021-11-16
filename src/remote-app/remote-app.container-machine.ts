@@ -8,16 +8,10 @@ import {
 	ContainerContext,
 	WebdavOptions,
 } from './remote-app.types'
-import { debugId } from './remote-app.service'
+import { debugId, config, remoteAppBaseURL, httpService } from './remote-app.service'
 
-const config = {
-	headers: {
-		Authorization: process.env.REMOTE_APP_BASIC_AUTH,
-		'Cache-Control': 'no-cache',
-	},
-}
-const remoteAppBaseURL = process.env.REMOTE_APP_API
-const httpService = new HttpService()
+
+
 const toParams = data =>
 	Object.keys(data)
 		.map(key => `${key}=${encodeURIComponent(data[key])}`)
@@ -54,9 +48,10 @@ export const invokeRemoteContainer = (
 
 	const url = `${remoteAppBaseURL}/control/${type}?${toParams(params)}`
 
-	if (id === debugId) {
+	// if (id === debugId) {
 		logger.debug(url, `invokeRemoteContainer-${id}`)
-	}
+	// }
+	
 
 	return httpService
 		.get(url, config)

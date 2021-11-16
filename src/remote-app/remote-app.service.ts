@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { HttpService, Injectable, Logger } from '@nestjs/common'
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { interpret } from 'xstate'
 import { Interval } from '@nestjs/schedule'
 import {
@@ -16,6 +18,17 @@ import {
 	invokeRemoteContainer,
 } from './remote-app.container-machine'
 import { CacheService } from '../cache/cache.service'
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+export const config = {
+	headers: {
+		Authorization: process.env.REMOTE_APP_BASIC_AUTH,
+		'Cache-Control': 'no-cache',
+	},
+}
+export const remoteAppBaseURL = process.env.REMOTE_APP_API
+export const httpService = new HttpService()
 
 const INTERVAL = 5
 export const debugId = 'app-946'
@@ -241,6 +254,20 @@ export class RemoteAppService {
 				}
 			}
 		})
+	}
+
+	async availableApps(): Promise<any> {
+		const url = `${remoteAppBaseURL}/control/app/list`
+		
+		return await httpService
+			.get(url, config)
+			.toPromise()
+			.then(response => response.data)
+			.then(data => Object.keys(data).map(k => ({
+				...data[k],
+				name: k,
+				label: data[k].name,
+			})))
 	}
 
 	/**
