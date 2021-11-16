@@ -11,11 +11,15 @@ import {
 	HttpStatus,
 } from '@nestjs/common'
 import { RemoteAppService } from './remote-app.service'
+import { BIDSService } from './bids.service'
 import { Request, Response } from 'express'
 
 @Controller('remote-app')
 export class RemoteAppController {
-	constructor(private readonly remoteAppService: RemoteAppService) { }
+	constructor(
+		private readonly remoteAppService: RemoteAppService,
+		private readonly bidsService: BIDSService
+		) { }
 
 	private readonly logger = new Logger('RemoteAppController')
 
@@ -184,80 +188,9 @@ export class RemoteAppController {
 	}
 
 	@Get('/apps')
-	availableApps() {
-		const appItems = [
-			{
-				name: 'anywave',
-				label: 'AnyWave',
-				description:
-					'AnyWave is a software designed to easily open and view data recorded by EEG or MEG acquisition systems.',
-				url: 'https://meg.univ-amu.fr/wiki/AnyWave',
-			},
-			{
-				name: 'bidsmanager',
-				label: 'Bids Manager',
-				description:
-					'Package to collect, organise and manage neuroscience data in Brain Imaging Data Structure (BIDS) format.',
-				url: 'https://github.com/Dynamap/BIDS_Manager',
-			},
-			{
-				name: 'brainstorm',
-				label: 'Brainstorm',
-				description:
-					'Brainstorm is a collaborative, open-source application dedicated to the analysis of brain recordings: MEG, EEG, fNIRS, ECoG, depth electrodes and multiunit electrophysiology.',
-				url: 'https: //neuroimage.usc.edu/brainstorm/Introduction',
-			},
-			{
-				name: 'dcm2niix',
-				label: 'dcm2niix',
-				description:
-					'dcm2niix is designed to convert neuroimaging data from the DICOM format to the NIfTI format.',
-				url: 'https://github.com/rordenlab/dcm2niix'
-			},
-			{
-				name: 'freesurfer',
-				label: 'Freesurfer',
-				description:
-					'An open source software suite for processing and analyzing (human) brain MRI images.',
-				url: 'https://surfer.nmr.mgh.harvard.edu/',
-			},
-			{
-				name: 'fsl',
-				label: 'FSL',
-				description:
-					'FSL is a comprehensive library of analysis tools for FMRI, MRI and DTI brain imaging data.',
-				url: 'https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL',
-			},
-			{
-				name: 'hibop',
-				label: 'HiBoP',
-				description:
-					'HiBoP illustrates the possibility to render group-level activity dynamically at the cortical level, for several experimental conditions (columns) of the same cognitive paradigm.',
-				url: '',
-			},
-			{
-				name: 'localizer',
-				label: 'Localizer',
-				description: '',
-				url: 'https://gin11-web.ujf-grenoble.fr/?page_id=228',
-			},
-			{
-				name: 'mricrogl',
-				label: 'MRIcroGL',
-				description:
-					'MRIcroGL is a cross-platform tool for viewing DICOM and NIfTI format images. It provides a drag-and-drop user interface as well as a scripting language.',
-				url: 'https://github.com/rordenlab/MRIcroGL',
-			},
-			{
-				name: 'slicer',
-				label: '3D Slicer',
-				description:
-					'Desktop software to solve advanced image computing challenges with a focus on clinical and biomedical applications.',
-				url: 'https://www.slicer.org/',
-			},
-		]
-
-		return appItems
+	async availableApps(@Res() res: Response) {
+		const json = await this.remoteAppService.availableApps()
+		return res.status(HttpStatus.OK).json(json)
 	}
 
 	// DEBUG methods
@@ -269,5 +202,17 @@ export class RemoteAppController {
 	@Get('/containers/forceRemove/:sessionId')
 	async forceRemove(@Param('sessionId') sessionId: string) {
 		this.remoteAppService.forceRemove(sessionId)
+	}
+
+	@Post('/bids')
+	async bidsConvert(
+		//@Body('message') message: any,
+		@Req() req: Request,
+		// @Res() res: Response
+	) {
+		this.logger.log(JSON.stringify(req.body, null, 2), '/bids', )
+		this.bidsService.convert(req.body)
+
+		//return res.status(HttpStatus.OK)
 	}
 }
