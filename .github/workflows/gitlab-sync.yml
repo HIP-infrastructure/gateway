@@ -1,13 +1,18 @@
 name: gitlab-sync
-on: push
+on: 
+  - push
+  - delete
+
 jobs:
-  git-sync:
+  sync:
     runs-on: ubuntu-latest
+    name: Git Repo Sync
     steps:
-      - name: git-sync
-        uses: wei/git-sync@v3
-        with:
-          source_repo: ${{ secrets.SOURCE_GITHUB }}
-          source_branch: "refs/remotes/source/*"
-          destination_repo: ${{ secrets.TARGET_GITLAB }}
-          destination_branch: "refs/heads/*"
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: wangchucheng/git-repo-sync@v0.1.0
+      with:
+        target-url: ${{ secrets.TARGET_URL }}
+        target-username: ${{ secrets.TARGET_USERNAME }}
+        target-token: ${{ secrets.TARGET_TOKEN }}
