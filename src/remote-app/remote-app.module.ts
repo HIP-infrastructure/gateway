@@ -8,4 +8,4 @@ import { CacheService } from '../cache/cache.service'
 	controllers: [RemoteAppController],
 	providers: [RemoteAppService, CacheService],
 })
-export class RemoteAppModule {}
+export class RemoteAppModule { }

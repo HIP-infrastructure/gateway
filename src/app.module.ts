@@ -4,6 +4,7 @@ import { FilesModule } from './files/files.module'
 import { RemoteAppModule } from './remote-app/remote-app.module'
 import { ScheduleModule } from '@nestjs/schedule'
 import { RedisModule } from 'nestjs-redis'
+import { WorkflowModule } from './workflow/workflow.module';
 @Module({
 	imports: [
 		FilesModule,
@@ -11,10 +12,11 @@ import { RedisModule } from 'nestjs-redis'
 		ScheduleModule.forRoot(),
 		RedisModule.register({
 			name: 'containers',
-			url: 'redis://cache',
+			url: `${process.env.REDIS_URL}://cache`,
 			port: 6379,
 			db: 1,
 		}),
+		WorkflowModule,
 	],
 	controllers: [AppController],
 	providers: [],

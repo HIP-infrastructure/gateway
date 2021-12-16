@@ -54,9 +54,10 @@ export const invokeRemoteContainer = (
 
 	const url = `${remoteAppBaseURL}/control/${type}?${toParams(params)}`
 
-	if (id === debugId) {
-		logger.debug(url, `invokeRemoteContainer-${id}`)
-	}
+	// if (id === debugId) {
+		// logger.debug(url, `invokeRemoteContainer-${id}`)
+	// }
+	
 
 	return httpService
 		.get(url, config)
