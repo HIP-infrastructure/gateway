@@ -443,6 +443,49 @@ export class RemoteAppService {
 	}
 
 	/**
+	 * @Description: Stop an app in session
+	 * @param serverId {String} The id of the server
+	 * @param appId {String} The id of the app
+	 * @return Promise<APIContainersResponse>
+	 */
+
+	 async stopAppInSession(
+		serverId: string,
+		appId: string,
+	): Promise<APIContainerResponse> {
+		// check existing server
+		const service = this.containerServices.find(
+			s => s.machine.id === serverId
+		)
+
+		if (!service) {
+			return {
+				data: undefined,
+				error: {
+					code: '',
+					message: 'Container is not available',
+				},
+			}
+		}
+
+		let appService = this.containerServices.find(s => s.machine.id === appId)
+
+		appService.send({
+			type: ContainerAction.STOP,
+			nextContext: {
+				...appService.state.context,
+				nextAction: ContainerAction.DESTROY,
+				error: undefined,
+			},
+		})
+
+		return {
+			data: appService.state.context,
+			error: null,
+		}
+	}
+
+	/**
 	 * @Description: Start a new app container for a user with Webdav folder mounted
 	 * @param uid {String} The id of the user
 	 * @param appName {String} The name of the app to be started

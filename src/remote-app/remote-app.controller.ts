@@ -112,6 +112,29 @@ export class RemoteAppController {
 		return res.status(HttpStatus.CREATED).json(json)
 	}
 
+	@Put('/containers/:sessionId/apps/:appId/stop')
+	async stopApp(
+		@Param('sessionId') sessionId: string,
+		@Param('appId') appId: string,
+		@Body('userId') userId: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		this.logger.log('/stopApp', appId)
+
+		// Basic check against nc cookie
+		if (userId !== req.cookies.nc_username) {
+			return res.status(HttpStatus.FORBIDDEN).send()
+		}
+
+		const json = await this.remoteAppService.stopAppInSession(
+			sessionId,
+			appId
+		)
+
+		return res.status(HttpStatus.CREATED).json(json)
+	}
+
 	@Put('/containers/:sessionId/remove')
 	async removeAppsAndSession(
 		@Param('sessionId') sessionId: string,
