@@ -1,29 +1,32 @@
-import { Injectable, Inject, Logger } from '@nestjs/common'
-import {
-	AuthType,
-	createClient,
-	FileStat,
-	ResponseDataDetailed,
-	WebDAVClient,
-} from 'webdav'
+import { Injectable, Logger, HttpService } from '@nestjs/common'
 
+const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL
 @Injectable()
 export class FilesService {
-	client: WebDAVClient
 
-	constructor() {
-		this.client = createClient(
-			`${process.env.COLLAB_WEBDAV_URL}/remote.php/dav/files/${process.env.COLLAB_COLLAB_WEBDAV_USERNAME}/`,
+	constructor(private readonly httpService: HttpService) { }
+
+	private logger = new Logger('Files Service')
+
+	async search(headersIn: any, term: string,): Promise<any> {
+
+		const headers = {
+			...headersIn,
+			"accept": "application/json, text/plain, */*"
+		}
+
+		return this.httpService.get(`${NEXTCLOUD_URL}/ocs/v2.php/search/providers/files/search?term=${term}`,
 			{
-				authType: AuthType.Password,
-				username: process.env.COLLAB_WEBDAV_USERNAME,
-				password: process.env.COLLAB_WEBDAV_PASSWORD,
-			}
-		)
+				headers
+			})
+			.toPromise()
+			.then((data) => {
+				return data.data.ocs.data
+			})
 	}
-	private logger = new Logger('AppService')
 
-	getFiles(path): Promise<FileStat[] | ResponseDataDetailed<FileStat[]>> {
-		return this.client.getDirectoryContents(path)
+	getFiles(path) {
+		return
 	}
+
 }
