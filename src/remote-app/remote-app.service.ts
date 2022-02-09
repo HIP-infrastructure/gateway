@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { HttpService, Injectable, Logger } from '@nestjs/common'
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { interpret } from 'xstate'
 import { Interval } from '@nestjs/schedule'
 import {
@@ -16,6 +18,17 @@ import {
 	invokeRemoteContainer,
 } from './remote-app.container-machine'
 import { CacheService } from '../cache/cache.service'
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+export const config = {
+	headers: {
+		Authorization: process.env.REMOTE_APP_BASIC_AUTH,
+		'Cache-Control': 'no-cache',
+	},
+}
+export const remoteAppBaseURL = process.env.REMOTE_APP_API
+export const httpService = new HttpService()
 
 const INTERVAL = 5
 export const debugId = 'app-946'
@@ -75,7 +88,7 @@ export class RemoteAppService {
 			)
 		)
 
-		this.logger.debug(JSON.stringify(containers, null, 2))
+		// this.logger.debug(JSON.stringify(containers, null, 2))
 		this.containerServices = containers.map(container => {
 			const service = interpret(createContainerMachine(container)).start()
 			this.handleTransitionFor(service)
@@ -145,13 +158,13 @@ export class RemoteAppService {
 					type: ContainerAction.STATUS,
 				})
 
-				if (currentContext.id === debugId) {
-					this.logger.debug(JSON.stringify(remoteContext, null, 2), debugId)
-					this.logger.debug(JSON.stringify(currentContext, null, 2), debugId)
-				}
+				// if (currentContext.id === debugId) {
+				// 	this.logger.debug(JSON.stringify(remoteContext, null, 2), debugId)
+				// 	this.logger.debug(JSON.stringify(currentContext, null, 2), debugId)
+				// }
 
 				if (remoteContext.error) {
-					this.logger.debug(JSON.stringify(remoteContext.error, null, 2))
+					// this.logger.debug(JSON.stringify(remoteContext.error, null, 2))
 					service.send({
 						type: ContainerAction.REMOTE_STOPPED,
 						nextContext: remoteContext,
@@ -190,7 +203,7 @@ export class RemoteAppService {
 				switch (remoteContext.state) {
 					case ContainerState.EXITED:
 					case ContainerState.UNINITIALIZED:
-						this.logger.debug(remoteContext.state, debugId)
+						// this.logger.debug(remoteContext.state, debugId)
 						// finish the sequence of destroying servers and apps
 						if (currentContext.nextAction === ContainerAction.DESTROY) {
 							service.send({
@@ -234,13 +247,29 @@ export class RemoteAppService {
 						break
 				}
 			} catch (error) {
-				this.logger.log(error, 'pollRemoteState error')
+				// this.logger.log(error, 'pollRemoteState error')
 				service.state.context = {
 					...currentContext,
 					// ...error,
 				}
 			}
 		})
+	}
+
+	async availableApps(): Promise<any> {
+		const url = `${remoteAppBaseURL}/control/app/list`
+		return await httpService
+			.get(url, config)
+			.toPromise()
+			.then(response => {
+			
+				return response.data
+			})
+			.then(data => Object.keys(data).map(k => ({
+				...data[k],
+				name: k,
+				label: data[k].name,
+			})))
 	}
 
 	/**
@@ -527,11 +556,11 @@ export class RemoteAppService {
 			}
 		}
 
-		this.logger.log(service, 'destroyAppsAndSession')
-		this.logger.log(
-			`${JSON.stringify(appServices, null, 2)}`,
-			'destroyAppsAndSession'
-		)
+		// this.logger.log(service, 'destroyAppsAndSession')
+		// this.logger.log(
+		// 	`${JSON.stringify(appServices, null, 2)}`,
+		// 	'destroyAppsAndSession'
+		// )
 
 		const currentContext = service.state.context
 		// stale: remove already exited apps and session
