@@ -25,31 +25,9 @@ export class FilesController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		// this.logger.log(JSON.stringify(req.cookies, null, 2), '/containers');
-		this.logger.debug(`${term}`, 'search')
+		const result = await this.fileService.search(req.headers, term)
 
-		// const token = req.headers['requesttoken'] as string
-
-		const result = this.fileService.search(req.headers, term)
-		const json = await result //.subscribe( (item: any) => item.ocs.data)
-			// .then((data) => {
-			// 	// console.log(data)
-
-			// 	return data.data.ocs.data
-
-			// 	// result.subscribe(function (item: any) {
-			// 	// 	// console.log(item.ocs.data);
-
-			// 	// 	return item.ocs.data
-			// 	// },
-			// 	// 	err => {
-			// 	// 		console.log('error')
-			// 	// 		console.log(err.response);
-			// 	// 	})
-			// })
-
-		this.logger.debug(`${JSON.stringify(json)}`, 'json')
-		return res.status(HttpStatus.OK).json(json)
+		return res.status(HttpStatus.OK).json(result)
 	}
 
 	@Get('/folders')
@@ -58,5 +36,11 @@ export class FilesController {
 		this.logger.debug(path, 'getFiles')
 
 		return this.fileService.getFiles(path)
+	}
+
+	@Get('/bids')
+	async getBids(@Req() req: Request,
+	) {
+		return this.fileService.getBids(req.headers)
 	}
 }
