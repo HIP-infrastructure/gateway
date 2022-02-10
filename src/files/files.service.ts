@@ -63,47 +63,58 @@ export class FilesService {
 		const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
 		const results = await Promise.allSettled(participantPromises)
 		const participants = results
-			.map((r, i) => ({ 
-				...r, 
+			.map((r, i) => ({
+				...r,
 				path: searchResults[i].attributes.path.replace('participants.tsv', ''),
 				resourceUrl: searchResults[i].resourceUrl.split('&')[0]
 			}))
 			.filter(result => result.status === 'fulfilled')
 		const bidsDatabasesPromises = await participants.map(p => this.getFileContent(`${p.path}/dataset_description.json`, headers))
 		const bresults = await Promise.allSettled(bidsDatabasesPromises)
-		const bidsDatabases = bresults.map((db, i) => db.status === 'fulfilled' ? ({
-			path: participants[i].path,
-			resourceUrl: participants[i].resourceUrl,
-			description: JSON.parse((db as PromiseFulfilledResult<any>)?.value.replace(/\\n/g, '')), 
-			participants: (participants[i] as PromiseFulfilledResult<Participant>)?.value
-		}) : ({}))
+
+
+		const bidsDatabases = bresults.map((db, i) => {
+			return db.status === 'fulfilled' ? ({
+				path: participants[i].path,
+				resourceUrl: participants[i].resourceUrl,
+				description: (() => {
+					try {
+						return JSON.parse((db as PromiseFulfilledResult<any>)?.value.replace(/\\n/g, ''))
+					} catch (e) {
+						return e.message
+					}
+
+				})(),
+				participants: (participants[i] as PromiseFulfilledResult<Participant>)?.value
+			}) : ({})
+		})
 
 		return bidsDatabases
 	}
 
-	async getFileContent(path: string, headersIn: any): Promise<string> {
-		const response = await this.httpService.get(`${NEXTCLOUD_URL}/apps/hip/document/file?path=${path}`,
-			{
-				headers: headersIn
-			})
-			.toPromise()
+	async getFileContent(path: string, headersIn: any): Promise < string > {
+	const response = await this.httpService.get(`${NEXTCLOUD_URL}/apps/hip/document/file?path=${path}`,
+		{
+			headers: headersIn
+		})
+		.toPromise()
 
 		return await response.data
-	}
+}
 
 	async readBIDSParticipants(path: string, headersIn: any) {
-		const tsv = await this.getFileContent(path, headersIn)
-		const [headers, ...rows] = tsv
-			.trim()
-			.split('\n')
-			.map(r => r.split('\t'))
+	const tsv = await this.getFileContent(path, headersIn)
+	const [headers, ...rows] = tsv
+		.trim()
+		.split('\n')
+		.map(r => r.split('\t'))
 
-		const participants: Participant[] = rows.reduce((arr, row) => [
-			...arr,
-			row.reduce((obj, item, i) => Object.assign(obj, ({ [headers[i].trim()]: item })), {})
-		], [])
+	const participants: Participant[] = rows.reduce((arr, row) => [
+		...arr,
+		row.reduce((obj, item, i) => Object.assign(obj, ({ [headers[i].trim()]: item })), {})
+	], [])
 
-		return participants
-	}
+	return participants
+}
 
 }
