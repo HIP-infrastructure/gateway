@@ -20,7 +20,7 @@ export class WorkflowController {
         @Req() req: Request,
         // @Res() res: Response
     ) {
-        this.logger.log(req.body.name)
+        // this.logger.log(req.body.name)
         return this.workflowService.workflow(req.body)
     }
 }

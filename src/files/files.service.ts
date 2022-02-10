@@ -23,6 +23,21 @@ interface ISearchResult {
 		path: string;
 	}
 }
+
+export interface BIDSDatabase {
+    path?: string;
+    resourceUrl?: string;
+    participants?: Participant[];
+    description?: { [key: string]: string | number }
+}
+
+export interface BIDSSubject {
+    id?: string;
+    database?: BIDSDatabase;
+    path?: string;
+    participant?: Participant
+}
+
 @Injectable()
 export class FilesService {
 
@@ -59,7 +74,6 @@ export class FilesService {
 
 		const s = await this.search(headersIn, 'participants.tsv')
 		const searchResults = s?.entries
-		console.log(searchResults)
 		const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
 		const results = await Promise.allSettled(participantPromises)
 		const participants = results

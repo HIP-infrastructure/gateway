@@ -4,7 +4,7 @@ import { FilesModule } from './files/files.module'
 import { RemoteAppModule } from './remote-app/remote-app.module'
 import { ScheduleModule } from '@nestjs/schedule'
 import { RedisModule } from 'nestjs-redis'
-import { WorkflowModule } from './workflow/workflow.module';
+// import { WorkflowModule } from './workflow/workflow.module';
 @Module({
 	imports: [
 		FilesModule,
@@ -16,7 +16,7 @@ import { WorkflowModule } from './workflow/workflow.module';
 			port: 6379,
 			db: 1,
 		}),
-		WorkflowModule,
+		// WorkflowModule,
 	],
 	controllers: [AppController],
 	providers: [],
