@@ -2,9 +2,7 @@ import { Injectable, Logger, HttpService } from '@nestjs/common'
 
 const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL
 
-interface Participant {
-	[key: string]: string | number
-}
+
 interface ISearch {
 	name: string;
 	isPaginated: true
@@ -24,20 +22,28 @@ interface ISearchResult {
 	}
 }
 
+interface Participant {
+	age?: string;
+	sex?: string;
+	[key: string]: string | number
+}
 export interface BIDSDatabase {
-	path?: string;
-	resourceUrl?: string;
+	path: string;
+	resourceUrl: string;
+	Name?: string;
+	BIDSVersion?: string;
+	Licence?: string;
+	Authors?: string[];
+	Acknowledgements?: string;
+	HowToAcknowledge?: string;
+	Funding?: string[];
+	ReferencesAndLinks?: string[];
+	DatasetDOI?: string;
+	[key: string]: any;
 	participants?: Participant[];
-	description?: { [key: string]: string | number }
 }
 
-export interface BIDSSubject {
-	id?: string;
-	database?: BIDSDatabase;
-	path?: string;
-	participant?: Participant
-}
-
+type DataError = { data?: Record<string, string>; error?: Record<string, string> }
 @Injectable()
 export class FilesService {
 
@@ -45,7 +51,7 @@ export class FilesService {
 
 	private logger = new Logger('Files Service')
 
-	async search(headersIn: any, term: string,): Promise<any> {
+	async search(headersIn: any, term: string,): Promise<ISearch> {
 		const headers = {
 			...headersIn,
 			"accept": "application/json, text/plain, */*"
@@ -76,59 +82,63 @@ export class FilesService {
 		const searchResults = s?.entries
 		const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
 		const results = await Promise.allSettled(participantPromises)
-		const participants = results
-			.map((r, i) => ({
-				...r,
-				path: searchResults[i].attributes.path.replace('participants.tsv', ''),
-				resourceUrl: searchResults[i].resourceUrl.split('&')[0]
+		const participantSearchFiltered = results
+			.map((p, i) => ({ p, i })) // keep indexes
+			.filter(item => item.p.status === 'fulfilled')
+			.map(item => ({
+				participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
+				searchResult: searchResults[item.i]
 			}))
-			.filter(result => result.status === 'fulfilled')
-		const bidsDatabasesPromises = await participants.map(p => this.getFileContent(`${p.path}/dataset_description.json`, headers))
-		const bresults = await Promise.allSettled(bidsDatabasesPromises)
 
-
-		const bidsDatabases = bresults.map((db, i) => {
-			return db.status === 'fulfilled' ? ({
-				path: participants[i].path,
-				resourceUrl: participants[i].resourceUrl,
-				description: (() => {
-					try {
-						return JSON.parse((db as PromiseFulfilledResult<any>)?.value.replace(/\\n/g, ''))
-					} catch (e) {
-						return e.message
-					}
-
-				})(),
-				participants: (participants[i] as PromiseFulfilledResult<Participant>)?.value
-			}) : ({})
-		})
+		const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace('participants.tsv', '')}/dataset_description.json`, headers))
+		const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
+		const bidsDatabases = bidsDatabasesResults
+			.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
+				...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
+				path: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
+				resourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
+				participants: participantSearchFiltered[i].participants
+			}): {} ], [])
 
 		return bidsDatabases
 	}
 
-	async getFileContent(path: string, headersIn: any): Promise < string > {
-	const response = await this.httpService.get(`${NEXTCLOUD_URL}/apps/hip/document/file?path=${path}`,
-		{
-			headers: headersIn
-		})
-		.toPromise()
+	async getFileContent(path: string, headersIn: any): Promise<string> {
+		const response = await this.httpService.get(`${NEXTCLOUD_URL}/apps/hip/document/file?path=${path}`,
+			{ headers: headersIn })
+			.toPromise()
 
 		return await response.data
-}
+	}
+
+	async getDatasetContent(path: string, headersIn: any): Promise<DataError> {
+		const response = await this.httpService.get(`${NEXTCLOUD_URL}/apps/hip/document/file?path=${path}`,
+			{ headers: headersIn })
+			.toPromise()
+
+		const data = response.data
+		const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
+
+		try {
+			return ({ data: JSON.parse(cleaned) })
+		} catch (e) {
+			return ({ error: e.message })
+		}
+	}
 
 	async readBIDSParticipants(path: string, headersIn: any) {
-	const tsv = await this.getFileContent(path, headersIn)
-	const [headers, ...rows] = tsv
-		.trim()
-		.split('\n')
-		.map(r => r.split('\t'))
+		const tsv = await this.getFileContent(path, headersIn)
+		const [headers, ...rows] = tsv
+			.trim()
+			.split('\n')
+			.map(r => r.split('\t'))
 
-	const participants: Participant[] = rows.reduce((arr, row) => [
-		...arr,
-		row.reduce((obj, item, i) => Object.assign(obj, ({ [headers[i].trim()]: item })), {})
-	], [])
+		const participants: Participant[] = rows.reduce((arr, row) => [
+			...arr,
+			row.reduce((obj, item, i) => Object.assign(obj, ({ [headers[i].trim()]: item })), {})
+		], [])
 
-	return participants
-}
+		return participants
+	}
 
 }
