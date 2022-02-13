@@ -12,7 +12,7 @@ export class WorkflowService {
 
     async workflow(data: Record<string | number, unknown>) {
         const message = JSON.stringify(data)
-        this.logger.log(data, 'process')
+        // this.logger.log(data, 'process')
 
         return this.client.emit('workflow', message);
     }

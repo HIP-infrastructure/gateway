@@ -21,6 +21,29 @@ interface ISearchResult {
 		path: string;
 	}
 }
+
+interface Participant {
+	age?: string;
+	sex?: string;
+	[key: string]: string | number
+}
+export interface BIDSDatabase {
+	path: string;
+	resourceUrl: string;
+	Name?: string;
+	BIDSVersion?: string;
+	Licence?: string;
+	Authors?: string[];
+	Acknowledgements?: string;
+	HowToAcknowledge?: string;
+	Funding?: string[];
+	ReferencesAndLinks?: string[];
+	DatasetDOI?: string;
+	[key: string]: any;
+	participants?: Participant[];
+}
+
+type DataError = { data?: Record<string, string>; error?: Record<string, string> }
 @Injectable()
 export class FilesService {
 
@@ -82,31 +105,6 @@ export class FilesService {
 		} catch (e: unknown) {
 			return { error: e }
 		}
-
-		const s = await this.search(headersIn, 'participants.tsv')
-		const searchResults = s?.entries
-		console.log(searchResults)
-		const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
-		const results = await Promise.allSettled(participantPromises)
-		const participantSearchFiltered = results
-			.map((p, i) => ({ p, i })) // keep indexes
-			.filter(item => item.p.status === 'fulfilled')
-			.map(item => ({
-				participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
-				searchResult: searchResults[item.i]
-			}))
-
-		const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace('participants.tsv', '')}/dataset_description.json`, headers))
-		const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
-		const bidsDatabases = bidsDatabasesResults
-			.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
-				...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
-				path: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
-				resourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
-				participants: participantSearchFiltered[i].participants
-			}): {} ], [])
-
-		return bidsDatabases
 	}
 
 	async getFileContent(path: string, headersIn: any): Promise<string> {
