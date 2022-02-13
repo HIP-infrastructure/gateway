@@ -2,6 +2,9 @@
 
 set -e
 
+# Gateway docker
+GATEWAY_CONTAINER_NAME=registry.hbp.link/hip/gateway
+
 # Set the current directory to be shared in the docker tools container
 TOOLS="docker run --rm -v $(pwd):/usr/src/app -w /usr/src/app node:lts "
 
@@ -12,7 +15,7 @@ echo "Testing for uncommited files"
 count=$($TOOLS git status --porcelain | wc -l)
 if test $count -gt 0; then
   $TOOLS git status
-  echo "Repository dirty. Exiting..."
+  # echo "Repository dirty. Exiting..."
   # exit 1
 fi
 
@@ -53,17 +56,17 @@ echo
 echo "Build the project..."
 docker build  \
     --no-cache \
-    -t hip/gateway:$INCREMENTED_VERSION  .
+    -t $GATEWAY_CONTAINER_NAME:$INCREMENTED_VERSION  .
 
 
-docker tag hip/gateway:$INCREMENTED_VERSION hip/gateway:latest
+docker tag $GATEWAY_CONTAINER_NAME:$INCREMENTED_VERSION $GATEWAY_CONTAINER_NAME:latest
 
 echo
 echo "Built"
-echo "hip/gateway:$INCREMENTED_VERSION"
-echo "hip/gateway:latest"
+echo "$GATEWAY_CONTAINER_NAME:$INCREMENTED_VERSION"
+echo "$GATEWAY_CONTAINER_NAME:latest"
 
-# echo `docker scan "hip/gateway:latest"`
+# echo `docker scan "$GATEWAY_CONTAINER_NAME:latest"`
 
 # echo
 # echo "Git tag gateway:$INCREMENTED_VERSION"
@@ -72,11 +75,11 @@ echo "hip/gateway:latest"
 # $TOOLS git push --tags
 
 # echo
-# echo "Push hip/gateway:$INCREMENTED_VERSION on repo"
-# docker push hip/gateway:$INCREMENTED_VERSION
-# docker push hip/gateway:latest
+# echo "Push $GATEWAY_CONTAINER_NAME:$INCREMENTED_VERSION on repo"
+# docker push $GATEWAY_CONTAINER_NAME:$INCREMENTED_VERSION
+# docker push $GATEWAY_CONTAINER_NAME:latest
 
 # echo
 # echo "Pushed"
-# echo "hip/gateway:$INCREMENTED_VERSION"
-# echo "hip/gateway:latest"
+# echo "$GATEWAY_CONTAINER_NAME:$INCREMENTED_VERSION"
+# echo "$GATEWAY_CONTAINER_NAME:latest"
