@@ -1,6 +1,6 @@
 import { Injectable, Logger, HttpService } from '@nestjs/common'
 
-const NEXTCLOUD_URL = process.env.NEXTCLOUD_URL
+const PRIVATE_WEBDAV_URL = process.env.PRIVATE_WEBDAV_URL
 
 
 interface ISearch {
@@ -35,7 +35,7 @@ export class FilesService {
 		}
 		// firstValueFrom
 		// https://stackoverflow.com/questions/34190375/how-can-i-await-on-an-rx-observable
-		return this.httpService.get(`${NEXTCLOUD_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
+		return this.httpService.get(`${PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
 			{
 				headers
 			})
@@ -49,10 +49,38 @@ export class FilesService {
 		return
 	}
 
-	async getBids(headersIn: any,) {
-		const headers = {
-			...headersIn,
-			"accept": "application/json, text/plain, */*"
+	async getBids(headersIn: any) {
+		try {
+			const headers = {
+				...headersIn,
+				"accept": "application/json, text/plain, */*"
+			}
+
+			const s = await this.search(headersIn, 'participants.tsv')
+			const searchResults = s?.entries
+			const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
+			const results = await Promise.allSettled(participantPromises)
+			const participantSearchFiltered = results
+				.map((p, i) => ({ p, i })) // keep indexes
+				.filter(item => item.p.status === 'fulfilled')
+				.map(item => ({
+					participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
+					searchResult: searchResults[item.i]
+				}))
+
+			const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace('participants.tsv', '')}/dataset_description.json`, headers))
+			const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
+			const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
+				.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
+					...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
+					path: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
+					resourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
+					participants: participantSearchFiltered[i].participants
+				}) : {}], [])
+
+			return { data: bidsDatabases }
+		} catch (e: unknown) {
+			return { error: e }
 		}
 
 		const s = await this.search(headersIn, 'participants.tsv')
@@ -82,7 +110,7 @@ export class FilesService {
 	}
 
 	async getFileContent(path: string, headersIn: any): Promise<string> {
-		const response = await this.httpService.get(`${NEXTCLOUD_URL}/apps/hip/document/file?path=${path}`,
+		const response = await this.httpService.get(`${PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
 			{ headers: headersIn })
 			.toPromise()
 
@@ -90,7 +118,7 @@ export class FilesService {
 	}
 
 	async getDatasetContent(path: string, headersIn: any): Promise<DataError> {
-		const response = await this.httpService.get(`${NEXTCLOUD_URL}/apps/hip/document/file?path=${path}`,
+		const response = await this.httpService.get(`${PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
 			{ headers: headersIn })
 			.toPromise()
 
