@@ -28,6 +28,7 @@ interface Participant {
 	[key: string]: string | number
 }
 export interface BIDSDatabase {
+	id: string;
 	path: string;
 	resourceUrl: string;
 	Name?: string;
@@ -96,6 +97,7 @@ export class FilesService {
 			const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
 				.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
 					...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
+					id: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
 					path: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
 					resourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
 					participants: participantSearchFiltered[i].participants
