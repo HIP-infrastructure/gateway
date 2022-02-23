@@ -1,4 +1,4 @@
-import { Injectable, Logger, HttpService } from '@nestjs/common'
+import { HttpService, Injectable, Logger } from '@nestjs/common'
 
 const PRIVATE_WEBDAV_URL = process.env.PRIVATE_WEBDAV_URL
 
@@ -52,7 +52,7 @@ export class FilesService {
 
 	private logger = new Logger('Files Service')
 
-	async search(headersIn: any, term: string,): Promise<ISearch> {
+	public async search(headersIn: any, term: string,): Promise<ISearch> {
 		const headers = {
 			...headersIn,
 			"accept": "application/json, text/plain, */*"
@@ -73,7 +73,7 @@ export class FilesService {
 		return
 	}
 
-	async getBids(headersIn: any) {
+	public async getBids(headersIn: any) {
 		try {
 			const headers = {
 				...headersIn,
@@ -98,15 +98,27 @@ export class FilesService {
 				.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
 					...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
 					id: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
-					path: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
-					resourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
-					participants: participantSearchFiltered[i].participants
+					Path: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
+					ResourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
+					Participants: participantSearchFiltered[i].participants
 				}) : {}], [])
 
 			return { data: bidsDatabases }
 		} catch (e: unknown) {
 			return { error: e }
 		}
+	}
+
+	public async createBids(headersIn: any, path: string, data: BIDSDatabase) {
+		console.log(data)
+		const response = await this.httpService.post(`${PRIVATE_WEBDAV_URL}/apps/hip/document/createBids?path=${path}`,
+			data,
+			{ headers: headersIn })
+			.toPromise()
+
+		console.log("response.data", response.data)
+
+		return await response.data
 	}
 
 	async getFileContent(path: string, headersIn: any): Promise<string> {

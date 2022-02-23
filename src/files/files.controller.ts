@@ -1,17 +1,14 @@
 import {
 	Body,
 	Controller,
-	Get,
-	Put,
-	Logger,
+	Get, HttpStatus, Logger,
 	Param,
 	Post,
 	Request as Req,
-	Response as Res,
-	HttpStatus,
+	Response as Res
 } from '@nestjs/common'
-import { FilesService } from './files.service'
 import { Request, Response } from 'express'
+import { BIDSDatabase, FilesService } from './files.service'
 
 @Controller('files')
 export class FilesController {
@@ -42,5 +39,14 @@ export class FilesController {
 	async getBids(@Req() req: Request,
 	) {
 		return this.fileService.getBids(req.headers)
+	}
+
+	@Post('/bids/create/:path')
+	async createBids(
+		@Req() req: Request,
+		@Param('path') path: string,
+		@Body('data') data: BIDSDatabase
+	) {
+		return this.fileService.createBids(req.headers, path, data)
 	}
 }
