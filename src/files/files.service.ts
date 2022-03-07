@@ -4,44 +4,44 @@ const PRIVATE_WEBDAV_URL = process.env.PRIVATE_WEBDAV_URL
 
 
 interface ISearch {
-	name: string;
+	name: string
 	isPaginated: true
 	entries: ISearchResult[]
 }
 
 interface ISearchResult {
-	thumbnailUrl: string;
-	title: string;
-	subline: string;
-	resourceUrl: string;
-	icon: string;
+	thumbnailUrl: string
+	title: string
+	subline: string
+	resourceUrl: string
+	icon: string
 	rounded: boolean,
 	attributes: {
-		fileId: string;
-		path: string;
+		fileId: string
+		path: string
 	}
 }
 
 interface Participant {
-	age?: string;
-	sex?: string;
+	age?: string
+	sex?: string
 	[key: string]: string | number
 }
 export interface BIDSDatabase {
-	id: string;
-	path: string;
-	resourceUrl: string;
-	Name?: string;
-	BIDSVersion?: string;
-	Licence?: string;
-	Authors?: string[];
-	Acknowledgements?: string;
-	HowToAcknowledge?: string;
-	Funding?: string[];
-	ReferencesAndLinks?: string[];
-	DatasetDOI?: string;
-	[key: string]: any;
-	participants?: Participant[];
+	id: string
+	path: string
+	resourceUrl: string
+	Name?: string
+	BIDSVersion?: string
+	Licence?: string
+	Authors?: string[]
+	Acknowledgements?: string
+	HowToAcknowledge?: string
+	Funding?: string[]
+	ReferencesAndLinks?: string[]
+	DatasetDOI?: string
+	[key: string]: any
+	participants?: Participant[]
 }
 
 type DataError = { data?: Record<string, string>; error?: Record<string, string> }
@@ -74,31 +74,34 @@ export class FilesService {
 	}
 
 	public async getBids(headersIn: any) {
+		const PARTICIPANTS_FILE = 'participants.tsv'
+
 		try {
 			const headers = {
 				...headersIn,
 				"accept": "application/json, text/plain, */*"
 			}
 
-			const s = await this.search(headersIn, 'participants.tsv')
+			const s = await this.search(headersIn, PARTICIPANTS_FILE)
 			const searchResults = s?.entries
 			const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
 			const results = await Promise.allSettled(participantPromises)
 			const participantSearchFiltered = results
 				.map((p, i) => ({ p, i })) // keep indexes
 				.filter(item => item.p.status === 'fulfilled')
+				.filter(item => (searchResults[item.i].attributes.path !== 'derivatives'))
 				.map(item => ({
 					participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
 					searchResult: searchResults[item.i]
 				}))
 
-			const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace('participants.tsv', '')}/dataset_description.json`, headers))
+			const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace(PARTICIPANTS_FILE, '')}/dataset_description.json`, headers))
 			const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
 			const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
 				.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
 					...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
-					id: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
-					Path: participantSearchFiltered[i].searchResult.attributes.path.replace('participants.tsv', ''),
+					id: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
+					Path: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
 					ResourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
 					Participants: participantSearchFiltered[i].participants
 				}) : {}], [])
