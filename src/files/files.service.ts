@@ -89,7 +89,7 @@ export class FilesService {
 			const participantSearchFiltered = results
 				.map((p, i) => ({ p, i })) // keep indexes
 				.filter(item => item.p.status === 'fulfilled')
-				.filter(item => (searchResults[item.i].attributes.path !== 'derivatives'))
+				.filter(item => !/derivatives/.test(searchResults[item.i].attributes.path))
 				.map(item => ({
 					participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
 					searchResult: searchResults[item.i]
