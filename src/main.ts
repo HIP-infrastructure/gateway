@@ -9,21 +9,6 @@ const globalPrefix = '/api/v1'
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule)
-	app.connectMicroservice({
-		transport: Transport.RMQ,
-		options: {
-			urls: [
-				'amqp://guest:guest@hub:5672'
-			],
-			queue: 'tags',
-			queueOptions: {
-				durable: false
-			},
-		}
-	});
-
-
-
 	app.enableShutdownHooks()
 	app.setGlobalPrefix(globalPrefix)
 	app.enableCors()
