@@ -1,15 +1,10 @@
-import { HttpService, Logger } from '@nestjs/common'
-import { createMachine, assign, AnyEventObject } from 'xstate'
+import { Logger } from '@nestjs/common'
+import { AnyEventObject, assign, createMachine } from 'xstate'
+import { httpService } from './remote-app.service'
 import {
-	ContainerType,
-	ContainerAction,
-	ContainerState,
-	ContainerStateMachine,
-	ContainerContext,
-	WebdavOptions,
+	ContainerAction, ContainerContext, ContainerState,
+	ContainerStateMachine, ContainerType, WebdavOptions
 } from './remote-app.types'
-import { debugId, config, remoteAppBaseURL, httpService } from './remote-app.service'
-
 
 
 const toParams = data =>
@@ -46,15 +41,20 @@ export const invokeRemoteContainer = (
 				action,
 			}
 
-	const url = `${remoteAppBaseURL}/control/${type}?${toParams(params)}`
+	const url = `${process.env.REMOTE_APP_API}/control/${type}?${toParams(params)}`
 
 	// if (id === debugId) {
-		// logger.debug(url, `invokeRemoteContainer-${id}`)
+	logger.debug(url, `invokeRemoteContainer-${id}`)
 	// }
-	
+
 
 	return httpService
-		.get(url, config)
+		.get(url, {
+			headers: {
+				Authorization: process.env.REMOTE_APP_BASIC_AUTH,
+				'Cache-Control': 'no-cache',
+			}
+		})
 		.toPromise()
 		.then(axiosResponse => {
 			if (axiosResponse.status === 200 && axiosResponse.data) {
@@ -117,7 +117,7 @@ export const invokeRemoteContainer = (
 		})
 		.catch(error => {
 			const { code, message } = error
-
+			console.log(error)
 			return Promise.reject({ error: { message, code } })
 		})
 }

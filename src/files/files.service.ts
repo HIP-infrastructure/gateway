@@ -1,8 +1,5 @@
 import { HttpService, Injectable, Logger } from '@nestjs/common'
 
-const PRIVATE_WEBDAV_URL = process.env.PRIVATE_WEBDAV_URL
-
-
 interface ISearch {
 	name: string
 	isPaginated: true
@@ -59,7 +56,7 @@ export class FilesService {
 		}
 		// firstValueFrom
 		// https://stackoverflow.com/questions/34190375/how-can-i-await-on-an-rx-observable
-		return this.httpService.get(`${PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
+		return this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
 			{
 				headers
 			})
@@ -83,7 +80,9 @@ export class FilesService {
 			}
 
 			const s = await this.search(headersIn, PARTICIPANTS_FILE)
+			
 			const searchResults = s?.entries
+			console.log(searchResults)
 			const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
 			const results = await Promise.allSettled(participantPromises)
 			const participantSearchFiltered = results
@@ -95,6 +94,7 @@ export class FilesService {
 					searchResult: searchResults[item.i]
 				}))
 
+				
 			const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace(PARTICIPANTS_FILE, '')}/dataset_description.json`, headers))
 			const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
 			const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
@@ -108,13 +108,14 @@ export class FilesService {
 
 			return { data: bidsDatabases }
 		} catch (e: unknown) {
+			console.log(e)
 			return { error: e }
 		}
 	}
 
 	public async createBids(headersIn: any, path: string, data: BIDSDatabase) {
 		console.log(data)
-		const response = await this.httpService.post(`${PRIVATE_WEBDAV_URL}/apps/hip/document/createBids?path=${path}`,
+		const response = await this.httpService.post(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/createBids?path=${path}`,
 			data,
 			{ headers: headersIn })
 			.toPromise()
@@ -125,7 +126,7 @@ export class FilesService {
 	}
 
 	async getFileContent(path: string, headersIn: any): Promise<string> {
-		const response = await this.httpService.get(`${PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
+		const response = await this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
 			{ headers: headersIn })
 			.toPromise()
 
@@ -133,7 +134,7 @@ export class FilesService {
 	}
 
 	async getDatasetContent(path: string, headersIn: any): Promise<DataError> {
-		const response = await this.httpService.get(`${PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
+		const response = await this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
 			{ headers: headersIn })
 			.toPromise()
 

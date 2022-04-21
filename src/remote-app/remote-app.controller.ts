@@ -9,6 +9,7 @@ import {
 	Request as Req,
 	Response as Res,
 	HttpStatus,
+	ForbiddenException,
 } from '@nestjs/common'
 import { RemoteAppService } from './remote-app.service'
 import { BIDSService } from './bids.service'
@@ -24,27 +25,20 @@ export class RemoteAppController {
 	private readonly logger = new Logger('RemoteAppController')
 
 	@Get('/containers/:userId')
-	async getContainers(
+	getContainers(
 		@Param('userId') userId: string,
 		@Req() req: Request,
-		@Res() res: Response
 	) {
-		// this.logger.log(JSON.stringify(req.cookies, null, 2), '/containers');
-
 		if (userId !== req.cookies.nc_username) {
-			return res.status(HttpStatus.FORBIDDEN).send()
+			throw new ForbiddenException(`User ${userId} is not allowed to perform that operation`)
 		}
 
 		// Admin endpoint to see every containers
 		if (req.cookies.nc_username === process.env.HIP_ADMIN) {
-			const json = await this.remoteAppService.getAllContainers()
-
-			return res.status(HttpStatus.OK).json(json)
+			return this.remoteAppService.getAllContainers()
 		}
 
-		const json = await this.remoteAppService.getContainers(userId)
-
-		return res.status(HttpStatus.OK).json(json)
+		return this.remoteAppService.getContainers(userId)
 	}
 
 	@Post('/containers/:sessionId/start')

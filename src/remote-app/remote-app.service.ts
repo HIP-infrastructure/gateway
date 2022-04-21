@@ -1,38 +1,22 @@
 import { HttpService, Injectable, Logger } from '@nestjs/common'
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { interpret } from 'xstate'
 import { Interval } from '@nestjs/schedule'
-import {
-	APIContainersResponse,
-	APIContainerResponse,
-	ContainerType,
-	ContainerAction,
-	ContainerState,
-	ContainerContext,
-	ContainerService,
-	WebdavOptions,
-} from './remote-app.types'
+import { interpret } from 'xstate'
+import { CacheService } from '../cache/cache.service'
 import {
 	createContainerMachine,
-	invokeRemoteContainer,
+	invokeRemoteContainer
 } from './remote-app.container-machine'
-import { CacheService } from '../cache/cache.service'
+import {
+	APIContainerResponse, APIContainersResponse, ContainerAction, ContainerContext,
+	ContainerService, ContainerState, ContainerType, WebdavOptions
+} from './remote-app.types'
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-export const config = {
-	headers: {
-		Authorization: process.env.REMOTE_APP_BASIC_AUTH,
-		'Cache-Control': 'no-cache',
-	},
-}
-export const remoteAppBaseURL = process.env.REMOTE_APP_API
+
 export const httpService = new HttpService()
 
 const INTERVAL = 5
-export const debugId = 'app-946'
-
 @Injectable()
 export class RemoteAppService {
 	private readonly logger = new Logger('RemoteAppService')
@@ -44,113 +28,12 @@ export class RemoteAppService {
 	}
 
 	/**
-	 * @Description: Persist a container in cache
-	 * @param container: {ContainerContext}
-	 * @return:
-	 */
-
-	private setCacheContainer = async ({
-		context,
-	}: {
-		context: Partial<ContainerContext & WebdavOptions>
-	}): Promise<any> => {
-		delete context.hippass
-		this.cacheService.set(`container:${context.id}`, context)
-		this.cacheService.sadd(`containers`, context.id)
-	}
-
-	/**
-	 * @Description: Remove a container from cache
-	 * @param containerId: {String} Id of the container
-	 * @return:
-	 */
-
-	private removeCacheContainer = containerId => {
-		this.cacheService.del(`container:${containerId}`)
-		this.cacheService.srem(`containers`, containerId)
-	}
-
-	/**
-	 * @Description: Restore all containers in cache to services
-	 * @return:
-	 */
-
-	private restoreCachedContainers = async () => {
-		const containerIds = await this.cacheService.smembers('containers')
-		if (!containerIds) {
-			this.containerServices = []
-		}
-
-		const containers: ContainerContext[] = await Promise.all(
-			containerIds.map(
-				async containerId =>
-					await this.cacheService.get(`container:${containerId}`)
-			)
-		)
-
-		// this.logger.debug(JSON.stringify(containers, null, 2))
-		this.containerServices = containers.map(container => {
-			const service = interpret(createContainerMachine(container)).start()
-			this.handleTransitionFor(service)
-
-			return service
-		})
-
-		// this.logger.log(
-		// 	`${JSON.stringify(this.containerServices, null, 2)}`,
-		// 	'restoreCachedContainers'
-		// )
-	}
-
-	/**
-	 * @Description: Handle state machine state
-	 * @return:
-	 */
-
-	private handleTransitionFor = (service: ContainerService) => {
-		service.onTransition(state => {
-			if (state.changed) {
-				if (state.value === ContainerState.DESTROYED) {
-					this.removeService(service.machine.id)
-				} else {
-					this.setCacheContainer({ context: service.state.context })
-				}
-			}
-		})
-	}
-
-	/**
-	 * @Description: Remove and stop service and its apps services
-	 * from curent state and cache when ContainerState.DESTROYED
-	 * @return:
-	 */
-
-	private removeService = (id: string) => {
-		const servicesToRemove =
-			this.containerServices.filter(
-				s => s.machine.id === id || s.state.context.parentId === id
-			) || []
-		servicesToRemove.forEach(s => {
-			s.stop()
-			this.removeCacheContainer(s.machine.id)
-		})
-
-		const nextServices =
-			this.containerServices.filter(
-				s => s.machine.id !== id && s.state.context.parentId !== id
-			) || []
-		this.containerServices = nextServices
-		this.removeCacheContainer(id)
-	}
-
-	/**
 	 * @Description: Poll remote api to update the status of all containers
 	 * @return:
 	 */
 
 	@Interval(INTERVAL * 1000)
 	pollRemoteState() {
-		// const services = [...this.containerServices];
 		this.containerServices?.forEach(async service => {
 			const currentContext = service.state.context
 			try {
@@ -256,13 +139,20 @@ export class RemoteAppService {
 		})
 	}
 
+
+
 	async availableApps(): Promise<any> {
-		const url = `${remoteAppBaseURL}/control/app/list`
+		const url = `${process.env.REMOTE_APP_API}/control/app/list`
 		return await httpService
-			.get(url, config)
+			.get(url, {
+				headers: {
+					Authorization: process.env.REMOTE_APP_BASIC_AUTH,
+					'Cache-Control': 'no-cache',
+				}
+			})
 			.toPromise()
 			.then(response => {
-			
+
 				return response.data
 			})
 			.then(data => Object.keys(data).map(k => ({
@@ -478,7 +368,7 @@ export class RemoteAppService {
 	 * @return Promise<APIContainersResponse>
 	 */
 
-	 async stopAppInSession(
+	async stopAppInSession(
 		serverId: string,
 		appId: string,
 	): Promise<APIContainerResponse> {
@@ -679,6 +569,107 @@ export class RemoteAppService {
 			data: nextContext,
 			error: undefined,
 		}
+	}
+
+	/**
+	 * @Description: Handle state machine state
+	 * @return:
+	 */
+
+	private handleTransitionFor = (service: ContainerService) => {
+		service.onTransition(state => {
+			if (state.changed) {
+				if (state.value === ContainerState.DESTROYED) {
+					this.removeService(service.machine.id)
+				} else {
+					this.setCacheContainer({ context: service.state.context })
+				}
+			}
+		})
+	}
+
+	/**
+	 * @Description: Remove and stop service and its apps services
+	 * from curent state and cache when ContainerState.DESTROYED
+	 * @return:
+	 */
+
+	private removeService = (id: string) => {
+		const servicesToRemove =
+			this.containerServices.filter(
+				s => s.machine.id === id || s.state.context.parentId === id
+			) || []
+		servicesToRemove.forEach(s => {
+			s.stop()
+			this.removeCacheContainer(s.machine.id)
+		})
+
+		const nextServices =
+			this.containerServices.filter(
+				s => s.machine.id !== id && s.state.context.parentId !== id
+			) || []
+		this.containerServices = nextServices
+		this.removeCacheContainer(id)
+	}
+
+
+	/**
+	 * @Description: Persist a container in cache
+	 * @param container: {ContainerContext}
+	 * @return:
+	 */
+
+	private setCacheContainer = async ({
+		context,
+	}: {
+		context: Partial<ContainerContext & WebdavOptions>
+	}): Promise<any> => {
+		delete context.hippass
+		this.cacheService.set(`container:${context.id}`, context)
+		this.cacheService.sadd(`containers`, context.id)
+	}
+
+	/**
+	 * @Description: Remove a container from cache
+	 * @param containerId: {String} Id of the container
+	 * @return:
+	 */
+
+	private removeCacheContainer = containerId => {
+		this.cacheService.del(`container:${containerId}`)
+		this.cacheService.srem(`containers`, containerId)
+	}
+
+	/**
+	 * @Description: Restore all containers in cache to services
+	 * @return:
+	 */
+
+	private restoreCachedContainers = async () => {
+		const containerIds = await this.cacheService.smembers('containers')
+		if (!containerIds) {
+			this.containerServices = []
+		}
+
+		const containers: ContainerContext[] = await Promise.all(
+			containerIds.map(
+				async containerId =>
+					await this.cacheService.get(`container:${containerId}`)
+			)
+		)
+
+		// this.logger.debug(JSON.stringify(containers, null, 2))
+		this.containerServices = containers.map(container => {
+			const service = interpret(createContainerMachine(container)).start()
+			this.handleTransitionFor(service)
+
+			return service
+		})
+
+		// this.logger.log(
+		// 	`${JSON.stringify(this.containerServices, null, 2)}`,
+		// 	'restoreCachedContainers'
+		// )
 	}
 }
 
