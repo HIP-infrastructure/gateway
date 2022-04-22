@@ -20,7 +20,7 @@ const INTERVAL = 5
 @Injectable()
 export class RemoteAppService {
 	private readonly logger = new Logger('RemoteAppService')
-	private containerServices: ContainerService[] = []
+	private containerServices: any[] = []
 
 	constructor(private readonly cacheService: CacheService) {
 		// this.cacheService.flushall()
@@ -259,7 +259,7 @@ export class RemoteAppService {
 		uid: string
 	): Promise<APIContainerResponse> {
 		// check for existing
-		let service = this.containerServices.find(s => s.machine.id === id)
+		let service:any = this.containerServices.find(s => s.machine.id === id)
 		if (service) {
 			return service.state.context
 		}
@@ -326,7 +326,7 @@ export class RemoteAppService {
 		// check for existing
 		// TODO: should test if appName exists in server as for now it's not
 		// possible to have the same app twice
-		let appService = this.containerServices.find(s => s.machine.id === appId)
+		let appService: any = this.containerServices.find(s => s.machine.id === appId)
 		if (appService) {
 			return appService.state.context
 		}
