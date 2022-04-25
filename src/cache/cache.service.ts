@@ -1,18 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { RedisService } from 'nestjs-redis'
+import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import Redis from 'ioredis'
+
 
 @Injectable()
 export class CacheService {
-	private client: any
 	private readonly logger = new Logger('CacheService')
 
-	constructor(private redisService: RedisService) {
-		this.getClient()
+	constructor(@InjectRedis() private readonly client: Redis) {
 	}
 
-	private async getClient() {
-		this.client = await this.redisService.getClient()
-	}
 	/**
 	 * @Description: Encapsulate the method of setting redis cache
 	 * @Param key {String} key value
@@ -23,10 +20,6 @@ export class CacheService {
 
 	public async set(key: string, value: any, seconds?: number): Promise<any> {
 		const jsonString = JSON.stringify(value)
-
-		if (!this.client) {
-			await this.getClient()
-		}
 		if (!seconds) {
 			await this.client.set(key, jsonString)
 		} else {
@@ -39,10 +32,6 @@ export class CacheService {
 	 */
 
 	public async get(key: string): Promise<any> {
-		if (!this.client) {
-			await this.getClient()
-		}
-
 		const data = await this.client.get(key)
 
 		if (data) {
@@ -59,10 +48,6 @@ export class CacheService {
 	 */
 
 	public async del(key: string): Promise<any> {
-		if (!this.client) {
-			await this.getClient()
-		}
-
 		await this.client.del(key)
 	}
 
@@ -74,10 +59,6 @@ export class CacheService {
 	 */
 
 	public async sadd(key: string, value: any): Promise<any> {
-		if (!this.client) {
-			await this.getClient()
-		}
-
 		await this.client.sadd(key, value)
 	}
 
@@ -88,10 +69,6 @@ export class CacheService {
 	 */
 
 	public async smembers(key: string): Promise<any[]> {
-		if (!this.client) {
-			await this.getClient()
-		}
-
 		return await this.client.smembers(key)
 	}
 
@@ -102,10 +79,6 @@ export class CacheService {
 	 */
 
 	public async srem(key: string, value: any): Promise<any> {
-		if (!this.client) {
-			await this.getClient()
-		}
-
 		await this.client.srem(key, value)
 	}
 
@@ -116,10 +89,6 @@ export class CacheService {
 	 */
 
 	public async flushall(): Promise<any> {
-		if (!this.client) {
-			await this.getClient()
-		}
-
 		await this.client.flushall()
 	}
 }
