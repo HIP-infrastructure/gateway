@@ -22,6 +22,7 @@
     },
     "dependencies": {
         "@liaoliaots/nestjs-redis": "^8.1.0",
+        "@nestjs/axios": "^0.0.7",
         "@nestjs/config": "^2.0.0",
         "@nestjs/schedule": "^1.1.0",
         "cookie-parser": "^1.4.6",
