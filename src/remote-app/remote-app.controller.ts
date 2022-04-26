@@ -12,14 +12,12 @@ import {
 	ForbiddenException,
 } from '@nestjs/common'
 import { RemoteAppService } from './remote-app.service'
-import { BIDSService } from './bids.service'
 import { Request, Response } from 'express'
 
 @Controller('remote-app')
 export class RemoteAppController {
 	constructor(
 		private readonly remoteAppService: RemoteAppService,
-		private readonly bidsService: BIDSService
 		) { }
 
 	private readonly logger = new Logger('RemoteAppController')
@@ -196,17 +194,5 @@ export class RemoteAppController {
 	@Get('/containers/forceRemove/:sessionId')
 	async forceRemove(@Param('sessionId') sessionId: string) {
 		this.remoteAppService.forceRemove(sessionId)
-	}
-
-	@Post('/bids')
-	async bidsConvert(
-		//@Body('message') message: any,
-		@Req() req: Request,
-		// @Res() res: Response
-	) {
-		this.logger.log(JSON.stringify(req.body, null, 2), '/bids', )
-		this.bidsService.convert(req.body)
-
-		//return res.status(HttpStatus.OK)
 	}
 }
