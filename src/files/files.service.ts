@@ -1,4 +1,6 @@
-import { HttpService, Injectable, Logger } from '@nestjs/common'
+import { HttpService } from '@nestjs/axios'
+import { Injectable, Logger } from '@nestjs/common'
+import { firstValueFrom } from 'rxjs'
 
 interface ISearch {
 	name: string
@@ -25,9 +27,6 @@ interface Participant {
 	[key: string]: string | number
 }
 export interface BIDSDatabase {
-	id: string
-	path: string
-	resourceUrl: string
 	Name?: string
 	BIDSVersion?: string
 	Licence?: string
@@ -37,8 +36,6 @@ export interface BIDSDatabase {
 	Funding?: string[]
 	ReferencesAndLinks?: string[]
 	DatasetDOI?: string
-	[key: string]: any
-	participants?: Participant[]
 }
 
 type DataError = { data?: Record<string, string>; error?: Record<string, string> }
@@ -54,24 +51,23 @@ export class FilesService {
 			...headersIn,
 			"accept": "application/json, text/plain, */*"
 		}
-		// firstValueFrom
-		// https://stackoverflow.com/questions/34190375/how-can-i-await-on-an-rx-observable
-		return this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
-			{
-				headers
-			})
-			.toPromise()
-			.then((data) => {
-				return data.data.ocs.data
-			})
-	}
 
-	getFiles(path) {
-		return
+		const response = this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
+			{ headers }
+		)
+
+		return firstValueFrom(response).then(r => r.data.ocs.data)
+		// .pipe(
+		// 	map(response => response.data),
+		// 	catchError(e => {
+		// 		throw new HttpException(e.response.data, e.response.status)
+		// 	})
+		// )
 	}
 
 	public async getBids(headersIn: any) {
 		const PARTICIPANTS_FILE = 'participants.tsv'
+		const DATASET_DESCRIPTION = 'dataset_description.json'
 
 		try {
 			const headers = {
@@ -79,32 +75,41 @@ export class FilesService {
 				"accept": "application/json, text/plain, */*"
 			}
 
-			const s = await this.search(headersIn, PARTICIPANTS_FILE)
-			
-			const searchResults = s?.entries
-			console.log(searchResults)
-			const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
-			const results = await Promise.allSettled(participantPromises)
-			const participantSearchFiltered = results
-				.map((p, i) => ({ p, i })) // keep indexes
-				.filter(item => item.p.status === 'fulfilled')
-				.filter(item => !/derivatives/.test(searchResults[item.i].attributes.path))
-				.map(item => ({
-					participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
-					searchResult: searchResults[item.i]
-				}))
-
-				
-			const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace(PARTICIPANTS_FILE, '')}/dataset_description.json`, headers))
+			const s = await this.search(headersIn, DATASET_DESCRIPTION)
+			const searchResults = s?.entries.filter(s => !/derivatives/.test(s.subline))
+			const bidsDatabasesPromises = await searchResults.map((ps) =>
+				this.getDatasetContent(`${ps.attributes.path}`, headers))
 			const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
 			const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
 				.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
 					...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
-					id: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-					Path: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-					ResourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
-					Participants: participantSearchFiltered[i].participants
 				}) : {}], [])
+
+
+			// const s = await this.search(headersIn, PARTICIPANTS_FILE)
+			// const searchResults = s?.entries.filter(s => !/derivatives/.test(s.subline))
+
+			// const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
+			// const results = await Promise.allSettled(participantPromises)
+			// const participantSearchFiltered = results
+			// 	.map((p, i) => ({ p, i })) // keep indexes
+			// 	.filter(item => item.p.status === 'fulfilled')
+			// 	.map(item => ({
+			// 		participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
+			// 		searchResult: searchResults[item.i]
+			// 	}))
+
+
+			// const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace(PARTICIPANTS_FILE, '')}/dataset_description.json`, headers))
+			// const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
+			// const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
+			// 	.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
+			// 		...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
+			// 		id: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
+			// 		Path: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
+			// 		ResourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
+			// 		Participants: participantSearchFiltered[i].participants
+			// 	}) : {}], [])
 
 			return { data: bidsDatabases }
 		} catch (e: unknown) {
