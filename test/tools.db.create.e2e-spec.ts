@@ -22,7 +22,7 @@ describe('ToolsController: db.create (e2e)', () => {
 
   it('/ (GET)', () => {
     const createBidsDatabaseDto = {
-      "owner": "guspuhle",
+      "owner": `${process.env.USER}`,
       "database": "mybidsdb",
       "DatasetDescJSON":
       {

@@ -22,7 +22,7 @@ describe('ToolsController: db.get (e2e)', () => {
 
   it('/ (GET)', async () => {
     const getBidsDatabaseDto = {
-      "owner": "guspuhle",
+      "owner": `${process.env.USER}`,
       "database": "mybidsdb",
       "BIDS_definitions": ["Anat", "Ieeg", "DatasetDescJSON"]
     }
