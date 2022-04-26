@@ -1,77 +1,155 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, InternalServerErrorException, HttpException } from '@nestjs/common'
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
+import { CreateSubjectDto } from './dto/create-subject.dto'
+import { GetBidsDatabaseDto } from './dto/get-bids-database.dto'
+const { spawn } = require('child_process')
+const fs = require('fs')
+
+const spawnable = (command, args): Promise<0 | 1> => {
+    const child = spawn(command, args)
+
+    child.stdout.on('data', (data) => {
+        console.log(`child stdout:\n${data}`)
+    })
+
+    child.stderr.on('data', (data) => {
+        console.error(`child stderr:\n${data}`)
+    })
+
+    child.on('error', error => {
+        console.log('error', error)
+    })
+
+    return new Promise((resolve, reject) => {
+        child.on('close', code => {
+            console.log('closed with code', code)
+            return code === 0 ? resolve(code) : reject(code)
+        })
+    })
+}
 
 @Injectable()
 export class ToolsService {
 
-    getBIDSDatabase() {
-        const dbCreate = {
-            "owner": "www-data",
-            "database": "MY-AMAZING-DB",
-            "DatasetDescJSON": {
-                "Name": "My New BIDS db",
-                "BIDSVersion": "1.4.0",
-                "License": "n/a",
-                "Authors": [
-                    "Tom",
-                    "Jerry"
-                ],
-                "Acknowledgements": "Overwrite test",
-                "HowToAcknowledge": "n/a",
-                "Funding": "Picsou",
-                "ReferencesAndLinks": "n/a",
-                "DatasetDOI": "n/a"
-            }
-        }
-
-
-        const { spawn } = require('child_process')
-        const fs = require('fs')
+    async getBIDSDatabase(getBidsDatabaseDto: GetBidsDatabaseDto) {
+        const { owner } = getBidsDatabaseDto
 
         try {
-            fs.writeFileSync('/home/manuel/db_create.json', JSON.stringify(dbCreate))
+            fs.writeFileSync('/tmp/db_get.json', JSON.stringify(getBidsDatabaseDto))
         } catch (err) {
             console.error(err)
         }
 
-
-        const child = spawn('docker',
+        const get = await spawnable('docker',
             [
                 'run',
                 '-v',
-                '/home/manuel:/input',
+                '/tmp:/input',
                 '-v',
-                '/mnt/nextcloud-dp/nextcloud/data/guspuhle/files:/output',
+                `/tmp:/output`,
                 '-v',
-                '/home/manuel/workdir/bids-converter/scripts:/scripts',
+                '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
+                'bids-converter',
+                '--command=db.get',
+                '--input_data=/input/db_get.json',
+                '--output_file=/output/output.json '
+            ])
+
+        if (get === 0) {
+            const dbInfo = await fs.readFileSync(`/tmp/output.json`, 'utf8')
+            
+            return JSON.parse(dbInfo)
+        }
+
+        throw new InternalServerErrorException()
+    }
+
+    async createBidsDatabase(createBidsDatabaseDto: CreateBidsDatabaseDto) {
+
+        const { owner } = createBidsDatabaseDto
+
+        try {
+            fs.writeFileSync('/tmp/db_create.json', JSON.stringify(createBidsDatabaseDto))
+        } catch (err) {
+            console.error(err)
+        }
+
+        const created = await spawnable('docker',
+            [
+                'run',
+                '-v',
+                '/tmp:/input',
+                '-v',
+                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/output`,
+                '-v',
+                '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
                 'bids-converter',
                 '--command=db.create',
                 '--input_data=/input/db_create.json'
             ])
 
-        child.stdout.on('data', (data) => {
-            console.log(`child stdout:\n${data}`)
-        })
+        if (created === 0) {
+            const scan = await this.scanFiles(owner) 
 
-        child.stderr.on('data', (data) => {
-            console.error(`child stderr:\n${data}`)
-        })
+            if (scan === 0) {
+                return createBidsDatabaseDto
+            } 
+        }
 
-        child.on('error', error => {
-            console.log('error', error)
-        })
+        throw new InternalServerErrorException()
+    }
 
-        child.on('close', code => {
-            console.log('closed with code', code)
-        })
+    getSubject() { }
 
+    /* Importing a subject into the database. */
+    async importSubject(createSubject: CreateSubjectDto) {
+        const { owner } = createSubject
 
-        // docker-compose -f nextcloud-docker/docker-compose.yml exec --user www-data app php occ files:scan --all
+        try {
+            fs.writeFileSync('/tmp/sub_import.json', JSON.stringify(createSubject))
+        } catch (err) {
+            throw new HttpException(err.message, err.status)
+            console.error(err)
+        }
+
+        const created = await spawnable('docker',
+            [
+                'run',
+                '-v',
+                '/tmp:/importation_directory',
+                '-v',
+                '/tmp:/input',
+                '-v',
+                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/output`,
+                '-v',
+                '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
+                'bids-converter',
+                '--command=db.import',
+                '--input_data=/input/sub_import.json'
+            ])
+
+        if (created === 0) {
+            return await this.scanFiles(owner) ? JSON.stringify(createSubject) : []
+        }
+
+        throw new InternalServerErrorException()
 
     }
-    createBIDSDatabase(createBidsDatabaseDto: CreateBidsDatabaseDto) { }
-    getSubject() { }
-    importSubject() { }
     deleteSubject() { }
+
+
+    private async scanFiles(owner: string): Promise<0 | 1> {
+        const scanned = await spawnable('docker', [
+            'exec',
+            '--user',
+            'www-data',
+            'nextcloud-docker_app_1',
+            'php',
+            'occ',
+            'files:scan',
+            owner])
+
+        return Promise.resolve(scanned)
+    }
 
 }

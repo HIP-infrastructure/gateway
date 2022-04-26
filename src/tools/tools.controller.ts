@@ -1,5 +1,7 @@
 import { Body, Controller, Delete, Get, Post } from '@nestjs/common'
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
+import { CreateSubjectDto } from './dto/create-subject.dto'
+import { GetBidsDatabaseDto } from './dto/get-bids-database.dto'
 import { ToolsService } from './tools.service'
 
 @Controller('tools')
@@ -8,29 +10,29 @@ export class ToolsController {
     constructor(
         private readonly toolsService: ToolsService) { }
 
-    // BIDS DATABASE
     @Get('/bids/database')
-    findOneDatabase() {
-        return this.toolsService.getBIDSDatabase()
+    findOneDatabase(@Body() getBidsDatabaseDto: GetBidsDatabaseDto) {
+        return this.toolsService.getBIDSDatabase(getBidsDatabaseDto)
     }
 
     @Post('/bids/database')
     createDatabase(@Body() createBidsDatabaseDto: CreateBidsDatabaseDto) {
-        return this.toolsService.createBIDSDatabase(createBidsDatabaseDto)
+        return this.toolsService.createBidsDatabase(createBidsDatabaseDto)
     }
 
-    @Delete('/bids/database')
-    removeOneDatabase() { }
+    // @Delete('/bids/database')
+    // removeOneDatabase() { }
 
-    // BIDS Subject
-    @Get('/bids/subject')
-    findOneSubject() { }
+    // @Get('/bids/subject')
+    // findOneSubject() { }
 
-    @Post('/bids/database')
-    createSubject() { }
+    @Post('/bids/database/:name/subject')
+    createSubject(@Body() createSubjectDto: CreateSubjectDto) { 
+        return this.toolsService.importSubject(createSubjectDto)
+    }
 
-    @Delete('/bids/database')
-    removeOneSubject() { }
+    // @Delete('/bids/subject')
+    // removeOneSubject() { }
 
 
 }
