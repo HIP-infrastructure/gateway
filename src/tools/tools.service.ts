@@ -1,32 +1,9 @@
-import { Injectable, InternalServerErrorException, HttpException } from '@nestjs/common'
+import { HttpException, Injectable, InternalServerErrorException } from '@nestjs/common'
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { GetBidsDatabaseDto } from './dto/get-bids-database.dto'
 const { spawn } = require('child_process')
 const fs = require('fs')
-
-const spawnable = (command, args): Promise<0 | 1> => {
-    const child = spawn(command, args)
-
-    child.stdout.on('data', (data) => {
-        console.log(`child stdout:\n${data}`)
-    })
-
-    child.stderr.on('data', (data) => {
-        console.error(`child stderr:\n${data}`)
-    })
-
-    child.on('error', error => {
-        console.log('error', error)
-    })
-
-    return new Promise((resolve, reject) => {
-        child.on('close', code => {
-            console.log('closed with code', code)
-            return code === 0 ? resolve(code) : reject(code)
-        })
-    })
-}
 
 @Injectable()
 export class ToolsService {
@@ -40,7 +17,7 @@ export class ToolsService {
             console.error(err)
         }
 
-        const get = await spawnable('docker',
+        const get = await this.spawnable('docker',
             [
                 'run',
                 '-v',
@@ -57,7 +34,7 @@ export class ToolsService {
 
         if (get === 0) {
             const dbInfo = await fs.readFileSync(`/tmp/output.json`, 'utf8')
-            
+
             return JSON.parse(dbInfo)
         }
 
@@ -74,7 +51,7 @@ export class ToolsService {
             console.error(err)
         }
 
-        const created = await spawnable('docker',
+        const created = await this.spawnable('docker',
             [
                 'run',
                 '-v',
@@ -89,11 +66,11 @@ export class ToolsService {
             ])
 
         if (created === 0) {
-            const scan = await this.scanFiles(owner) 
+            const scan = await this.scanFiles(owner)
 
             if (scan === 0) {
                 return createBidsDatabaseDto
-            } 
+            }
         }
 
         throw new InternalServerErrorException()
@@ -101,45 +78,50 @@ export class ToolsService {
 
     getSubject() { }
 
-    /* Importing a subject into the database. */
     async importSubject(createSubject: CreateSubjectDto) {
+
         const { owner } = createSubject
 
         try {
-            fs.writeFileSync('/tmp/sub_import.json', JSON.stringify(createSubject))
+            fs.writeFileSync(`${process.env.PRIVATE_FILESYSTEM}/${owner}/files/sub_import.json`, JSON.stringify(createSubject))
         } catch (err) {
             throw new HttpException(err.message, err.status)
             console.error(err)
         }
 
-        const created = await spawnable('docker',
+        const created = await this.spawnable('docker',
             [
                 'run',
                 '-v',
                 '/tmp:/importation_directory',
                 '-v',
-                '/tmp:/input',
+                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
                 '-v',
                 `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/output`,
                 '-v',
                 '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
                 'bids-converter',
-                '--command=db.import',
+                '--command=sub.import',
                 '--input_data=/input/sub_import.json'
             ])
 
         if (created === 0) {
-            return await this.scanFiles(owner) ? JSON.stringify(createSubject) : []
+            const scan = await this.scanFiles(owner)
+
+            if (scan === 0) {
+                return createSubject
+            }
         }
 
         throw new InternalServerErrorException()
 
     }
+
     deleteSubject() { }
 
 
     private async scanFiles(owner: string): Promise<0 | 1> {
-        const scanned = await spawnable('docker', [
+        const scanned = await this.spawnable('docker', [
             'exec',
             '--user',
             'www-data',
@@ -150,6 +132,32 @@ export class ToolsService {
             owner])
 
         return Promise.resolve(scanned)
+    }
+
+    private spawnable = (command, args): Promise<0 | 1> => {
+        const child = spawn(command, args)
+
+        return new Promise((resolve, reject) => {
+
+            child.stdout.on('data', (data) => {
+                console.log(`child stdout:\n${data}`)
+            })
+
+            child.stderr.on('data', (data) => {
+                console.error(`child stderr:\n${data}`)
+                return reject(data)
+            })
+
+            child.on('error', error => {
+                return reject(error)
+            })
+
+
+            child.on('close', code => {
+                // console.log('closed with code', code)
+                if (code === 0) resolve(code)
+            })
+        })
     }
 
 }
