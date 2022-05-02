@@ -1,12 +1,20 @@
-import { HttpException, Injectable, InternalServerErrorException } from '@nestjs/common'
+import { HttpService } from '@nestjs/axios'
+import { HttpException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common'
+import { firstValueFrom } from 'rxjs'
+import { Participant } from 'src/files/files.service'
+
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { GetBidsDatabaseDto } from './dto/get-bids-database.dto'
+
 const { spawn } = require('child_process')
 const fs = require('fs')
-
 @Injectable()
 export class ToolsService {
+
+    constructor(private readonly httpService: HttpService) { }
+
+    private logger = new Logger('ToolsService')
 
     async getBIDSDatabase(getBidsDatabaseDto: GetBidsDatabaseDto) {
         const { owner } = getBidsDatabaseDto
@@ -120,6 +128,29 @@ export class ToolsService {
     deleteSubject() { }
 
 
+    async participants(headersIn: any, path: string) {
+        try {
+            const response = this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}/participants.tsv`,
+                { headers: headersIn })
+            const data = await firstValueFrom(response).then(r => r.data)
+
+            const [headers, ...rows] = data
+                .trim()
+                .split('\n')
+                .map(r => r.split('\t'))
+
+            const participants: Participant[] = rows.reduce((arr, row) => [
+                ...arr,
+                row.reduce((obj, item, i) => Object.assign(obj, ({ [headers[i].trim()]: item })), {})
+            ], [])
+
+            return participants
+        } catch (e) {
+            throw new HttpException(e.message, e.status)
+        }
+    }
+
+
     private async scanFiles(owner: string): Promise<0 | 1> {
         const scanned = await this.spawnable('docker', [
             'exec',
@@ -145,17 +176,20 @@ export class ToolsService {
 
             child.stderr.on('data', (data) => {
                 console.error(`child stderr:\n${data}`)
-                return reject(data)
+                // return reject(data)
             })
 
             child.on('error', error => {
-                return reject(error)
+                console.error(`child stderr:\n${error}`)
+                // return reject(error)
             })
 
 
             child.on('close', code => {
                 // console.log('closed with code', code)
                 if (code === 0) resolve(code)
+
+                else reject(code)
             })
         })
     }

@@ -21,7 +21,7 @@ interface ISearchResult {
 	}
 }
 
-interface Participant {
+export interface Participant {
 	age?: string
 	sex?: string
 	[key: string]: string | number
@@ -39,6 +39,7 @@ export interface BIDSDatabase {
 }
 
 type DataError = { data?: Record<string, string>; error?: Record<string, string> }
+const DATASET_DESCRIPTION = 'dataset_description.json'
 @Injectable()
 export class FilesService {
 
@@ -65,10 +66,9 @@ export class FilesService {
 		// )
 	}
 
-	public async getBids(headersIn: any) {
-		const PARTICIPANTS_FILE = 'participants.tsv'
-		const DATASET_DESCRIPTION = 'dataset_description.json'
+	
 
+	public async getBids(headersIn: any) {
 		try {
 			const headers = {
 				...headersIn,
@@ -83,6 +83,7 @@ export class FilesService {
 			const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
 				.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
 					...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
+					path: searchResults[i].attributes.path.replace(`/${DATASET_DESCRIPTION}`, '')
 				}) : {}], [])
 
 
@@ -118,26 +119,6 @@ export class FilesService {
 		}
 	}
 
-	public async createBids(headersIn: any, path: string, data: BIDSDatabase) {
-		console.log(data)
-		const response = await this.httpService.post(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/createBids?path=${path}`,
-			data,
-			{ headers: headersIn })
-			.toPromise()
-
-		console.log("response.data", response.data)
-
-		return await response.data
-	}
-
-	async getFileContent(path: string, headersIn: any): Promise<string> {
-		const response = await this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
-			{ headers: headersIn })
-			.toPromise()
-
-		return await response.data
-	}
-
 	async getDatasetContent(path: string, headersIn: any): Promise<DataError> {
 		const response = await this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
 			{ headers: headersIn })
@@ -152,20 +133,4 @@ export class FilesService {
 			return ({ error: e.message })
 		}
 	}
-
-	async readBIDSParticipants(path: string, headersIn: any) {
-		const tsv = await this.getFileContent(path, headersIn)
-		const [headers, ...rows] = tsv
-			.trim()
-			.split('\n')
-			.map(r => r.split('\t'))
-
-		const participants: Participant[] = rows.reduce((arr, row) => [
-			...arr,
-			row.reduce((obj, item, i) => Object.assign(obj, ({ [headers[i].trim()]: item })), {})
-		], [])
-
-		return participants
-	}
-
 }

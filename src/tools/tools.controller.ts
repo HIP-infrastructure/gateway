@@ -1,4 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Request } from 'express'
+
+import {
+    Body, Controller, Get, Query, Param, Post, Request as Req, UsePipes, ValidationPipe
+} from '@nestjs/common'
+
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { GetBidsDatabaseDto } from './dto/get-bids-database.dto'
@@ -37,5 +42,15 @@ export class ToolsController {
     // @Delete('/bids/subject')
     // removeOneSubject() { }
 
+    @UsePipes(ValidationPipe)
+    @Get(`/bids/database/participants`)
+    getParticipants(
+        @Query('path') path: string,
+        @Req() req: Request) {
+
+        return this.toolsService.participants(req.headers, path)
+    }
+
 
 }
+
