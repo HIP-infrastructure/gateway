@@ -5,14 +5,14 @@ export class CreateSubjectDto {
     readonly files: File[]
 }
 
-class Subject {
+export class Subject {
     sub: string
     age: string
     sex: string
     [key: string]: string
 }
 
-class File {
+export class File {
     modality: string
     subject: string
     path: string

@@ -576,7 +576,7 @@ export class RemoteAppService {
 	 * @return:
 	 */
 
-	private handleTransitionFor = (service: ContainerService) => {
+	private handleTransitionFor = (service: any) => {
 		service.onTransition(state => {
 			if (state.changed) {
 				if (state.value === ContainerState.DESTROYED) {
@@ -660,7 +660,7 @@ export class RemoteAppService {
 
 		// this.logger.debug(JSON.stringify(containers, null, 2))
 		this.containerServices = containers.map(container => {
-			const service = interpret(createContainerMachine(container)).start()
+			const service = interpret(createContainerMachine(container)).start() 
 			this.handleTransitionFor(service)
 
 			return service

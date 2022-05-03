@@ -17,7 +17,7 @@ export class ToolsController {
 
     @UsePipes(ValidationPipe)
     @Get('/bids/database')
-    findOneDatabase(@Body() getBidsDatabaseDto: GetBidsDatabaseDto) {
+    findOneDatabase(@Query() getBidsDatabaseDto: GetBidsDatabaseDto) {
         return this.toolsService.getBIDSDatabase(getBidsDatabaseDto)
     }
 
@@ -34,7 +34,7 @@ export class ToolsController {
     // findOneSubject() { }
 
     @UsePipes(ValidationPipe)
-    @Post('/bids/database/:name/subject')
+    @Post('/bids/database/subject')
     createSubject(@Body() createSubjectDto: CreateSubjectDto) {
         return this.toolsService.importSubject(createSubjectDto)
     }

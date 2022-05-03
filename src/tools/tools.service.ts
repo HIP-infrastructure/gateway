@@ -156,7 +156,7 @@ export class ToolsService {
             'exec',
             '--user',
             'www-data',
-            'nextcloud-docker_app_1',
+            'nextcloud-docker-app-1',
             'php',
             'occ',
             'files:scan',
