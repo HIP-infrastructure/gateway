@@ -2,7 +2,8 @@ import {
 	Controller,
 	Get, HttpStatus, Logger,
 	Param, Request as Req,
-	Response as Res
+	Response as Res,
+	Query
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { FilesService } from './files.service'
@@ -22,19 +23,5 @@ export class FilesController {
 		const result = await this.fileService.search(req.headers, term)
 
 		return res.status(HttpStatus.OK).json(result)
-	}
-
-	// @Get('/folders')
-	// async getFiles(@Param() params) {
-	// 	const path = `/${params[0]}`
-	// 	this.logger.debug(path, 'getFiles')
-
-	// 	return this.fileService.getFiles(path)
-	// }
-
-	@Get('/bids')
-	async getBids(@Req() req: Request,
-	) {
-		return this.fileService.getBids(req.headers)
 	}
 }

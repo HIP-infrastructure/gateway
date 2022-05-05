@@ -21,6 +21,14 @@ export class ToolsController {
         return this.toolsService.getBIDSDatabase(getBidsDatabaseDto)
     }
 
+    @Get('/bids/databases')
+	async getBids(
+		@Query('owner') owner: string,
+		@Req() req: Request,
+	) {
+		return this.toolsService.getBIDSDatabases(owner, req.headers)
+	}
+
     @UsePipes(ValidationPipe)
     @Post('/bids/database')
     createDatabase(@Body() createBidsDatabaseDto: CreateBidsDatabaseDto) {
@@ -34,7 +42,7 @@ export class ToolsController {
     // findOneSubject() { }
 
     @UsePipes(ValidationPipe)
-    @Post('/bids/database/subject')
+    @Post('/bids/subject')
     createSubject(@Body() createSubjectDto: CreateSubjectDto) {
         return this.toolsService.importSubject(createSubjectDto)
     }
@@ -43,12 +51,13 @@ export class ToolsController {
     // removeOneSubject() { }
 
     @UsePipes(ValidationPipe)
-    @Get(`/bids/database/participants`)
+    @Get(`/bids/participants`)
     getParticipants(
         @Query('path') path: string,
+        @Query('owner') owner: string,
         @Req() req: Request) {
 
-        return this.toolsService.participants(req.headers, path)
+        return this.toolsService.participants(req.headers, path, owner)
     }
 
 
