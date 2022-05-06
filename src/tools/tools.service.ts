@@ -14,38 +14,38 @@ type DataError = { data?: Record<string, string>; error?: Record<string, string>
 const DATASET_DESCRIPTION = 'dataset_description.json'
 const PARTICIPANTS_FILE = 'participants.tsv'
 interface ISearch {
-	name: string
-	isPaginated: true
-	entries: ISearchResult[]
+    name: string
+    isPaginated: true
+    entries: ISearchResult[]
 }
 
 interface ISearchResult {
-	thumbnailUrl: string
-	title: string
-	subline: string
-	resourceUrl: string
-	icon: string
-	rounded: boolean,
-	attributes: {
-		fileId: string
-		path: string
-	}
+    thumbnailUrl: string
+    title: string
+    subline: string
+    resourceUrl: string
+    icon: string
+    rounded: boolean,
+    attributes: {
+        fileId: string
+        path: string
+    }
 }
 export interface Participant {
-	age?: string
-	sex?: string
-	[key: string]: string | number
+    age?: string
+    sex?: string
+    [key: string]: string | number
 }
 export interface BIDSDatabase {
-	Name?: string
-	BIDSVersion?: string
-	Licence?: string
-	Authors?: string[]
-	Acknowledgements?: string
-	HowToAcknowledge?: string
-	Funding?: string[]
-	ReferencesAndLinks?: string[]
-	DatasetDOI?: string
+    Name?: string
+    BIDSVersion?: string
+    Licence?: string
+    Authors?: string[]
+    Acknowledgements?: string
+    HowToAcknowledge?: string
+    Funding?: string[]
+    ReferencesAndLinks?: string[]
+    DatasetDOI?: string
 }
 
 @Injectable()
@@ -89,53 +89,57 @@ export class ToolsService {
     }
 
     public async getBIDSDatabases(owner: string, headersIn: any) {
-		try {
-			const headers = {
-				...headersIn,
-				"accept": "application/json, text/plain, */*"
-			}
-			const s = await this.search(headersIn, DATASET_DESCRIPTION)
-			const searchResults = s?.entries.filter(s => !/derivatives/.test(s.subline))
-			const bidsDatabasesPromises = await searchResults.map((ps) =>
-				this.getDatasetContent(`${ps.attributes.path}`, owner))
-			const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
-			const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
-				.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
-					...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
-					path: searchResults[i].attributes.path.replace(`/${DATASET_DESCRIPTION}`, '')
-				}) : {}], [])
+        try {
+            console.time('getBIDSDatabases')
+            const headers = {
+                ...headersIn,
+                "accept": "application/json, text/plain, */*"
+            }
+            const s = await this.search(headersIn, DATASET_DESCRIPTION)
 
-			// const s = await this.search(headersIn, PARTICIPANTS_FILE)
-			// const searchResults = s?.entries.filter(s => !/derivatives/.test(s.subline))
+            const searchResults = s?.entries.filter(s => !/derivatives/.test(s.subline))
+            console.timeLog('getBIDSDatabases', searchResults.map(s => s.title))
+            const bidsDatabasesPromises = await searchResults.map((ps) =>
+                this.getDatasetContent(`${ps.attributes.path}`, owner))
+            const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
+            console.timeLog('getBIDSDatabases', 'bidsDatabasesResults')
+            const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
+                .reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
+                    ...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
+                    path: searchResults[i].attributes.path.replace(`/${DATASET_DESCRIPTION}`, '')
+                }) : {}], [])
+            console.timeEnd('getBIDSDatabases')
+            // const s = await this.search(headersIn, PARTICIPANTS_FILE)
+            // const searchResults = s?.entries.filter(s => !/derivatives/.test(s.subline))
 
-			// const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
-			// const results = await Promise.allSettled(participantPromises)
-			// const participantSearchFiltered = results
-			// 	.map((p, i) => ({ p, i })) // keep indexes
-			// 	.filter(item => item.p.status === 'fulfilled')
-			// 	.map(item => ({
-			// 		participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
-			// 		searchResult: searchResults[item.i]
-			// 	}))
+            // const participantPromises = searchResults.map(s => this.readBIDSParticipants(s.attributes.path, headers))
+            // const results = await Promise.allSettled(participantPromises)
+            // const participantSearchFiltered = results
+            // 	.map((p, i) => ({ p, i })) // keep indexes
+            // 	.filter(item => item.p.status === 'fulfilled')
+            // 	.map(item => ({
+            // 		participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
+            // 		searchResult: searchResults[item.i]
+            // 	}))
 
 
-			// const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace(PARTICIPANTS_FILE, '')}/dataset_description.json`, headers))
-			// const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
-			// const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
-			// 	.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
-			// 		...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
-			// 		id: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-			// 		Path: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-			// 		ResourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
-			// 		Participants: participantSearchFiltered[i].participants
-			// 	}) : {}], [])
+            // const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace(PARTICIPANTS_FILE, '')}/dataset_description.json`, headers))
+            // const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
+            // const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
+            // 	.reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
+            // 		...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
+            // 		id: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
+            // 		Path: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
+            // 		ResourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
+            // 		Participants: participantSearchFiltered[i].participants
+            // 	}) : {}], [])
 
-			return { data: bidsDatabases }
-		} catch (e: unknown) {
-			console.log(e)
-			return { error: e }
-		}
-	}
+            return { data: bidsDatabases }
+        } catch (e: unknown) {
+            console.log(e)
+            return { error: e }
+        }
+    }
 
     public async createBidsDatabase(createBidsDatabaseDto: CreateBidsDatabaseDto) {
         const { owner } = createBidsDatabaseDto
@@ -179,8 +183,6 @@ export class ToolsService {
         console.log('docker', [
             'run',
             '-v',
-            '/tmp:/importation_directory',
-            '-v',
             `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
             '-v',
             `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/output`,
@@ -203,8 +205,6 @@ export class ToolsService {
             [
                 'run',
                 '-v',
-                '/tmp:/importation_directory',
-                '-v',
                 `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
                 '-v',
                 `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/output`,
@@ -215,7 +215,7 @@ export class ToolsService {
                 '--input_data=/input/sub_import.json'
             ])
 
-        
+
         if (created === 0) {
             const scan = await this.scanFiles(owner)
 
@@ -251,23 +251,23 @@ export class ToolsService {
     }
 
     public async search(headersIn: any, term: string,): Promise<ISearch> {
-		const headers = {
-			...headersIn,
-			"accept": "application/json, text/plain, */*"
-		}
+        const headers = {
+            ...headersIn,
+            "accept": "application/json, text/plain, */*"
+        }
 
-		const response = this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
-			{ headers }
-		)
+        const response = this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
+            { headers }
+        )
 
-		return firstValueFrom(response).then(r => r.data.ocs.data)
-		// .pipe(
-		// 	map(response => response.data),
-		// 	catchError(e => {
-		// 		throw new HttpException(e.response.data, e.response.status)
-		// 	})
-		// )
-	}
+        return firstValueFrom(response).then(r => r.data.ocs.data)
+        // .pipe(
+        // 	map(response => response.data),
+        // 	catchError(e => {
+        // 		throw new HttpException(e.response.data, e.response.status)
+        // 	})
+        // )
+    }
 
     private async scanFiles(owner: string): Promise<0 | 1> {
         const scanned = await this.spawnable('docker', [
@@ -312,23 +312,23 @@ export class ToolsService {
         })
     }
 
-	private async getDatasetContent(path: string, owner: string): Promise<DataError> {
-		console.time(path)
-		const nextPath = `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}`
-		try {
-			const data = fs.readFileSync(nextPath, 'utf-8')
-			const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
-			console.timeEnd(path)
-			try {
-				return ({ data: JSON.parse(cleaned) })
-			} catch (e) {
-				console.log(e.message)
-				// throw new HttpException(e.message, e.status)
+    private async getDatasetContent(path: string, owner: string): Promise<DataError> {
+        console.time(path)
+        const nextPath = `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}`
+        try {
+            const data = fs.readFileSync(nextPath, 'utf-8')
+            const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
+            console.timeEnd(path)
+            try {
+                return ({ data: JSON.parse(cleaned) })
+            } catch (e) {
+                console.log(e.message)
+                // throw new HttpException(e.message, e.status)
 
-				return ({ error: e })
-			}
-		} catch (err) {
-			console.error(err)
-		}
-	}
+                return ({ error: e })
+            }
+        } catch (err) {
+            console.error(err)
+        }
+    }
 }

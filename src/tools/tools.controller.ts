@@ -43,7 +43,7 @@ export class ToolsController {
 
     @UsePipes(ValidationPipe)
     @Post('/bids/subject')
-    createSubject(@Body() createSubjectDto: CreateSubjectDto) {
+    importSubject(@Body() createSubjectDto: CreateSubjectDto) {
         return this.toolsService.importSubject(createSubjectDto)
     }
 

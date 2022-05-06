@@ -20,7 +20,7 @@ describe('ToolsController: db.get (e2e)', () => {
     await app.init()
   })
 
-  it('/ (GET)', async () => {
+  it.skip('/ (GET)', async () => {
     const getBidsDatabaseDto = {
       "owner": `${process.env.USER}`,
       "database": "mybidsdb",
