@@ -1,5 +1,7 @@
-import { HttpService, Injectable, Logger } from '@nestjs/common'
+import { HttpService } from '@nestjs/axios'
+import { HttpException, Injectable, Logger } from '@nestjs/common'
 import { Interval } from '@nestjs/schedule'
+import { firstValueFrom } from 'rxjs'
 import { interpret } from 'xstate'
 import { CacheService } from '../cache/cache.service'
 import {
@@ -7,9 +9,9 @@ import {
 	invokeRemoteContainer
 } from './remote-app.container-machine'
 import {
-	APIContainerResponse, APIContainersResponse, ContainerAction, ContainerContext,
-	ContainerService, ContainerState, ContainerType, WebdavOptions
+	APIContainerResponse, APIContainersResponse, ContainerAction, ContainerContext, ContainerState, ContainerType, WebdavOptions
 } from './remote-app.types'
+
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -143,23 +145,26 @@ export class RemoteAppService {
 
 	async availableApps(): Promise<any> {
 		const url = `${process.env.REMOTE_APP_API}/control/app/list`
-		return await httpService
+		try {
+			const response = httpService
 			.get(url, {
 				headers: {
 					Authorization: process.env.REMOTE_APP_BASIC_AUTH,
 					'Cache-Control': 'no-cache',
 				}
 			})
-			.toPromise()
-			.then(response => {
 
-				return response.data
-			})
-			.then(data => Object.keys(data).map(k => ({
-				...data[k],
+			const data = await firstValueFrom(response)
+				.then(r => Object.keys(r.data).map(k => ({
+				...r.data[k],
 				name: k,
-				label: data[k].name,
+				label: r.data[k].name,
 			})))
+
+			return data
+		} catch (error) {
+			throw new HttpException(error.message, error.status)
+		}
 	}
 
 	/**

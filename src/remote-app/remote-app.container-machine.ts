@@ -44,7 +44,7 @@ export const invokeRemoteContainer = (
 	const url = `${process.env.REMOTE_APP_API}/control/${type}?${toParams(params)}`
 
 	// if (id === debugId) {
-	logger.debug(url, `invokeRemoteContainer-${id}`)
+	// logger.debug(url, `invokeRemoteContainer-${id}`)
 	// }
 
 
@@ -117,7 +117,7 @@ export const invokeRemoteContainer = (
 		})
 		.catch(error => {
 			const { code, message } = error
-			console.log(error)
+			// console.log(error)
 			return Promise.reject({ error: { message, code } })
 		})
 }

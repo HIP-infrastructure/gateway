@@ -1,7 +1,9 @@
-import { Module, HttpModule } from '@nestjs/common'
+import { HttpModule } from '@nestjs/axios'
+import { Module } from '@nestjs/common'
+import { CacheService } from '../cache/cache.service'
 import { RemoteAppController } from './remote-app.controller'
 import { RemoteAppService } from './remote-app.service'
-import { CacheService } from '../cache/cache.service'
+
 
 @Module({
 	imports: [HttpModule],

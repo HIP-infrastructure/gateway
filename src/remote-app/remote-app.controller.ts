@@ -180,9 +180,8 @@ export class RemoteAppController {
 	}
 
 	@Get('/apps')
-	async availableApps(@Res() res: Response) {
-		const json = await this.remoteAppService.availableApps()
-		return res.status(HttpStatus.OK).json(json)
+	availableApps() {
+		return this.remoteAppService.availableApps()
 	}
 
 	// DEBUG methods
