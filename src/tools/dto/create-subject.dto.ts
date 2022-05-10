@@ -1,6 +1,7 @@
 export class CreateSubjectDto {
     readonly owner: string
     readonly database: string
+    readonly path: string
     readonly subjects: Subject[]
     readonly files: File[]
 }
@@ -18,9 +19,6 @@ export class File {
     path: string
     entities: {
         sub: string
-        ses: string
-        task: string
-        acq: string
         [key: string]: string
     }
 }

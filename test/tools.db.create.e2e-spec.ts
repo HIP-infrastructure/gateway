@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import * as request from 'supertest'
 import { ToolsModule } from '../src/tools/tools.module'
+import { CreateBidsDatabaseDto } from 'src/tools/dto/create-bids-database.dto'
 
 const path = require('path')
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
@@ -21,17 +22,20 @@ describe('ToolsController: db.create (e2e)', () => {
   })
 
   it('/ (GET)', () => {
-    const createBidsDatabaseDto = {
+    const createBidsDatabaseDto: CreateBidsDatabaseDto = {
       "owner": `${process.env.USER}`,
       "database": "mybidsdb",
+      "path": "",
       "DatasetDescJSON":
       {
         "Name": "my bids db",
+        "BIDSVersion": "1.4.1",
         "License": "MIT",
         "Authors": ["Manuel Spuhler"],
         "Acknowledgements": "CHUV",
         "Funding": "ME",
-        "DatasetDOI": "DOI"
+        "ReferencesAndLinks": "http://me.com",
+        "DatasetDOI": "DOI",
       }
     }
 

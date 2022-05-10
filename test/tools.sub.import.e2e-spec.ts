@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { CreateSubjectDto } from 'src/tools/dto/create-subject.dto'
 import * as request from 'supertest'
 import { ToolsModule } from '../src/tools/tools.module'
 
@@ -21,15 +22,16 @@ describe('ToolsController: sub.import (e2e)', () => {
   })
 
   it('/ (GET)', async () => {
-    const createSubjectDto = {
+    const createSubjectDto: CreateSubjectDto = {
       "owner": `${process.env.USER}`,
       "database": "mybidsdb",
+      "path": "mybidsdb",
       "subjects": [
         {
           "sub": "carole",
-          // "age": "25",
-          // "sex": "M",
-          // "hospital": "CHUV"
+          "age": "25",
+          "sex": "M",
+          "hospital": "CHUV"
         }
       ],
       "files": [
@@ -91,7 +93,7 @@ describe('ToolsController: sub.import (e2e)', () => {
     }
 
     return await request(app.getHttpServer())
-      .post('/tools/bids/database/new/subject')
+      .post('/tools/bids/subject')
       .send(createSubjectDto)
       .expect(201)
       // .expect((response) => {

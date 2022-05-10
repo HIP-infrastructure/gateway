@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs'
 
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
+import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { GetBidsDatabaseDto } from './dto/get-bids-database.dto'
 
 const { spawn } = require('child_process')
@@ -55,42 +56,42 @@ export class ToolsService {
 
     private logger = new Logger('ToolsService')
 
-    public async getBIDSDatabase(getBidsDatabaseDto: GetBidsDatabaseDto) {
-        const { owner } = getBidsDatabaseDto
+    // public async getBIDSDatabase(getBidsDatabaseDto: GetBidsDatabaseDto) {
+    //     const { owner, path } = getBidsDatabaseDto
 
-        try {
-            fs.writeFileSync('/tmp/db_get.json', JSON.stringify(getBidsDatabaseDto))
-        } catch (err) {
-            console.error(err)
-        }
+    //     try {
+    //         fs.writeFileSync('/tmp/db_get.json', JSON.stringify(getBidsDatabaseDto))
+    //     } catch (err) {
+    //         console.error(err)
+    //     }
 
-        const get = await this.spawnable('docker',
-            [
-                'run',
-                '-v',
-                '/tmp:/input',
-                '-v',
-                `/tmp:/output`,
-                '-v',
-                '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
-                'bids-converter',
-                '--command=db.get',
-                '--input_data=/input/db_get.json',
-                '--output_file=/output/output.json '
-            ])
+    //     const get = await this.spawnable('docker',
+    //         [
+    //             'run',
+    //             '-v',
+    //             '/tmp:/input',
+    //             '-v',
+    //             `/tmp:/output`,
+    //             '-v',
+    //             '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
+    //             'bids-converter',
+    //             '--command=db.get',
+    //             '--input_data=/input/db_get.json',
+    //             '--output_file=/output/output.json '
+    //         ])
 
-        if (get === 0) {
-            const dbInfo = await fs.readFileSync(`/tmp/output.json`, 'utf8')
+    //     if (get === 0) {
+    //         const dbInfo = await fs.readFileSync(`/tmp/output.json`, 'utf8')
 
-            return JSON.parse(dbInfo)
-        }
+    //         return JSON.parse(dbInfo)
+    //     }
 
-        throw new InternalServerErrorException()
-    }
+    //     throw new InternalServerErrorException()
+    // }
 
     public async getBIDSDatabases(owner: string, headersIn: any) {
         try {
-            console.time('getBIDSDatabases')
+            // console.time('getBIDSDatabases')
             const headers = {
                 ...headersIn,
                 "accept": "application/json, text/plain, */*"
@@ -98,17 +99,17 @@ export class ToolsService {
             const s = await this.search(headersIn, DATASET_DESCRIPTION)
 
             const searchResults = s?.entries.filter(s => !/derivatives/.test(s.subline))
-            console.timeLog('getBIDSDatabases', searchResults.map(s => s.title))
+            // console.timeLog('getBIDSDatabases', searchResults.map(s => s.title))
             const bidsDatabasesPromises = await searchResults.map((ps) =>
                 this.getDatasetContent(`${ps.attributes.path}`, owner))
             const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
-            console.timeLog('getBIDSDatabases', 'bidsDatabasesResults')
+            // console.timeLog('getBIDSDatabases', 'bidsDatabasesResults')
             const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
                 .reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
                     ...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
                     path: searchResults[i].attributes.path.replace(`/${DATASET_DESCRIPTION}`, '')
                 }) : {}], [])
-            console.timeEnd('getBIDSDatabases')
+            // console.timeEnd('getBIDSDatabases')
             // const s = await this.search(headersIn, PARTICIPANTS_FILE)
             // const searchResults = s?.entries.filter(s => !/derivatives/.test(s.subline))
 
@@ -142,7 +143,7 @@ export class ToolsService {
     }
 
     public async createBidsDatabase(createBidsDatabaseDto: CreateBidsDatabaseDto) {
-        const { owner } = createBidsDatabaseDto
+        const { owner, path } = createBidsDatabaseDto
         try {
             fs.writeFileSync('/tmp/db_create.json', JSON.stringify(createBidsDatabaseDto))
         } catch (err) {
@@ -155,7 +156,7 @@ export class ToolsService {
                 '-v',
                 '/tmp:/input',
                 '-v',
-                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/output`,
+                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}:/output`,
                 '-v',
                 '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
                 'bids-converter',
@@ -177,15 +178,14 @@ export class ToolsService {
     getSubject() { }
 
     public async importSubject(createSubject: CreateSubjectDto) {
-        const { owner } = createSubject
+        const { owner, path } = createSubject
 
-        console.log(createSubject, `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,)
-        console.log('docker', [
+        console.log([
             'run',
             '-v',
             `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
             '-v',
-            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/output`,
+            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}:/output`,
             '-v',
             '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
             'bids-converter',
@@ -193,11 +193,11 @@ export class ToolsService {
             '--input_data=/input/sub_import.json'
         ].join(' '))
 
+
         try {
             fs.writeFileSync(`${process.env.PRIVATE_FILESYSTEM}/${owner}/files/sub_import.json`, JSON.stringify(createSubject))
         } catch (err) {
             console.error(err)
-
             throw new HttpException(err.message, err.status)
         }
 
@@ -207,7 +207,7 @@ export class ToolsService {
                 '-v',
                 `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
                 '-v',
-                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/output`,
+                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}:/output`,
                 '-v',
                 '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
                 'bids-converter',
@@ -216,11 +216,49 @@ export class ToolsService {
             ])
 
 
+
+
         if (created === 0) {
             const scan = await this.scanFiles(owner)
 
             if (scan === 0) {
                 return createSubject
+            }
+        }
+
+        throw new InternalServerErrorException()
+    }
+
+    public async editClinical(editSubjectClinicalDto: EditSubjectClinicalDto) {
+        const { owner, path } = editSubjectClinicalDto
+
+        try {
+            fs.writeFileSync(`${process.env.PRIVATE_FILESYSTEM}/${owner}/files/sub_edit_clinical.json`, JSON.stringify(editSubjectClinicalDto))
+        } catch (err) {
+            console.error(err)
+            throw new HttpException(err.message, err.status)
+        }
+
+        const created = await this.spawnable('docker',
+            [
+                'run',
+                '-v',
+                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
+                '-v',
+                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}:/output`,
+                '-v',
+                '/Users/guspuhle/workdir/hip/frontend/bids-converter/scripts:/scripts',
+                'bids-converter',
+                '--command=sub.edit.clinical',
+                '--input_data=/input/sub_edit_clinical.json'
+            ])
+
+
+        if (created === 0) {
+            const scan = await this.scanFiles(owner)
+
+            if (scan === 0) {
+                return editSubjectClinicalDto
             }
         }
 

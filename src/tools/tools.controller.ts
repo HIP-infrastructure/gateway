@@ -1,13 +1,14 @@
 import { Request } from 'express'
 
 import {
-    Body, Controller, Get, Query, Param, Post, Request as Req, UsePipes, ValidationPipe
+    Body, Controller, Get, Query, Patch, Post, Request as Req, UsePipes, ValidationPipe
 } from '@nestjs/common'
 
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { GetBidsDatabaseDto } from './dto/get-bids-database.dto'
 import { ToolsService } from './tools.service'
+import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 
 @Controller('tools')
 export class ToolsController {
@@ -15,11 +16,11 @@ export class ToolsController {
     constructor(
         private readonly toolsService: ToolsService) { }
 
-    @UsePipes(ValidationPipe)
-    @Get('/bids/database')
-    findOneDatabase(@Query() getBidsDatabaseDto: GetBidsDatabaseDto) {
-        return this.toolsService.getBIDSDatabase(getBidsDatabaseDto)
-    }
+    // @UsePipes(ValidationPipe)
+    // @Get('/bids/database')
+    // findOneDatabase(@Query() getBidsDatabaseDto: GetBidsDatabaseDto) {
+    //     return this.toolsService.getBIDSDatabase(getBidsDatabaseDto)
+    // }
 
     @Get('/bids/databases')
 	async getBids(
@@ -31,7 +32,10 @@ export class ToolsController {
 
     @UsePipes(ValidationPipe)
     @Post('/bids/database')
-    createDatabase(@Body() createBidsDatabaseDto: CreateBidsDatabaseDto) {
+    createDatabase(
+        @Body() createBidsDatabaseDto: CreateBidsDatabaseDto
+        
+        ) {
         return this.toolsService.createBidsDatabase(createBidsDatabaseDto)
     }
 
@@ -45,6 +49,12 @@ export class ToolsController {
     @Post('/bids/subject')
     importSubject(@Body() createSubjectDto: CreateSubjectDto) {
         return this.toolsService.importSubject(createSubjectDto)
+    }
+
+    @UsePipes(ValidationPipe)
+    @Patch('/bids/subject')
+    editClinical(@Body() editSubjectClinicalDto: EditSubjectClinicalDto) {
+        return this.toolsService.editClinical(editSubjectClinicalDto)
     }
 
     // @Delete('/bids/subject')

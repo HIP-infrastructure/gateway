@@ -1,6 +1,7 @@
 export class CreateBidsDatabaseDto {
     readonly owner: string
     readonly database: string
+    readonly path: string
     readonly DatasetDescJSON: {
         readonly Name: string
         readonly BIDSVersion: string

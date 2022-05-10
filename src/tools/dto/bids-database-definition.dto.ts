@@ -35,7 +35,7 @@ export class BidsDatabaseDefinitionDto {
 }
 
 
-/*
+
 export class BidsDatabaseSchemaDto {
     "BIDS_definitions": {
         "Anat": {
@@ -46,10 +46,6 @@ export class BidsDatabaseSchemaDto {
                 "ce",
                 "rec",
                 "run",
-                "mod",
-                "modality",
-                "fileLoc",
-                "AnatJSON"
             ],
             "required_keys": [
                 "sub",
@@ -260,4 +256,3 @@ export class BidsDatabaseSchemaDto {
         }
     }
 }
-*/
