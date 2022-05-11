@@ -222,45 +222,6 @@ export class ToolsService {
 
         return this.participantsWithPath(headersIn, nextPath)
     }
-    public async participantsWithPath(headersIn: any, path: string, owner?: string) {
-        try {
-            const tsv = await this.getFileContent(path, headersIn)
-            const [headers, ...rows] = tsv
-                .trim()
-                .split('\n')
-                .map(r => r.split('\t'))
-
-            const participants: Participant[] = rows.reduce((arr, row) => [
-                ...arr,
-                row.reduce((obj, item, i) =>
-                    Object.assign(obj, ({ [headers[i].trim()]: item })), {})
-            ], [])
-
-            return participants
-        } catch (e) {
-            console.log(e)
-            throw new HttpException(e.message, e.status)
-        }
-
-        // const nextPath = `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}/${PARTICIPANTS_FILE}`
-        // console.log(nextPath)
-        // try {
-        //     const data = fs.readFileSync(nextPath, 'utf-8')
-        //     const [headers, ...rows] = data
-        //         .trim()
-        //         .split('\n')
-        //         .map(r => r.split('\t'))
-
-        //     const participants: Participant[] = rows.reduce((arr, row) => [
-        //         ...arr,
-        //         row.reduce((obj, item, i) => Object.assign(obj, ({ [headers[i].trim()]: item })), {})
-        //     ], [])
-
-        //     return participants
-        // } catch (e) {
-        //     throw new HttpException(e.message, e.status)
-        // }
-    }
 
     public async search(headersIn: any, term: string,): Promise<ISearch> {
         const headers = {
@@ -324,7 +285,28 @@ export class ToolsService {
         })
     }
 
-    async getDatasetContent(path: string, headersIn: any): Promise<DataError> {
+    private async participantsWithPath(headersIn: any, path: string, owner?: string) {
+        try {
+            const tsv = await this.getFileContent(path, headersIn)
+            const [headers, ...rows] = tsv
+                .trim()
+                .split('\n')
+                .map(r => r.split('\t'))
+
+            const participants: Participant[] = rows.reduce((arr, row) => [
+                ...arr,
+                row.reduce((obj, item, i) =>
+                    Object.assign(obj, ({ [headers[i].trim()]: item })), {})
+            ], [])
+
+            return participants
+        } catch (e) {
+            console.log(e)
+            throw new HttpException(e.message, e.status)
+        }
+    }
+
+    private async getDatasetContent(path: string, headersIn: any): Promise<DataError> {
         const response = await this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
             { headers: headersIn })
             .toPromise()
@@ -339,25 +321,6 @@ export class ToolsService {
             return ({ error: e.message })
         }
     }
-
-    // private async getDatasetContent(path: string, owner: string): Promise<DataError> {
-    //     const nextPath = `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}`
-    //     try {
-    //         const data = fs.readFileSync(nextPath, 'utf-8')
-    //         const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
-    //         try {
-    //             return ({ data: JSON.parse(cleaned) })
-    //         } catch (e) {
-    //             console.log(e.message)
-    //             // throw new HttpException(e.message, e.status)
-
-    //             return ({ error: e })
-    //         }
-    //     } catch (err) {
-    //         console.error(err)
-    //     }
-    // }
-
 
     private async getFileContent(path: string, headersIn: any): Promise<string> {
         try {
@@ -374,20 +337,4 @@ export class ToolsService {
         }
 
     }
-
-    // private async readBIDSParticipants(path: string, headersIn: any) {
-    //     const tsv = await this.getFileContent(path, headersIn)
-    //     const [headers, ...rows] = tsv
-    //         .trim()
-    //         .split('\n')
-    //         .map(r => r.split('\t'))
-
-    //     const participants: Participant[] = rows.reduce((arr, row) => [
-    //         ...arr,
-    //         row.reduce((obj, item, i) => Object.assign(obj, ({ [headers[i].trim()]: item })), {})
-    //     ], [])
-
-    //     return participants
-    // }
-
 }
