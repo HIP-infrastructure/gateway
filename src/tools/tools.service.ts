@@ -6,6 +6,8 @@ import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { GetBidsDatabaseDto } from './dto/get-bids-database.dto'
+const userid = require('userid')
+
 
 const { spawn } = require('child_process')
 const fs = require('fs')
@@ -52,7 +54,15 @@ export interface BIDSDatabase {
 @Injectable()
 export class ToolsService {
 
-    constructor(private readonly httpService: HttpService) { }
+    private dataUser
+    private dataUserId
+
+    constructor(private readonly httpService: HttpService) {
+        this.dataUser = process.env.DATA_USER
+        const uid = parseInt(userid.uid(this.dataUser), 10)
+
+        if (uid) this.dataUserId = uid
+    }
 
     private logger = new Logger('ToolsService')
 
@@ -118,6 +128,8 @@ export class ToolsService {
                 '-v',
                 '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
                 'bids-converter',
+                this.dataUser,
+                this.dataUserId,
                 '--command=db.create',
                 '--input_data=/input/db_create.json'
             ])
@@ -161,6 +173,8 @@ export class ToolsService {
                 '-v',
                 '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
                 'bids-converter',
+                this.dataUser,
+                this.dataUserId,
                 '--command=sub.import',
                 '--input_data=/import-data/sub_import.json'
             ])
@@ -199,6 +213,8 @@ export class ToolsService {
                 '-v',
                 '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
                 'bids-converter',
+                this.dataUser,
+                this.dataUserId,
                 '--command=sub.edit.clinical',
                 '--input_data=/input/sub_edit_clinical.json'
             ])
@@ -246,7 +262,7 @@ export class ToolsService {
         const scanned = await this.spawnable('docker', [
             'exec',
             '--user',
-            'www-data',
+            `${this.dataUserId}:${this.dataUserId}`,
             'nextcloud-docker_app_1',
             'php',
             'occ',

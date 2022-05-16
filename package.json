@@ -36,6 +36,7 @@
         "rxjs": "^7.5.5",
         "swagger-ui-express": "^4.3.0",
         "typeorm": "^0.3.6",
+        "userid": "^1.2.5",
         "webdav": "^4.9.0",
         "xstate": "^4.19.1"
     },
