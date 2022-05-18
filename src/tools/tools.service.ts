@@ -1,18 +1,23 @@
 import { HttpService } from '@nestjs/axios'
-import { HttpException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common'
+import {
+    HttpException,
+    Injectable,
+    InternalServerErrorException,
+    Logger
+} from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
-
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
-import { GetBidsDatabaseDto } from './dto/get-bids-database.dto'
+
 const userid = require('userid')
-
-
 const { spawn } = require('child_process')
 const fs = require('fs')
 
-type DataError = { data?: Record<string, string>; error?: Record<string, string> }
+type DataError = {
+    data?: Record<string, string>
+    error?: Record<string, string>
+}
 
 const DATASET_DESCRIPTION = 'dataset_description.json'
 const PARTICIPANTS_FILE = 'participants.tsv'
@@ -28,11 +33,21 @@ interface ISearchResult {
     subline: string
     resourceUrl: string
     icon: string
-    rounded: boolean,
+    rounded: boolean
     attributes: {
         fileId: string
         path: string
     }
+}
+
+interface Group {
+    id: number
+    mount_point: string
+    groups: object
+    quota: number
+    size: number
+    acl: boolean
+    manage: object
 }
 export interface Participant {
     age?: string
@@ -53,7 +68,7 @@ export interface BIDSDatabase {
 
 @Injectable()
 export class ToolsService {
-
+    private readonly logger = new Logger('ToolsService')
     private dataUser
     private dataUserId
 
@@ -64,39 +79,63 @@ export class ToolsService {
         if (uid) this.dataUserId = uid
     }
 
-    private logger = new Logger('ToolsService')
-
     public async getBIDSDatabases(owner: string, headersIn: any) {
         try {
             const headers = {
                 ...headersIn,
-                "accept": "application/json, text/plain, */*"
+                accept: 'application/json, text/plain, */*',
             }
             const s = await this.search(headersIn, PARTICIPANTS_FILE)
 
             const searchResults = s?.entries
             // console.log(searchResults)
-            const participantPromises = searchResults.map(s => this.participantsWithPath(headers, s.attributes.path))
+            const participantPromises = searchResults.map(s =>
+                this.participantsWithPath(headers, s.attributes.path)
+            )
             const results = await Promise.allSettled(participantPromises)
             const participantSearchFiltered = results
                 .map((p, i) => ({ p, i })) // keep indexes
                 .filter(item => item.p.status === 'fulfilled')
-                .filter(item => !/derivatives/.test(searchResults[item.i].attributes.path))
+                .filter(
+                    item => !/derivatives/.test(searchResults[item.i].attributes.path)
+                )
                 .map(item => ({
                     participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
-                    searchResult: searchResults[item.i]
+                    searchResult: searchResults[item.i],
                 }))
 
-            const bidsDatabasesPromises = await participantSearchFiltered.map((ps) => this.getDatasetContent(`${ps.searchResult.attributes.path.replace(PARTICIPANTS_FILE, '')}/dataset_description.json`, headers))
-            const bidsDatabasesResults = await Promise.allSettled(bidsDatabasesPromises)
-            const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults
-                .reduce((arr, item, i) => [...arr, item.status === 'fulfilled' ? ({
-                    ...((item as PromiseFulfilledResult<DataError>).value.data || (item as PromiseFulfilledResult<DataError>).value.error),
-                    id: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-                    path: participantSearchFiltered[i].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-                    // ResourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
-                    Participants: participantSearchFiltered[i].participants
-                }) : {}], [])
+            const bidsDatabasesPromises = participantSearchFiltered.map(ps =>
+                this.getDatasetContent(
+                    `${ps.searchResult.attributes.path.replace(
+                        PARTICIPANTS_FILE,
+                        ''
+                    )}/dataset_description.json`,
+                    headers
+                )
+            )
+            const bidsDatabasesResults = await Promise.allSettled(
+                bidsDatabasesPromises
+            )
+            const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults.reduce(
+                (arr, item, i) => [
+                    ...arr,
+                    item.status === 'fulfilled'
+                        ? {
+                            ...((item as PromiseFulfilledResult<DataError>).value.data ||
+                                (item as PromiseFulfilledResult<DataError>).value.error),
+                            id: participantSearchFiltered[
+                                i
+                            ].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
+                            path: participantSearchFiltered[
+                                i
+                            ].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
+                            // ResourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
+                            Participants: participantSearchFiltered[i].participants,
+                        }
+                        : {},
+                ],
+                []
+            )
 
             return { data: bidsDatabases }
         } catch (e: unknown) {
@@ -105,34 +144,38 @@ export class ToolsService {
         }
     }
 
-    public async createBidsDatabase(createBidsDatabaseDto: CreateBidsDatabaseDto) {
+    public async createBidsDatabase(
+        createBidsDatabaseDto: CreateBidsDatabaseDto
+    ) {
         const { owner, path } = createBidsDatabaseDto
         const uniquId = Date.now() + Math.random()
         const tmpDir = `/tmp/${uniquId}`
 
         try {
             fs.mkdirSync(tmpDir, true)
-            fs.writeFileSync(`${tmpDir}/db_create.json`, JSON.stringify(createBidsDatabaseDto))
+            fs.writeFileSync(
+                `${tmpDir}/db_create.json`,
+                JSON.stringify(createBidsDatabaseDto)
+            )
         } catch (err) {
             console.error(err)
             throw new HttpException(err.message, err.status)
         }
 
-        const created = await this.spawnable('docker',
-            [
-                'run',
-                '-v',
-                `${tmpDir}:/input`,
-                '-v',
-                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}:/output`,
-                '-v',
-                '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
-                'bids-converter',
-                this.dataUser,
-                this.dataUserId,
-                '--command=db.create',
-                '--input_data=/input/db_create.json'
-            ])
+        const created = await this.spawnable('docker', [
+            'run',
+            '-v',
+            `${tmpDir}:/input`,
+            '-v',
+            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}:/output`,
+            '-v',
+            '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
+            'bids-converter',
+            this.dataUser,
+            this.dataUserId,
+            '--command=db.create',
+            '--input_data=/input/db_create.json',
+        ])
 
         if (created === 0) {
             const scan = await this.scanFiles(owner)
@@ -152,35 +195,33 @@ export class ToolsService {
         const uniquId = Date.now() + Math.random()
         const tmpDir = `/tmp/${uniquId}`
 
-
         try {
             fs.mkdirSync(tmpDir, true)
-            fs.writeFileSync(`${tmpDir}/sub_import.json`, JSON.stringify(createSubject))
+            fs.writeFileSync(
+                `${tmpDir}/sub_import.json`,
+                JSON.stringify(createSubject)
+            )
         } catch (err) {
             console.error(err)
             throw new HttpException(err.message, err.status)
         }
 
-        const created = await this.spawnable('docker',
-            [
-                'run',
-                '-v',
-                `${tmpDir}:/import-data`,
-                '-v',
-                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
-                '-v',
-                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}:/output`,
-                '-v',
-                '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
-                'bids-converter',
-                this.dataUser,
-                this.dataUserId,
-                '--command=sub.import',
-                '--input_data=/import-data/sub_import.json'
-            ])
-
-
-
+        const created = await this.spawnable('docker', [
+            'run',
+            '-v',
+            `${tmpDir}:/import-data`,
+            '-v',
+            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
+            '-v',
+            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}:/output`,
+            '-v',
+            '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
+            'bids-converter',
+            this.dataUser,
+            this.dataUserId,
+            '--command=sub.import',
+            '--input_data=/import-data/sub_import.json',
+        ])
 
         if (created === 0) {
             const scan = await this.scanFiles(owner)
@@ -193,39 +234,56 @@ export class ToolsService {
         throw new InternalServerErrorException()
     }
 
-    public async editClinical(editSubjectClinicalDto: EditSubjectClinicalDto) {
-        const { owner, path } = editSubjectClinicalDto
+    public async subEditClinical(
+        editSubjectClinicalDto: EditSubjectClinicalDto,
+        headers
+    ) {
+        let { owner, path } = editSubjectClinicalDto
+        const uniquId = Date.now() + Math.random()
+        const tmpDir = `/tmp/${uniquId}`
+
+        console.log(path)
+        const groups = await this.getGroups(headers)
+        const absolutePath = path.split('/')[1]
+        const id = groups.find(g => g.mount_point === absolutePath)?.id
+        const dbMount = id ?
+            `${process.env.PRIVATE_FILESYSTEM}/__groupfolders/${id}/${path.replace(`/${absolutePath}/`, '')}:/output` :
+            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}:/output`
+
+        console.log({ dbMount })
 
         try {
-            fs.writeFileSync(`${process.env.PRIVATE_FILESYSTEM}/${owner}/files/sub_edit_clinical.json`, JSON.stringify(editSubjectClinicalDto))
+            fs.mkdirSync(tmpDir, true)
+            fs.writeFileSync(
+                `${tmpDir}/sub_edit_clinical.json`,
+                JSON.stringify(editSubjectClinicalDto)
+            )
         } catch (err) {
             console.error(err)
             throw new HttpException(err.message, err.status)
         }
 
-        const created = await this.spawnable('docker',
-            [
-                'run',
-                '-v',
-                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
-                '-v',
-                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}:/output`,
-                '-v',
-                '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
-                'bids-converter',
-                this.dataUser,
-                this.dataUserId,
-                '--command=sub.edit.clinical',
-                '--input_data=/input/sub_edit_clinical.json'
-            ])
+        const dockerCmd = [
+            'run',
+            '-v',
+            `${tmpDir}:/import-data`,
+            '-v',
+            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
+            '-v',
+            dbMount,
+            '-v',
+            '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
+            'bids-converter',
+            this.dataUser,
+            this.dataUserId,
+            '--command=sub.edit.clinical',
+            '--input_data=/import-data/sub_edit_clinical.json',
+        ]
 
+        const created = await this.spawnable('docker', dockerCmd)
 
         if (created === 0) {
-            const scan = await this.scanFiles(owner)
-
-            if (scan === 0) {
-                return editSubjectClinicalDto
-            }
+            return editSubjectClinicalDto
         }
 
         throw new InternalServerErrorException()
@@ -239,19 +297,20 @@ export class ToolsService {
         return this.participantsWithPath(headersIn, nextPath)
     }
 
-    public async search(headersIn: any, term: string,): Promise<ISearch> {
+    public async search(headersIn: any, term: string): Promise<ISearch> {
         const headers = {
             ...headersIn,
-            "accept": "application/json, text/plain, */*"
+            accept: 'application/json, text/plain, */*',
         }
 
-        const response = this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
+        const response = this.httpService.get(
+            `${process.env.PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
             { headers }
         )
 
         return firstValueFrom(response).then(r => r.data.ocs.data)
-        // .pipe(
-        // 	map(response => response.data),
+        // return response.pipe(
+        // 	map(response => response.data.ocs.data),
         // 	catchError(e => {
         // 		throw new HttpException(e.response.data, e.response.status)
         // 	})
@@ -267,7 +326,8 @@ export class ToolsService {
             'php',
             'occ',
             'files:scan',
-            owner])
+            owner,
+        ])
 
         return Promise.resolve(scanned)
     }
@@ -276,12 +336,11 @@ export class ToolsService {
         const child = spawn(command, args)
 
         return new Promise((resolve, reject) => {
-
-            child.stdout.on('data', (data) => {
+            child.stdout.on('data', data => {
                 console.log(`child stdout:\n${data}`)
             })
 
-            child.stderr.on('data', (data) => {
+            child.stderr.on('data', data => {
                 console.log(`child stderr:\n${data}`)
                 // return reject(data)
             })
@@ -291,17 +350,19 @@ export class ToolsService {
                 // return reject(error)
             })
 
-
             child.on('close', code => {
                 // console.log('closed with code', code)
                 if (code === 0) resolve(code)
-
                 else reject(code)
             })
         })
     }
 
-    private async participantsWithPath(headersIn: any, path: string, owner?: string) {
+    private async participantsWithPath(
+        headersIn: any,
+        path: string,
+        owner?: string
+    ) {
         try {
             const tsv = await this.getFileContent(path, headersIn)
             const [headers, ...rows] = tsv
@@ -309,11 +370,16 @@ export class ToolsService {
                 .split('\n')
                 .map(r => r.split('\t'))
 
-            const participants: Participant[] = rows.reduce((arr, row) => [
-                ...arr,
-                row.reduce((obj, item, i) =>
-                    Object.assign(obj, ({ [headers[i].trim()]: item })), {})
-            ], [])
+            const participants: Participant[] = rows.reduce(
+                (arr, row) => [
+                    ...arr,
+                    row.reduce(
+                        (obj, item, i) => Object.assign(obj, { [headers[i].trim()]: item }),
+                        {}
+                    ),
+                ],
+                []
+            )
 
             return participants
         } catch (e) {
@@ -322,35 +388,69 @@ export class ToolsService {
         }
     }
 
-    private async getDatasetContent(path: string, headersIn: any): Promise<DataError> {
-        const response = await this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
-            { headers: headersIn })
-            .toPromise()
+    private async getDatasetContent(
+        path: string,
+        headersIn: any
+    ): Promise<DataError> {
+        const response = this.httpService.get(
+            `${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
+            { headers: headersIn }
+        )
 
-        const data = response.data
+        const data = await firstValueFrom(response).then(r => r.data)
         const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
 
         try {
-            return ({ data: JSON.parse(cleaned) })
+            return { data: JSON.parse(cleaned) }
         } catch (e) {
             console.log(e)
-            return ({ error: e.message })
+            return { error: e.message }
         }
     }
 
-    private async getFileContent(path: string, headersIn: any): Promise<string> {
+    /**
+     * It takes a path and a set of headers, and returns the contents of the file at that path
+     * @param {string} path - the path to the file you want to get
+     * @param {any} headersIn - This is the headers that you need to pass to the webdav server.
+     * @returns The file content
+     */
+    private getFileContent(path: string, headersIn: any): Promise<string> {
         try {
-            const response = await this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
+            const response = this.httpService.get(
+                `${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
                 {
-                    headers: headersIn
-                })
-                .toPromise()
+                    headers: headersIn,
+                }
+            )
 
-            return await response.data
+            return firstValueFrom(response).then(r => r.data)
         } catch (e) {
             console.log(e)
             throw new HttpException(e.message, e.status)
         }
+    }
 
+    /**
+     * It makes a GET request to the Nextcloud API to get a list of groups
+     * @param {any} headersIn - The headers that are passed in from the controller.
+     * @returns An array of groups
+     */
+    public getGroups(headersIn: any): Promise<any> {
+        try {
+            const response = this.httpService.get(
+                `${process.env.PRIVATE_WEBDAV_URL}/apps/groupfolders/folders?format=json`,
+                {
+                    headers: {
+                        'OCS-APIRequest': true,
+                        ...headersIn,
+                    },
+                }
+            )
+
+            return firstValueFrom(response).then(r => Object.values(r.data.ocs.data))
+        } catch (e) {
+            console.log(e)
+            throw new HttpException(e.message, e.status)
+        }
     }
 }
