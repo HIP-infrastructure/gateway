@@ -1,46 +1,43 @@
-import { RandomUUIDOptions } from "crypto"
-import { BidsDatabase } from "./bids-database.entity"
-import { GuardPredicate } from "xstate"
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm"
+// import { Column, Entity, JoinTable, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm"
 import { CreateSubjectDto } from "../dto/create-subject.dto"
 import { Dataset } from "./dataset.entity"
 import { User } from "./user.entity"
 
-@Entity()
+// @Entity()
 export class Patient {
-    @PrimaryGeneratedColumn()
+    // @PrimaryGeneratedColumn()
     pseudonym: number
     
-    @Column()
+    // @Column()
     age: string
     
-    @Column()
+    // @Column()
     sex: string
     
-    @Column()
+    // @Column()
     diagnosis: string
 
-    @Column()
+    // @Column()
     data: CreateSubjectDto
 
-    @JoinTable()
-    @ManyToOne(
-        type => Dataset,
-        dataset => dataset.patients,
-        {
-            cascade: true
-        }
-    )
+    // @JoinTable()
+    // @ManyToOne(
+    //     type => Dataset,
+    //     dataset => dataset.patients,
+    //     {
+    //         cascade: true
+    //     }
+    // )
     dataset: Dataset[]
 
-    @JoinTable()
-    @OneToOne(
-        type => User,
-        user => user.patients,
-        {
-            cascade: true
-        }
-    )
+    // @JoinTable()
+    // @OneToOne(
+    //     type => User,
+    //     user => user.patients,
+    //     {
+    //         cascade: true
+    //     }
+    // )
     user: User
 }
 

@@ -1,26 +1,25 @@
-import { Column, Entity, JoinTable, OneToOne, PrimaryGeneratedColumn } from "typeorm"
+// import { Column, Entity, JoinTable, OneToOne, PrimaryGeneratedColumn } from "typeorm"
 import { Patient } from "./patient.entity"
 
-@Entity()
+// @Entity()
 export class User {
-    @PrimaryGeneratedColumn()
+    // @PrimaryGeneratedColumn()
     pseudonym: number
 
-    @Column()
-
+    // @Column()
     login: string
 
-    @Column()
+    // @Column()
     role: string
 
-    @JoinTable()
-    @OneToOne(
-        type => Patient,
-        patient => patient.user,
-        {
-            cascade: true
-        }
-    )
+    // @JoinTable()
+    // @OneToOne(
+    //     type => Patient,
+    //     patient => patient.user,
+    //     {
+    //         cascade: true
+    //     }
+    // )
     patients: Patient[]
 
 

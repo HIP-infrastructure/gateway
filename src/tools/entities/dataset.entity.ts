@@ -1,24 +1,24 @@
 import { BIDSDatabase } from "src/files/files.service"
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
+// import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { Patient } from "./patient.entity"
 
-@Entity()
+// @Entity()
 export class Dataset {
-    @PrimaryGeneratedColumn()
+    // @PrimaryGeneratedColumn()
     guid: string
 
-    @Column()
+    // @Column()
     date: string
 
-    @Column()
+    // @Column()
     type: string
 
-    @Column()
+    // @Column()
     data: BIDSDatabase
 
-    @OneToMany(
-        type => Patient,
-        patient => patient.dataset
-    )
+    // @OneToMany(
+        // type => Patient,
+        // patient => patient.dataset
+    // )
     patients: Patient[]
 }
