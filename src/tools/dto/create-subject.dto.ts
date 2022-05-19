@@ -1,7 +1,7 @@
 export class CreateSubjectDto {
     readonly owner: string
     readonly database: string
-    readonly path: string
+    readonly path: string // relative path for user or group eg: data/file.md
     readonly subjects: Subject[]
     readonly files: File[]
 }

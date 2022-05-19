@@ -32,8 +32,16 @@ export class ToolsController {
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/database')
-	createDatabase(@Body() createBidsDatabaseDto: CreateBidsDatabaseDto) {
-		return this.toolsService.createBidsDatabase(createBidsDatabaseDto)
+	createDatabase(
+		@Body() createBidsDatabaseDto: CreateBidsDatabaseDto,
+		@Req() req: Request
+	) {
+		const { requesttoken, cookie } = req.headers
+
+		return this.toolsService.createBidsDatabase(createBidsDatabaseDto, {
+			requesttoken,
+			cookie,
+		})
 	}
 
 	// @Delete('/bids/database')
@@ -44,8 +52,16 @@ export class ToolsController {
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/subject')
-	importSubject(@Body() createSubjectDto: CreateSubjectDto) {
-		return this.toolsService.importSubject(createSubjectDto)
+	importSubject(
+		@Body() createSubjectDto: CreateSubjectDto,
+		@Req() req: Request
+	) {
+		const { requesttoken, cookie } = req.headers
+
+		return this.toolsService.importSubject(createSubjectDto, {
+			requesttoken,
+			cookie,
+		})
 	}
 
 	@UsePipes(ValidationPipe)

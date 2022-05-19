@@ -128,9 +128,9 @@ export class ToolsService {
                             ].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
                             path: participantSearchFiltered[
                                 i
-                            ].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-                            // ResourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
-                            Participants: participantSearchFiltered[i].participants,
+                            ].searchResult.attributes.path.replace(PARTICIPANTS_FILE, '').substring(1),
+                            resourceUrl: participantSearchFiltered[i].searchResult.resourceUrl.split('&')[0],
+                            participants: participantSearchFiltered[i].participants,
                         }
                         : {},
                 ],
@@ -145,7 +145,7 @@ export class ToolsService {
     }
 
     public async createBidsDatabase(
-        createBidsDatabaseDto: CreateBidsDatabaseDto
+        createBidsDatabaseDto: CreateBidsDatabaseDto, headers
     ) {
         const { owner, path } = createBidsDatabaseDto
         const uniquId = Date.now() + Math.random()
@@ -162,12 +162,13 @@ export class ToolsService {
             throw new HttpException(err.message, err.status)
         }
 
+        const dbMount = await this.filePath(headers, path, owner)
         const created = await this.spawnable('docker', [
             'run',
             '-v',
             `${tmpDir}:/input`,
             '-v',
-            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}:/output`,
+            `${dbMount}:/output`,
             '-v',
             '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
             'bids-converter',
@@ -190,7 +191,7 @@ export class ToolsService {
 
     getSubject() { }
 
-    public async importSubject(createSubject: CreateSubjectDto) {
+    public async importSubject(createSubject: CreateSubjectDto, headers) {
         const { owner, path } = createSubject
         const uniquId = Date.now() + Math.random()
         const tmpDir = `/tmp/${uniquId}`
@@ -206,6 +207,7 @@ export class ToolsService {
             throw new HttpException(err.message, err.status)
         }
 
+        const dbMount = await this.filePath(headers, path, owner)
         const created = await this.spawnable('docker', [
             'run',
             '-v',
@@ -213,7 +215,7 @@ export class ToolsService {
             '-v',
             `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
             '-v',
-            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}:/output`,
+            `${dbMount}:/output`,
             '-v',
             '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
             'bids-converter',
@@ -238,19 +240,10 @@ export class ToolsService {
         editSubjectClinicalDto: EditSubjectClinicalDto,
         headers
     ) {
+        // throw new HttpException('err.message', 501)
         let { owner, path } = editSubjectClinicalDto
         const uniquId = Date.now() + Math.random()
         const tmpDir = `/tmp/${uniquId}`
-
-        console.log(path)
-        const groups = await this.getGroups(headers)
-        const absolutePath = path.split('/')[1]
-        const id = groups.find(g => g.mount_point === absolutePath)?.id
-        const dbMount = id ?
-            `${process.env.PRIVATE_FILESYSTEM}/__groupfolders/${id}/${path.replace(`/${absolutePath}/`, '')}:/output` :
-            `${process.env.PRIVATE_FILESYSTEM}/${owner}/files${path}:/output`
-
-        console.log({ dbMount })
 
         try {
             fs.mkdirSync(tmpDir, true)
@@ -262,7 +255,8 @@ export class ToolsService {
             console.error(err)
             throw new HttpException(err.message, err.status)
         }
-
+ 
+        const dbMount = await this.filePath(headers, path, owner)
         const dockerCmd = [
             'run',
             '-v',
@@ -270,7 +264,7 @@ export class ToolsService {
             '-v',
             `${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
             '-v',
-            dbMount,
+            `${dbMount}:/output`,
             '-v',
             '/home/hipadmin/frontend/bids-converter/scripts:/scripts',
             'bids-converter',
@@ -430,12 +424,36 @@ export class ToolsService {
         }
     }
 
+    /* A private method that is used to get the file path, either user based or for a group */
+    private async filePath(headers: any, path: string, owner: string) {
+        try {
+            console.log({ path })
+
+            const groups = await this.groups(headers)
+            console.log({ groups })
+            const rootPath = path.split('/')[0]
+            const id = groups.find(g => g.mount_point === rootPath)?.id
+            console.log({ rootPath, id })
+            const dbMount = id ?
+                `${process.env.PRIVATE_FILESYSTEM}/__groupfolders/${id}/${path.replace(`${rootPath}/`, '')}` :
+                `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}`
+            console.log({ path }, { rootPath }, { id }, { dbMount })
+
+            return dbMount
+        } catch (error) {
+            console.log(error)
+            throw new HttpException('Couldn\'t find path', error.status)
+        }
+    }
+
     /**
      * It makes a GET request to the Nextcloud API to get a list of groups
      * @param {any} headersIn - The headers that are passed in from the controller.
      * @returns An array of groups
      */
-    public getGroups(headersIn: any): Promise<any> {
+    private groups(headersIn: any): Promise<any> {
+        console.log({ headersIn })
+
         try {
             const response = this.httpService.get(
                 `${process.env.PRIVATE_WEBDAV_URL}/apps/groupfolders/folders?format=json`,
