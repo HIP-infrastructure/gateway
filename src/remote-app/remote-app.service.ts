@@ -1,20 +1,29 @@
 import { HttpService } from '@nestjs/axios'
-import { HttpException, Injectable, Logger } from '@nestjs/common'
+import {
+	HttpException,
+	ServiceUnavailableException,
+	Injectable,
+	Logger,
+} from '@nestjs/common'
 import { Interval } from '@nestjs/schedule'
 import { firstValueFrom } from 'rxjs'
 import { interpret } from 'xstate'
 import { CacheService } from '../cache/cache.service'
 import {
 	createContainerMachine,
-	invokeRemoteContainer
+	invokeRemoteContainer,
 } from './remote-app.container-machine'
 import {
-	APIContainerResponse, APIContainersResponse, ContainerAction, ContainerContext, ContainerState, ContainerType, WebdavOptions
+	APIContainerResponse,
+	APIContainersResponse,
+	ContainerAction,
+	ContainerContext,
+	ContainerState,
+	ContainerType,
+	WebdavOptions,
 } from './remote-app.types'
 
-
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-
 
 export const httpService = new HttpService()
 
@@ -141,30 +150,32 @@ export class RemoteAppService {
 		})
 	}
 
-
-
 	async availableApps(): Promise<any> {
 		const url = `${process.env.REMOTE_APP_API}/control/app/list`
-		try {
-			const response = httpService
-			.get(url, {
-				headers: {
-					Authorization: process.env.REMOTE_APP_BASIC_AUTH,
-					'Cache-Control': 'no-cache',
-				}
+		console.log(url)
+		const response = httpService.get(url, {
+			headers: {
+				Authorization: process.env.REMOTE_APP_BASIC_AUTH,
+				'Cache-Control': 'no-cache',
+			},
+		})
+
+		return await firstValueFrom(response)
+			.then(r =>
+				Object.keys(r.data).map(k => ({
+					...r.data[k],
+					name: k,
+					label: r.data[k].name,
+				}))
+			)
+			.catch(error => {
+				const e = error.toJSON()
+				this.logger.error(e)
+
+				// Return Service unavailable rather than backend login issue
+				//if (e.status) throw new HttpException(e.message, e.status)
+				throw new ServiceUnavailableException(e.message)
 			})
-
-			const data = await firstValueFrom(response)
-				.then(r => Object.keys(r.data).map(k => ({
-				...r.data[k],
-				name: k,
-				label: r.data[k].name,
-			})))
-
-			return data
-		} catch (error) {
-			throw new HttpException(error.message, error.status)
-		}
 	}
 
 	/**
@@ -202,8 +213,8 @@ export class RemoteAppService {
 
 	async getAllContainers(): Promise<APIContainersResponse> {
 		return {
-			data: this.containerServices
-				.map(service => {
+			data:
+				this.containerServices.map(service => {
 					const { id, name, user, url, error, type, app, parentId } = service
 						.state.context as Partial<ContainerContext & WebdavOptions>
 					return {
@@ -222,7 +233,6 @@ export class RemoteAppService {
 		}
 	}
 
-
 	/**
 	 * @Description: Get all containers from state
 	 * @param: uid {String} id of the user
@@ -231,23 +241,24 @@ export class RemoteAppService {
 
 	async getContainers(uid: string): Promise<APIContainersResponse> {
 		return {
-			data: this.containerServices
-				.filter(service => service.state.context.user === uid)
-				.map(service => {
-					const { id, name, user, url, error, type, app, parentId } = service
-						.state.context as Partial<ContainerContext & WebdavOptions>
-					return {
-						id,
-						name,
-						user,
-						url,
-						error,
-						type,
-						app,
-						parentId,
-						state: service.state.value as ContainerState,
-					}
-				}) ?? [],
+			data:
+				this.containerServices
+					.filter(service => service.state.context.user === uid)
+					.map(service => {
+						const { id, name, user, url, error, type, app, parentId } = service
+							.state.context as Partial<ContainerContext & WebdavOptions>
+						return {
+							id,
+							name,
+							user,
+							url,
+							error,
+							type,
+							app,
+							parentId,
+							state: service.state.value as ContainerState,
+						}
+					}) ?? [],
 			error: null,
 		}
 	}
@@ -264,7 +275,7 @@ export class RemoteAppService {
 		uid: string
 	): Promise<APIContainerResponse> {
 		// check for existing
-		let service:any = this.containerServices.find(s => s.machine.id === id)
+		let service: any = this.containerServices.find(s => s.machine.id === id)
 		if (service) {
 			return service.state.context
 		}
@@ -331,7 +342,9 @@ export class RemoteAppService {
 		// check for existing
 		// TODO: should test if appName exists in server as for now it's not
 		// possible to have the same app twice
-		let appService: any = this.containerServices.find(s => s.machine.id === appId)
+		let appService: any = this.containerServices.find(
+			s => s.machine.id === appId
+		)
 		if (appService) {
 			return appService.state.context
 		}
@@ -375,12 +388,10 @@ export class RemoteAppService {
 
 	async stopAppInSession(
 		serverId: string,
-		appId: string,
+		appId: string
 	): Promise<APIContainerResponse> {
 		// check existing server
-		const service = this.containerServices.find(
-			s => s.machine.id === serverId
-		)
+		const service = this.containerServices.find(s => s.machine.id === serverId)
 
 		if (!service) {
 			return {
@@ -526,11 +537,11 @@ export class RemoteAppService {
 		const currentContext = service.state.context
 		service.send({ type: ContainerAction.PAUSE })
 
-		this.containerServices.filter(
-			s => s.state.context.parentId === service.machine.id
-		).forEach(s => {
-			s.send({ type: ContainerAction.PAUSE })
-		})
+		this.containerServices
+			.filter(s => s.state.context.parentId === service.machine.id)
+			.forEach(s => {
+				s.send({ type: ContainerAction.PAUSE })
+			})
 
 		const nextContext: ContainerContext = {
 			...currentContext,
@@ -559,11 +570,11 @@ export class RemoteAppService {
 		const currentContext = service.state.context
 		service.send({ type: ContainerAction.RESUME })
 
-		this.containerServices.filter(
-			s => s.state.context.parentId === service.machine.id
-		).forEach(s => {
-			s.send({ type: ContainerAction.RESUME })
-		})
+		this.containerServices
+			.filter(s => s.state.context.parentId === service.machine.id)
+			.forEach(s => {
+				s.send({ type: ContainerAction.RESUME })
+			})
 
 		const nextContext: ContainerContext = {
 			...currentContext,
@@ -617,7 +628,6 @@ export class RemoteAppService {
 		this.removeCacheContainer(id)
 	}
 
-
 	/**
 	 * @Description: Persist a container in cache
 	 * @param container: {ContainerContext}
@@ -665,7 +675,7 @@ export class RemoteAppService {
 
 		// this.logger.debug(JSON.stringify(containers, null, 2))
 		this.containerServices = containers.map(container => {
-			const service = interpret(createContainerMachine(container)).start() 
+			const service = interpret(createContainerMachine(container)).start()
 			this.handleTransitionFor(service)
 
 			return service
@@ -677,5 +687,3 @@ export class RemoteAppService {
 		// )
 	}
 }
-
-
