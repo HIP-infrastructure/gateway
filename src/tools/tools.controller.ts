@@ -10,6 +10,7 @@ import {
 	ValidationPipe,
 } from '@nestjs/common'
 import { Request } from 'express'
+import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
@@ -46,9 +47,26 @@ export class ToolsController {
 
 	// @Delete('/bids/database')
 	// removeOneDatabase() { }
+	@UsePipes(ValidationPipe)
+	@Get('/bids/subject')
+	getSubject(
+		@Query('path') path: string,
+		@Query('owner') owner: string,
+		@Query('sub') sub: string,
+		@Req() req: Request
+	) {
+		const { requesttoken, cookie } = req.headers
+		const bidsGetSubjectDto: BidsGetSubjectDto = {
+			owner,
+			path,
+			sub
+		}
 
-	// @Get('/bids/subject')
-	// findOneSubject() { }
+		return this.toolsService.getSubject(bidsGetSubjectDto, {
+			requesttoken,
+			cookie,
+		})
+	}
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/subject')

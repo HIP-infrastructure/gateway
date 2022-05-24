@@ -6,6 +6,7 @@ import {
 	Logger,
 } from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
+import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
@@ -18,8 +19,6 @@ type DataError = {
 	data?: Record<string, string>
 	error?: Record<string, string>
 }
-
-const BIDS_SCRIPTS = process.env.BIDS_SCRIPTS
 
 const DATASET_DESCRIPTION = 'dataset_description.json'
 const PARTICIPANTS_FILE = 'participants.tsv'
@@ -141,10 +140,10 @@ export class ToolsService {
 				[]
 			)
 
-			return { data: bidsDatabases }
+			return bidsDatabases
 		} catch (e) {
 			console.log(e)
-			return { error: e }
+			throw new HttpException(e.message, e.status)
 		}
 	}
 
@@ -176,7 +175,7 @@ export class ToolsService {
 			'-v',
 			`${dbMount}:/output`,
 			'-v',
-			`${BIDS_SCRIPTS}:/scripts`,
+			`${process.env.BIDS_SCRIPTS}:/scripts`,
 			'bids-converter',
 			this.dataUser,
 			this.dataUserId,
@@ -195,12 +194,59 @@ export class ToolsService {
 		throw new InternalServerErrorException()
 	}
 
-	getSubject() {}
+	async getSubject(bidsGetSubjectDto: BidsGetSubjectDto, headers) {
+		const { owner, path } = bidsGetSubjectDto
+		const uniquId = Date.now() + Math.random()
+		const tmpDir = `/tmp/${uniquId}`
+
+		try {
+			fs.mkdirSync(tmpDir, true)
+			fs.writeFileSync(
+				`${tmpDir}/sub_get.json`,
+				JSON.stringify(bidsGetSubjectDto)
+			)
+		} catch (err) {
+			console.error(err)
+			throw new HttpException(err.message, err.status)
+		}
+
+		const dbMount = await this.filePath(headers, path, owner)
+		console.log(dbMount)
+		const created = await this.spawnable('docker', [
+			'run',
+			'-v',
+			`${tmpDir}:/input`,
+			'-v',
+			`${dbMount}:/output`,
+			'-v',
+			`${process.env.BIDS_SCRIPTS}:/scripts`,
+			'bids-converter',
+			this.dataUser,
+			this.dataUserId,
+			'--command=sub.get',
+			'--input_data=/input/sub_get.json',
+			'--output_file=/input/sub_info.json',
+		])
+
+		if (created === 0) {
+			try {
+				const sub = fs.readFileSync(`${tmpDir}/sub_info.json`, 'utf-8')
+				return JSON.parse(sub)
+			} catch (err) {
+				console.error(err)
+				throw new HttpException(err.message, err.status)
+			}
+		}
+
+		throw new InternalServerErrorException()
+	}
 
 	public async importSubject(createSubject: CreateSubjectDto, headers) {
 		const { owner, path } = createSubject
 		const uniquId = Date.now() + Math.random()
 		const tmpDir = `/tmp/${uniquId}`
+
+		// this.getSubject()
 
 		try {
 			fs.mkdirSync(tmpDir, true)
@@ -223,7 +269,7 @@ export class ToolsService {
 			'-v',
 			`${dbMount}:/output`,
 			'-v',
-			`${BIDS_SCRIPTS}:/scripts`,
+			`${process.env.BIDS_SCRIPTS}:/scripts`,
 			'bids-converter',
 			this.dataUser,
 			this.dataUserId,
@@ -272,7 +318,7 @@ export class ToolsService {
 			'-v',
 			`${dbMount}:/output`,
 			'-v',
-			`${BIDS_SCRIPTS}:/scripts`,
+			`${process.env.BIDS_SCRIPTS}:/scripts`,
 			'bids-converter',
 			this.dataUser,
 			this.dataUserId,
