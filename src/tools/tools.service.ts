@@ -4,6 +4,8 @@ import {
 	Injectable,
 	InternalServerErrorException,
 	Logger,
+	HttpStatus,
+	BadRequestException,
 } from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
@@ -130,9 +132,10 @@ export class ToolsService {
 								path: participantSearchFiltered[i].searchResult.attributes.path
 									.replace(PARTICIPANTS_FILE, '')
 									.substring(1),
-								resourceUrl: participantSearchFiltered[
-									i
-								].searchResult.resourceUrl.split('&')[0],
+								resourceUrl:
+									participantSearchFiltered[i].searchResult.resourceUrl.split(
+										'&'
+									)[0],
 								participants: participantSearchFiltered[i].participants,
 						  }
 						: {},
@@ -166,14 +169,13 @@ export class ToolsService {
 			throw new HttpException(err.message, err.status)
 		}
 
-		const dbMount = await this.filePath(headers, path, owner)
-		console.log(dbMount)
-		const created = await this.spawnable('docker', [
+		const dbPath = await this.filePath(headers, path, owner)
+		const { code, message } = await this.spawnable('docker', [
 			'run',
 			'-v',
 			`${tmpDir}:/input`,
 			'-v',
-			`${dbMount}:/output`,
+			`${dbPath}:/output`,
 			'-v',
 			`${process.env.BIDS_SCRIPTS}:/scripts`,
 			'bids-converter',
@@ -183,8 +185,8 @@ export class ToolsService {
 			'--input_data=/input/db_create.json',
 		])
 
-		if (created === 0) {
-			const scan = await this.scanFiles(owner)
+		if (code === 0) {
+			const { code: scan } = await this.scanFiles(owner)
 
 			if (scan === 0) {
 				return createBidsDatabaseDto
@@ -210,14 +212,14 @@ export class ToolsService {
 			throw new HttpException(err.message, err.status)
 		}
 
-		const dbMount = await this.filePath(headers, path, owner)
-		console.log(dbMount)
-		const created = await this.spawnable('docker', [
+		const dbPath = await this.filePath(headers, path, owner)
+		// console.log(dbPath)
+		const { code, message } = await this.spawnable('docker', [
 			'run',
 			'-v',
 			`${tmpDir}:/input`,
 			'-v',
-			`${dbMount}:/output`,
+			`${dbPath}:/output`,
 			'-v',
 			`${process.env.BIDS_SCRIPTS}:/scripts`,
 			'bids-converter',
@@ -228,7 +230,7 @@ export class ToolsService {
 			'--output_file=/input/sub_info.json',
 		])
 
-		if (created === 0) {
+		if (code === 0) {
 			try {
 				const sub = fs.readFileSync(`${tmpDir}/sub_info.json`, 'utf-8')
 				return JSON.parse(sub)
@@ -326,7 +328,7 @@ export class ToolsService {
 			throw new HttpException(err.message, err.status)
 		}
 
-		const dbMount = await this.filePath(headers, path, owner)
+		const dbPath = await this.filePath(headers, path, owner)
 		const dockerCmd = [
 			'run',
 			'-v',
@@ -334,7 +336,7 @@ export class ToolsService {
 			'-v',
 			`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
 			'-v',
-			`${dbMount}:/output`,
+			`${dbPath}:/output`,
 			'-v',
 			`${process.env.BIDS_SCRIPTS}:/scripts`,
 			'bids-converter',
@@ -344,9 +346,9 @@ export class ToolsService {
 			'--input_data=/import-data/sub_edit_clinical.json',
 		]
 
-		const created = await this.spawnable('docker', dockerCmd)
+		const { code, message } = await this.spawnable('docker', dockerCmd)
 
-		if (created === 0) {
+		if (code === 0) {
 			return editSubjectClinicalDto
 		}
 
@@ -381,43 +383,47 @@ export class ToolsService {
 		// )
 	}
 
-	private async scanFiles(owner: string): Promise<0 | 1> {
-		const scanned = await this.spawnable('docker', [
+	private async scanFiles(
+		owner: string
+	): Promise<{ code: number; message?: string }> {
+		return this.spawnable('docker', [
 			'exec',
 			'--user',
 			`${this.dataUserId}:${this.dataUserId}`,
-			'nextcloud-docker_app_1',
+			'nextcloud-docker_app_1', // FIXME
 			'php',
 			'occ',
 			'files:scan',
 			owner,
 		])
-
-		return Promise.resolve(scanned)
 	}
 
-	private spawnable = (command, args): Promise<0 | 1> => {
+	private spawnable = (
+		command,
+		args
+	): Promise<{ code: number; message?: string }> => {
 		const child = spawn(command, args)
+		let message = ''
 
 		return new Promise((resolve, reject) => {
+			child.stdout.setEncoding('utf8')
 			child.stdout.on('data', data => {
-				console.log(`child stdout:\n${data}`)
+				message += data.toString()
 			})
 
+			child.stderr.setEncoding('utf8')
 			child.stderr.on('data', data => {
-				console.log(`child stderr:\n${data}`)
-				// return reject(data)
+				message += data.toString()
 			})
 
-			child.on('error', error => {
-				console.log(`child stderr:\n${error}`)
-				// return reject(error)
+			child.on('error', data => {
+				message += data.toString()
 			})
 
 			child.on('close', code => {
 				// console.log('closed with code', code)
-				if (code === 0) resolve(code)
-				else reject(code)
+				if (code === 0) resolve({ code, message })
+				else reject({ code, message })
 			})
 		})
 	}
@@ -500,13 +506,11 @@ export class ToolsService {
 			const groups = await this.groups(headers)
 			const rootPath = path.split('/')[0]
 			const id = groups.find(g => g.mount_point === rootPath)?.id
-			const dbMount = id
+			return id
 				? `${
 						process.env.PRIVATE_FILESYSTEM
 				  }/__groupfolders/${id}/${path.replace(`${rootPath}/`, '')}`
 				: `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}`
-
-			return dbMount
 		} catch (error) {
 			console.log(error)
 			throw new HttpException("Couldn't find a path for the file", error.status)
