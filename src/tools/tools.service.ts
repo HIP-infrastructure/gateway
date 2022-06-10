@@ -243,7 +243,7 @@ export class ToolsService {
 
 	public async importSubject(createSubject: CreateSubjectDto, headers) {
 		const { owner, path } = createSubject
-		const uniquId = Date.now() + Math.random()
+		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
 		// this.getSubject()
@@ -259,15 +259,15 @@ export class ToolsService {
 			throw new HttpException(err.message, err.status)
 		}
 
-		const dbMount = await this.filePath(headers, path, owner)
-		const created = await this.spawnable('docker', [
+		const dbPath = await this.filePath(headers, path, owner)
+		const dockerParams = [
 			'run',
 			'-v',
 			`${tmpDir}:/import-data`,
 			'-v',
 			`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
 			'-v',
-			`${dbMount}:/output`,
+			`${dbPath}:/output`,
 			'-v',
 			`${process.env.BIDS_SCRIPTS}:/scripts`,
 			'bids-converter',
@@ -275,17 +275,35 @@ export class ToolsService {
 			this.dataUserId,
 			'--command=sub.import',
 			'--input_data=/import-data/sub_import.json',
-		])
+		]
+		const { code, message } = await this.spawnable('docker', dockerParams)
 
-		if (created === 0) {
-			const scan = await this.scanFiles(owner)
+		const errorMatching =
+			/does not match/.test(message) ||
+			/does not exist/.test(message) ||
+			/not imported/.test(message)
+		if (errorMatching) throw new BadRequestException(message)
 
-			if (scan === 0) {
-				return createSubject
-			}
+		if (code === 0) {
+			await this.scanFiles(owner)
+
+			return createSubject
+		} else {
+			throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 		}
+	}
 
-		throw new InternalServerErrorException()
+	private async bidsValidate(dbPath: string) {
+		// docker run -ti --rm -v /path/to/data:/data:ro bids/validator /data
+		const dockerParams = [
+			'run',
+			'-v',
+			`${dbPath}:/output`,
+			'bids/validator',
+			'/data',
+		]
+		// console.log(dockerParams.join(' '))
+		return await this.spawnable('docker', dockerParams)
 	}
 
 	public async subEditClinical(
