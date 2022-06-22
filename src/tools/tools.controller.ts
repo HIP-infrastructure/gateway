@@ -8,6 +8,7 @@ import {
 	Request as Req,
 	UsePipes,
 	ValidationPipe,
+	UnauthorizedException
 } from '@nestjs/common'
 import { Request } from 'express'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
@@ -38,6 +39,10 @@ export class ToolsController {
 		@Req() req: Request
 	) {
 		const { requesttoken, cookie } = req.headers
+
+		if (! (requesttoken && cookie)) {
+			throw new UnauthorizedException
+		}
 
 		return this.toolsService.createBidsDatabase(createBidsDatabaseDto, {
 			requesttoken,

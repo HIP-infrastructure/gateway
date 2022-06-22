@@ -1,11 +1,11 @@
 import { HttpService } from '@nestjs/axios'
 import {
+	BadRequestException,
 	HttpException,
+	HttpStatus,
 	Injectable,
 	InternalServerErrorException,
 	Logger,
-	HttpStatus,
-	BadRequestException,
 } from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
@@ -155,7 +155,7 @@ export class ToolsService {
 		headers
 	) {
 		const { owner, path } = createBidsDatabaseDto
-		const uniquId = Date.now() + Math.random()
+		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
 		try {
@@ -164,41 +164,42 @@ export class ToolsService {
 				`${tmpDir}/db_create.json`,
 				JSON.stringify(createBidsDatabaseDto)
 			)
-		} catch (err) {
-			console.error(err)
-			throw new HttpException(err.message, err.status)
-		}
 
-		const dbPath = await this.filePath(headers, path, owner)
-		const { code, message } = await this.spawnable('docker', [
-			'run',
-			'-v',
-			`${tmpDir}:/input`,
-			'-v',
-			`${dbPath}:/output`,
-			'-v',
-			`${process.env.BIDS_SCRIPTS}:/scripts`,
-			'bids-converter',
-			this.dataUser,
-			this.dataUserId,
-			'--command=db.create',
-			'--input_data=/input/db_create.json',
-		])
+			const dbPath = await this.filePath(headers, path, owner)
+			const { code, message } = await this.spawnable('docker', [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${dbPath}:/output`,
+				'-v',
+				`${process.env.BIDS_SCRIPTS}:/scripts`,
+				'bids-converter',
+				this.dataUser,
+				this.dataUserId,
+				'--command=db.create',
+				'--input_data=/input/db_create.json',
+			])
 
-		if (code === 0) {
-			const { code: scan } = await this.scanFiles(owner)
+			if (code === 0) {
+				await this.scanFiles(owner)
 
-			if (scan === 0) {
 				return createBidsDatabaseDto
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
+		} catch (error) {
+			console.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
 		}
-
-		throw new InternalServerErrorException()
 	}
 
 	async getSubject(bidsGetSubjectDto: BidsGetSubjectDto, headers) {
 		const { owner, path } = bidsGetSubjectDto
-		const uniquId = Date.now() + Math.random()
+		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
 		try {
@@ -314,7 +315,7 @@ export class ToolsService {
 	) {
 		// throw new HttpException('err.message', 501)
 		let { owner, path } = editSubjectClinicalDto
-		const uniquId = Date.now() + Math.random()
+		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
 		try {
@@ -513,7 +514,9 @@ export class ToolsService {
 				: `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}`
 		} catch (error) {
 			console.log(error)
-			throw new HttpException("Couldn't find a path for the file", error.status)
+			throw new InternalServerErrorException(
+				"Couldn't find a path for the file"
+			)
 		}
 	}
 
@@ -524,6 +527,8 @@ export class ToolsService {
 	 */
 	private groups(headersIn: any): Promise<any> {
 		try {
+			process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+
 			const response = this.httpService.get(
 				`${process.env.PRIVATE_WEBDAV_URL}/apps/groupfolders/folders?format=json`,
 				{
@@ -536,11 +541,12 @@ export class ToolsService {
 
 			return firstValueFrom(response).then(r => {
 				if (r.data && r.data.ocs) return Object.values(r.data.ocs.data)
+
 				return []
 			})
 		} catch (e) {
-			console.log(e)
-			return Promise.resolve([])
+			console.error(e)
+			throw new InternalServerErrorException(e.message)
 		}
 	}
 }
