@@ -1,40 +1,24 @@
 import {
 	Body,
 	Controller,
-	Get,
-	Put,
-	Logger,
+	Get, HttpStatus, Logger,
 	Param,
-	Post,
-	Request as Req,
-	Response as Res,
-	HttpStatus,
-	ForbiddenException,
+	Post, Put, Request as Req,
+	Response as Res
 } from '@nestjs/common'
-import { RemoteAppService } from './remote-app.service'
 import { Request, Response } from 'express'
+import { RemoteAppService } from './remote-app.service'
 
 @Controller('remote-app')
 export class RemoteAppController {
-	constructor(
-		private readonly remoteAppService: RemoteAppService,
-		) { }
+	constructor(private readonly remoteAppService: RemoteAppService) {}
 
 	private readonly logger = new Logger('RemoteAppController')
 
 	@Get('/containers/:userId')
-	getContainers(
-		@Param('userId') userId: string,
-		@Req() req: Request,
-	) {
-		if (userId !== req.cookies.nc_username) {
-			throw new ForbiddenException(`User ${userId} is not allowed to perform that operation`)
-		}
-
+	getContainers(@Param('userId') userId: string, @Req() req: Request) {
 		// Admin endpoint to see every containers
-		if (req.cookies.nc_username === process.env.HIP_ADMIN) {
-			return this.remoteAppService.getAllContainers()
-		}
+		// 	return this.remoteAppService.getAllContainers()
 
 		return this.remoteAppService.getContainers(userId)
 	}
@@ -47,12 +31,10 @@ export class RemoteAppController {
 		@Res() res: Response
 	) {
 		this.logger.log('/startSessionWithUserId', sessionId)
-
-		if (userId !== req.cookies.nc_username) {
-			return res.status(HttpStatus.FORBIDDEN).send()
-		}
-
-		const json = await this.remoteAppService.startSessionWithUserId(sessionId, userId)
+		const json = await this.remoteAppService.startSessionWithUserId(
+			sessionId,
+			userId
+		)
 
 		return res.status(HttpStatus.CREATED).json(json)
 	}
@@ -66,12 +48,6 @@ export class RemoteAppController {
 		@Res() res: Response
 	) {
 		this.logger.log('/startNewSessionAndAppWithWebdav', appName)
-
-		// Basic check against nc cookie
-		if (userId !== req.cookies.nc_username) {
-			return res.status(HttpStatus.FORBIDDEN).send()
-		}
-
 		const json = await this.remoteAppService.startNewSessionAndAppWithWebdav(
 			userId,
 			appName,
@@ -92,12 +68,6 @@ export class RemoteAppController {
 		@Res() res: Response
 	) {
 		this.logger.log('/startAppWithWebdav', sessionId)
-
-		// Basic check against nc cookie
-		if (userId !== req.cookies.nc_username) {
-			return res.status(HttpStatus.FORBIDDEN).send()
-		}
-
 		const json = await this.remoteAppService.startAppWithWebdav(
 			sessionId,
 			appId,
@@ -117,16 +87,7 @@ export class RemoteAppController {
 		@Res() res: Response
 	) {
 		this.logger.log('/stopApp', appId)
-
-		// Basic check against nc cookie
-		if (userId !== req.cookies.nc_username) {
-			return res.status(HttpStatus.FORBIDDEN).send()
-		}
-
-		const json = await this.remoteAppService.stopAppInSession(
-			sessionId,
-			appId
-		)
+		const json = await this.remoteAppService.stopAppInSession(sessionId, appId)
 
 		return res.status(HttpStatus.CREATED).json(json)
 	}
@@ -138,10 +99,6 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		if (userId !== req.cookies.nc_username) {
-			return res.status(HttpStatus.FORBIDDEN).send()
-		}
-
 		const json = this.remoteAppService.removeAppsAndSession(sessionId)
 
 		return res.status(HttpStatus.OK).json(json)
@@ -154,10 +111,6 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		if (userId !== req.cookies.nc_username) {
-			return res.status(HttpStatus.FORBIDDEN).send()
-		}
-
 		const json = this.remoteAppService.pauseAppsAndSession(sessionId)
 
 		return res.status(HttpStatus.OK).json(json)
@@ -170,10 +123,6 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		if (userId !== req.cookies.nc_username) {
-			return res.status(HttpStatus.FORBIDDEN).send()
-		}
-
 		const json = this.remoteAppService.resumeAppsAndSession(sessionId)
 
 		return res.status(HttpStatus.OK).json(json)
