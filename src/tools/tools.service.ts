@@ -22,6 +22,7 @@ type DataError = {
 	error?: Record<string, string>
 }
 
+const NC_SEARCH_PATH = '/ocs/v2.php/search/providers/files/search'
 const DATASET_DESCRIPTION = 'dataset_description.json'
 const PARTICIPANTS_FILE = 'participants.tsv'
 interface ISearch {
@@ -82,18 +83,12 @@ export class ToolsService {
 		if (uid) this.dataUserId = uid
 	}
 
-	public async getBIDSDatabases(owner: string, headersIn: any) {
+	public async getBIDSDatabases(cookie: any) {
 		try {
-			const headers = {
-				...headersIn,
-				accept: 'application/json, text/plain, */*',
-			}
-			const s = await this.search(headersIn, PARTICIPANTS_FILE)
-
+			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchResults = s?.entries
-			// console.log(searchResults)
-			const participantPromises = searchResults.map(s =>
-				this.participantsWithPath(headers, s.attributes.path)
+			const participantPromises = searchResults.map(r =>
+				this.participantsWithPath(r.attributes.path, cookie)
 			)
 			const results = await Promise.allSettled(participantPromises)
 			const participantSearchFiltered = results
@@ -112,8 +107,8 @@ export class ToolsService {
 					`${ps.searchResult.attributes.path.replace(
 						PARTICIPANTS_FILE,
 						''
-					)}/dataset_description.json`,
-					headers
+					)}/${DATASET_DESCRIPTION}`,
+					cookie
 				)
 			)
 			const bidsDatabasesResults = await Promise.allSettled(
@@ -124,8 +119,7 @@ export class ToolsService {
 					...arr,
 					item.status === 'fulfilled'
 						? {
-								...((item as PromiseFulfilledResult<DataError>).value.data ||
-									(item as PromiseFulfilledResult<DataError>).value.error),
+								...(item.value.data || item.value.error),
 								id: participantSearchFiltered[
 									i
 								].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
@@ -152,7 +146,7 @@ export class ToolsService {
 
 	public async createBidsDatabase(
 		createBidsDatabaseDto: CreateBidsDatabaseDto,
-		headers
+		cookie: any
 	) {
 		const { owner, path } = createBidsDatabaseDto
 		const uniquId = Math.round(Date.now() + Math.random())
@@ -165,7 +159,7 @@ export class ToolsService {
 				JSON.stringify(createBidsDatabaseDto)
 			)
 
-			const dbPath = await this.filePath(headers, path, owner)
+			const dbPath = await this.filePath(path, owner, cookie)
 			const { code, message } = await this.spawnable('docker', [
 				'run',
 				'-v',
@@ -197,7 +191,7 @@ export class ToolsService {
 		}
 	}
 
-	async getSubject(bidsGetSubjectDto: BidsGetSubjectDto, headers) {
+	async getSubject(bidsGetSubjectDto: BidsGetSubjectDto, cookie) {
 		const { owner, path } = bidsGetSubjectDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -213,7 +207,7 @@ export class ToolsService {
 			throw new HttpException(err.message, err.status)
 		}
 
-		const dbPath = await this.filePath(headers, path, owner)
+		const dbPath = await this.filePath(path, owner, cookie)
 		// console.log(dbPath)
 		const { code, message } = await this.spawnable('docker', [
 			'run',
@@ -244,7 +238,7 @@ export class ToolsService {
 		throw new InternalServerErrorException()
 	}
 
-	public async importSubject(createSubject: CreateSubjectDto, headers) {
+	public async importSubject(createSubject: CreateSubjectDto, cookie) {
 		const { owner, path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -257,42 +251,44 @@ export class ToolsService {
 				`${tmpDir}/sub_import.json`,
 				JSON.stringify(createSubject)
 			)
+
+			const dbPath = await this.filePath(path, owner, cookie)
+			const dockerParams = [
+				'run',
+				'-v',
+				`${tmpDir}:/import-data`,
+				'-v',
+				`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
+				'-v',
+				`${dbPath}:/output`,
+				'-v',
+				`${process.env.BIDS_SCRIPTS}:/scripts`,
+				'bids-converter',
+				this.dataUser,
+				this.dataUserId,
+				'--command=sub.import',
+				'--input_data=/import-data/sub_import.json',
+			]
+			console.log({ dbPath, dockerParams: dockerParams.join(' ') })
+			const { code, message } = await this.spawnable('docker', dockerParams)
+
+			const errorMatching =
+				/does not match/.test(message) ||
+				/does not exist/.test(message) ||
+				/not imported/.test(message)
+
+			if (errorMatching) throw new BadRequestException(message)
+
+			if (code === 0) {
+				await this.scanFiles(owner)
+
+				return createSubject
+			}
+
+			throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 		} catch (err) {
 			console.error(err)
 			throw new HttpException(err.message, err.status)
-		}
-
-		const dbPath = await this.filePath(headers, path, owner)
-		const dockerParams = [
-			'run',
-			'-v',
-			`${tmpDir}:/import-data`,
-			'-v',
-			`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
-			'-v',
-			`${dbPath}:/output`,
-			'-v',
-			`${process.env.BIDS_SCRIPTS}:/scripts`,
-			'bids-converter',
-			this.dataUser,
-			this.dataUserId,
-			'--command=sub.import',
-			'--input_data=/import-data/sub_import.json',
-		]
-		const { code, message } = await this.spawnable('docker', dockerParams)
-
-		const errorMatching =
-			/does not match/.test(message) ||
-			/does not exist/.test(message) ||
-			/not imported/.test(message)
-		if (errorMatching) throw new BadRequestException(message)
-
-		if (code === 0) {
-			await this.scanFiles(owner)
-
-			return createSubject
-		} else {
-			throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 		}
 	}
 
@@ -306,14 +302,13 @@ export class ToolsService {
 			'/data',
 		]
 		// console.log(dockerParams.join(' '))
-		return await this.spawnable('docker', dockerParams)
+		return this.spawnable('docker', dockerParams)
 	}
 
 	public async subEditClinical(
 		editSubjectClinicalDto: EditSubjectClinicalDto,
-		headers
+		cookie
 	) {
-		// throw new HttpException('err.message', 501)
 		let { owner, path } = editSubjectClinicalDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -324,64 +319,58 @@ export class ToolsService {
 				`${tmpDir}/sub_edit_clinical.json`,
 				JSON.stringify(editSubjectClinicalDto)
 			)
+
+			const dbPath = await this.filePath(path, owner, cookie)
+			const dockerCmd = [
+				'run',
+				'-v',
+				`${tmpDir}:/import-data`,
+				'-v',
+				`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
+				'-v',
+				`${dbPath}:/output`,
+				'-v',
+				`${process.env.BIDS_SCRIPTS}:/scripts`,
+				'bids-converter',
+				this.dataUser,
+				this.dataUserId,
+				'--command=sub.edit.clinical',
+				'--input_data=/import-data/sub_edit_clinical.json',
+			]
+
+			const { code, message } = await this.spawnable('docker', dockerCmd)
+
+			if (code === 0) {
+				return editSubjectClinicalDto
+			}
+
+			throw new InternalServerErrorException(message)
 		} catch (err) {
 			console.error(err)
 			throw new HttpException(err.message, err.status)
 		}
-
-		const dbPath = await this.filePath(headers, path, owner)
-		const dockerCmd = [
-			'run',
-			'-v',
-			`${tmpDir}:/import-data`,
-			'-v',
-			`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
-			'-v',
-			`${dbPath}:/output`,
-			'-v',
-			`${process.env.BIDS_SCRIPTS}:/scripts`,
-			'bids-converter',
-			this.dataUser,
-			this.dataUserId,
-			'--command=sub.edit.clinical',
-			'--input_data=/import-data/sub_edit_clinical.json',
-		]
-
-		const { code, message } = await this.spawnable('docker', dockerCmd)
-
-		if (code === 0) {
-			return editSubjectClinicalDto
-		}
-
-		throw new InternalServerErrorException()
 	}
 
 	public deleteSubject() {}
 
-	public async participants(headersIn: any, path: string, owner?: string) {
-		const nextPath = `${path}/${PARTICIPANTS_FILE}`
+	public async participants(path: string, cookie: any) {
+		const nextPath = `${path}${PARTICIPANTS_FILE}`
 
-		return this.participantsWithPath(headersIn, nextPath)
+		return this.participantsWithPath(nextPath, cookie)
 	}
 
-	public async search(headersIn: any, term: string): Promise<ISearch> {
-		const headers = {
-			...headersIn,
-			accept: 'application/json, text/plain, */*',
+	public async search(cookie: any, term: string): Promise<ISearch> {
+		try {
+			const response = this.httpService.get(
+				`${process.env.PRIVATE_WEBDAV_URL}${NC_SEARCH_PATH}?term=${term}&cursor=0&limit=100`,
+				{ headers: { cookie } }
+			)
+
+			return firstValueFrom(response).then(r => r.data.ocs.data)
+		} catch (error) {
+			console.error(error)
+			throw new InternalServerErrorException()
 		}
-
-		const response = this.httpService.get(
-			`${process.env.PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
-			{ headers }
-		)
-
-		return firstValueFrom(response).then(r => r.data.ocs.data)
-		// return response.pipe(
-		// 	map(response => response.data.ocs.data),
-		// 	catchError(e => {
-		// 		throw new HttpException(e.response.data, e.response.status)
-		// 	})
-		// )
 	}
 
 	private async scanFiles(
@@ -406,7 +395,7 @@ export class ToolsService {
 		const child = spawn(command, args)
 		let message = ''
 
-		return new Promise((resolve, reject) => {
+		return new Promise(resolve => {
 			child.stdout.setEncoding('utf8')
 			child.stdout.on('data', data => {
 				message += data.toString()
@@ -422,21 +411,15 @@ export class ToolsService {
 			})
 
 			child.on('close', code => {
-				// console.log('closed with code', code)
-				if (code === 0) resolve({ code, message })
-				else reject({ code, message })
+				resolve({ code, message })
 			})
 		})
 	}
 
-	private async participantsWithPath(
-		headersIn: any,
-		path: string,
-		owner?: string
-	) {
+	private async participantsWithPath(path: string, cookie: any) {
 		try {
-			const tsv = await this.getFileContent(path, headersIn)
-			const [headers, ...rows] = tsv
+			const tsv = await this.getFileContent(path, cookie)
+			const [tsvheaders, ...rows] = tsv
 				.trim()
 				.split('\n')
 				.map(r => r.split('\t'))
@@ -445,7 +428,8 @@ export class ToolsService {
 				(arr, row) => [
 					...arr,
 					row.reduce(
-						(obj, item, i) => Object.assign(obj, { [headers[i].trim()]: item }),
+						(obj, item, i) =>
+							Object.assign(obj, { [tsvheaders[i].trim()]: item }),
 						{}
 					),
 				],
@@ -461,17 +445,16 @@ export class ToolsService {
 
 	private async getDatasetContent(
 		path: string,
-		headersIn: any
+		cookie: any
 	): Promise<DataError> {
-		const response = this.httpService.get(
-			`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
-			{ headers: headersIn }
-		)
-
-		const data = await firstValueFrom(response).then(r => r.data)
-		const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
-
 		try {
+			const response = this.httpService.get(
+				`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
+				{ headers: { cookie } }
+			)
+
+			const data = await firstValueFrom(response).then(r => r.data)
+			const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
 			return { data: JSON.parse(cleaned) }
 		} catch (e) {
 			console.log(e)
@@ -482,16 +465,14 @@ export class ToolsService {
 	/**
 	 * It takes a path and a set of headers, and returns the contents of the file at that path
 	 * @param {string} path - the path to the file you want to get
-	 * @param {any} headersIn - This is the headers that you need to pass to the webdav server.
+	 * @param {any} headers - This is the headers that you need to pass to the webdav server.
 	 * @returns The file content
 	 */
-	private getFileContent(path: string, headersIn: any): Promise<string> {
+	private getFileContent(path: string, cookie: any): Promise<string> {
 		try {
 			const response = this.httpService.get(
 				`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
-				{
-					headers: headersIn,
-				}
+				{ headers: { cookie } }
 			)
 
 			return firstValueFrom(response).then(r => r.data)
@@ -502,9 +483,9 @@ export class ToolsService {
 	}
 
 	/* A private method that is used to get the file path, either user based or for a group */
-	private async filePath(headers: any, path: string, owner: string) {
+	private async filePath(path: string, owner: string, cookie: any) {
 		try {
-			const groups = await this.groups(headers)
+			const groups = await this.groups(cookie)
 			const rootPath = path.split('/')[0]
 			const id = groups.find(g => g.mount_point === rootPath)?.id
 			return id
@@ -525,7 +506,7 @@ export class ToolsService {
 	 * @param {any} headersIn - The headers that are passed in from the controller.
 	 * @returns An array of groups
 	 */
-	private groups(headersIn: any): Promise<any> {
+	private groups(cookie: any): Promise<any> {
 		try {
 			process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -534,7 +515,7 @@ export class ToolsService {
 				{
 					headers: {
 						'OCS-APIRequest': true,
-						...headersIn,
+						cookie,
 					},
 				}
 			)

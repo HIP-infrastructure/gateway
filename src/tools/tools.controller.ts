@@ -8,7 +8,6 @@ import {
 	Request as Req,
 	UsePipes,
 	ValidationPipe,
-	UnauthorizedException
 } from '@nestjs/common'
 import { Request } from 'express'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
@@ -28,8 +27,9 @@ export class ToolsController {
 	// }
 
 	@Get('/bids/databases')
-	async getBids(@Query('owner') owner: string, @Req() req: Request) {
-		return this.toolsService.getBIDSDatabases(owner, req.headers)
+	async getBids(@Req() req: Request) {
+		const { cookie } = req.headers
+		return this.toolsService.getBIDSDatabases(cookie)
 	}
 
 	@UsePipes(ValidationPipe)
@@ -38,20 +38,13 @@ export class ToolsController {
 		@Body() createBidsDatabaseDto: CreateBidsDatabaseDto,
 		@Req() req: Request
 	) {
-		const { requesttoken, cookie } = req.headers
-
-		if (! (requesttoken && cookie)) {
-			throw new UnauthorizedException
-		}
-
-		return this.toolsService.createBidsDatabase(createBidsDatabaseDto, {
-			requesttoken,
-			cookie,
-		})
+		const { cookie } = req.headers
+		return this.toolsService.createBidsDatabase(createBidsDatabaseDto, cookie)
 	}
 
 	// @Delete('/bids/database')
 	// removeOneDatabase() { }
+
 	@UsePipes(ValidationPipe)
 	@Get('/bids/subject')
 	getSubject(
@@ -60,17 +53,14 @@ export class ToolsController {
 		@Query('sub') sub: string,
 		@Req() req: Request
 	) {
-		const { requesttoken, cookie } = req.headers
+		const { cookie } = req.headers
 		const bidsGetSubjectDto: BidsGetSubjectDto = {
 			owner,
 			path,
-			sub
+			sub,
 		}
 
-		return this.toolsService.getSubject(bidsGetSubjectDto, {
-			requesttoken,
-			cookie,
-		})
+		return this.toolsService.getSubject(bidsGetSubjectDto, cookie)
 	}
 
 	@UsePipes(ValidationPipe)
@@ -79,12 +69,9 @@ export class ToolsController {
 		@Body() createSubjectDto: CreateSubjectDto,
 		@Req() req: Request
 	) {
-		const { requesttoken, cookie } = req.headers
+		const { cookie } = req.headers
 
-		return this.toolsService.importSubject(createSubjectDto, {
-			requesttoken,
-			cookie,
-		})
+		return this.toolsService.importSubject(createSubjectDto, cookie)
 	}
 
 	@UsePipes(ValidationPipe)
@@ -93,11 +80,8 @@ export class ToolsController {
 		@Body() editSubjectClinicalDto: EditSubjectClinicalDto,
 		@Req() req: Request
 	) {
-		const { requesttoken, cookie } = req.headers
-		return this.toolsService.subEditClinical(editSubjectClinicalDto, {
-			requesttoken,
-			cookie,
-		})
+		const { cookie } = req.headers
+		return this.toolsService.subEditClinical(editSubjectClinicalDto, cookie)
 	}
 
 	// @Delete('/bids/subject')
@@ -110,6 +94,7 @@ export class ToolsController {
 		@Query('owner') owner: string,
 		@Req() req: Request
 	) {
-		return this.toolsService.participants(req.headers, path, owner)
+		const { cookie } = req.headers
+		return this.toolsService.participants(path, cookie)
 	}
 }
