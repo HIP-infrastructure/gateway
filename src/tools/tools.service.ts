@@ -202,40 +202,38 @@ export class ToolsService {
 				`${tmpDir}/sub_get.json`,
 				JSON.stringify(bidsGetSubjectDto)
 			)
-		} catch (err) {
-			console.error(err)
-			throw new HttpException(err.message, err.status)
-		}
 
-		const dbPath = await this.filePath(path, owner, cookie)
-		// console.log(dbPath)
-		const { code, message } = await this.spawnable('docker', [
-			'run',
-			'-v',
-			`${tmpDir}:/input`,
-			'-v',
-			`${dbPath}:/output`,
-			'-v',
-			`${process.env.BIDS_SCRIPTS}:/scripts`,
-			'bids-converter',
-			this.dataUser,
-			this.dataUserId,
-			'--command=sub.get',
-			'--input_data=/input/sub_get.json',
-			'--output_file=/input/sub_info.json',
-		])
+			const dbPath = await this.filePath(path, owner, cookie)
+			// console.log(dbPath)
+			const { code, message } = await this.spawnable('docker', [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${dbPath}:/output`,
+				'-v',
+				`${process.env.BIDS_SCRIPTS}:/scripts`,
+				'bids-converter',
+				this.dataUser,
+				this.dataUserId,
+				'--command=sub.get',
+				'--input_data=/input/sub_get.json',
+				'--output_file=/input/sub_info.json',
+			])
 
-		if (code === 0) {
-			try {
+			if (code === 0) {
 				const sub = fs.readFileSync(`${tmpDir}/sub_info.json`, 'utf-8')
 				return JSON.parse(sub)
-			} catch (err) {
-				console.error(err)
-				throw new HttpException(err.message, err.status)
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
+		} catch (error) {
+			console.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
 		}
-
-		throw new InternalServerErrorException()
 	}
 
 	public async importSubject(createSubject: CreateSubjectDto, cookie) {
