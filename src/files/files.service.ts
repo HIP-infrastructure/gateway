@@ -30,7 +30,7 @@ export interface Participant {
 export interface BIDSDatabase {
 	Name?: string
 	BIDSVersion?: string
-	Licence?: string
+	License?: string
 	Authors?: string[]
 	Acknowledgements?: string
 	HowToAcknowledge?: string

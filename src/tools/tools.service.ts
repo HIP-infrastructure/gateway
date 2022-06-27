@@ -61,7 +61,7 @@ export interface Participant {
 export interface BIDSDatabase {
 	Name?: string
 	BIDSVersion?: string
-	Licence?: string
+	License?: string
 	Authors?: string[]
 	Acknowledgements?: string
 	HowToAcknowledge?: string
@@ -240,8 +240,6 @@ export class ToolsService {
 		const { owner, path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
-
-		// this.getSubject()
 
 		try {
 			fs.mkdirSync(tmpDir, true)
