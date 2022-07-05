@@ -1,18 +1,15 @@
 .DEFAULT_GOAL := help
 
-include ../.env
-export
-
-#dep: @ Install all depencies defined in package.json
+#dep: @ Install all dependencies defined in package.json
 dep:
 	npm install
 
-#dep.init: @ Install all depencies for Ubuntu
+#dep.init: @ Install all dependencies for Ubuntu
 dep.init:
 	curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
 	sudo apt-get install -y nodejs
-	sudo npm i -g @nestjs/cli
-	sudo npm install pm2@latest -g
+	sudo npm i --location=global @nestjs/cli
+	sudo npm i --location=global pm2@latest
 	# pm2 startup systemd
 	# pm2 save
 
@@ -25,7 +22,7 @@ b.clean:
 
 #b.bundle: @ Builds the application as a JavaScript bundle
 b.bundle:
-	npm run build -- --NODE_ENV=production
+	npm run build
 
 #release: @ Release on GitHub, tag the application with package version 
 release: build r.package
@@ -36,6 +33,7 @@ r.package:
 	tar -czvf release.tar.gz -C dist .
 
 deploy: build
+	# TODO: prevent the build if no .env
 	cp ../.env .env
 	sudo pm2 start dist/main.js --name hip-gateway --watch
 
@@ -44,6 +42,7 @@ deploy.stop:
 
 #deploy.dev: @ Deploys the application to the development environment
 deploy.dev: dep
+	# TODO: prevent the build if no .env
 	cp ../.env .env
 	# sudo -u www-data -E npm run start:dev	
 	sudo npm run start:dev	
