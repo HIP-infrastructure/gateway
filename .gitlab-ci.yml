@@ -1,48 +1,12 @@
-# Source https://github.com/HIP-infrastructure/app-in-browser/blob/dev/.gitlab-ci.yml
-# Source: https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Docker.gitlab-ci.yml
+default:
+  image: node:17
+  before_script:
+    - npm i -g @nestjs/cli
 
-image: docker:20
-variables:
-  # using "docker" as the host is only possible if you alias the service below
-  DOCKER_HOST: tcp://docker:2375
-  # could be wrong here but although Docker defaults to overlay2,
-  # Docker-in-Docker (DIND) does not according to the following GitLab doc:
-  # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#use-the-overlayfs-driver
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ''
-services:
-  - name: docker:20-dind
-    alias: docker
-    # in our experience although you'd assume this would be sufficient, this did
-    # nothing to prevent connection errors without `DOCKER_TLS_CERTDIR` being set
-    # to an empty string, and I would call that beyond mildly infuriating.
-    command: ['--tls=false', '--mtu=1450']
-before_script:
-  - apk add --no-cache bash
-  - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
 stages:
   - build
 
-docker-build:
-  script:
-    - |
-      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
-        PACKAGE_VERSION=$(cat package.json | grep version | head -1 | awk '{ print $2 }' | sed 's/[",]//g')
-        tag="${PACKAGE_VERSION}"
-        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = $tag"
-      else
-        tag="$CI_COMMIT_REF_SLUG"
-        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
-      fi
-    - docker build --pull -t "$CI_REGISTRY_IMAGE:${tag}" .
-    - docker push "$CI_REGISTRY_IMAGE:${tag}"
-    - |
-      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
-        docker tag "$CI_REGISTRY_IMAGE:${tag}" "$CI_REGISTRY_IMAGE:latest"
-        docker push "$CI_REGISTRY_IMAGE:latest"
-      fi
+build:
   stage: build
-  rules:
-    - if: $CI_COMMIT_BRANCH
-      exists:
-        - Dockerfile
+  script:
+    - make build
