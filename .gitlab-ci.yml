@@ -5,8 +5,14 @@ default:
 
 stages:
   - build
+  - release
 
 build:
   stage: build
   script:
     - make build
+
+release:
+  stage: release
+  script:
+    - make release

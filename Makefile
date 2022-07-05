@@ -17,21 +17,26 @@ dep.init:
 	# pm2 save
 
 #build: @ Builds the project
-build: b.clean dep
-	cp ../.env .env
-	nest build -- --NODE_ENV=production
-	sudo chown -R $(DATA_USER) dist
-
+build: dep b.clean b.bundle
 
 #b.clean: @ Removes all build artifacts
 b.clean:
-	sudo rm -rf dist 
+	sudo rm -rf dist release.tar.gz
+
+#b.bundle: @ Builds the application as a JavaScript bundle
+b.bundle:
+	npm run build -- --NODE_ENV=production
 
 #release: @ Release on GitHub, tag the application with package version 
-# release: build
-#	./release.sh
+release: build r.package
+	./release.sh
 
-deploy:
+#r.package: @ Packages the application as a tarball
+r.package:
+	tar -czvf release.tar.gz -C dist .
+
+deploy: build
+	cp ../.env .env
 	sudo pm2 start dist/main.js --name hip-gateway --watch
 
 deploy.stop:
@@ -40,7 +45,8 @@ deploy.stop:
 #deploy.dev: @ Deploys the application to the development environment
 deploy.dev: dep
 	cp ../.env .env
-	sudo -u www-data -E npm run start:dev	
+	# sudo -u www-data -E npm run start:dev	
+	sudo npm run start:dev	
 
 #help:	@ List available tasks on this project
 help:
