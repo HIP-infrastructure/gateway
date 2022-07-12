@@ -1,3 +1,5 @@
+import { firstValueFrom } from 'rxjs'
+
 import { HttpService } from '@nestjs/axios'
 import {
 	BadRequestException,
@@ -7,7 +9,7 @@ import {
 	InternalServerErrorException,
 	Logger,
 } from '@nestjs/common'
-import { firstValueFrom } from 'rxjs'
+
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
@@ -69,6 +71,8 @@ export interface BIDSDatabase {
 	ReferencesAndLinks?: string[]
 	DatasetDOI?: string
 }
+
+const debugCmd = ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`]
 
 @Injectable()
 export class ToolsService {
@@ -160,20 +164,22 @@ export class ToolsService {
 			)
 
 			const dbPath = await this.filePath(path, owner, cookie)
-			const { code, message } = await this.spawnable('docker', [
-				'run',
-				'-v',
-				`${tmpDir}:/input`,
-				'-v',
-				`${dbPath}:/output`,
-				'-v',
-				`${process.env.BIDS_SCRIPTS}:/scripts`,
-				'bids-converter',
+
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
+			const cmd2 = [
+				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
 				'--command=db.create',
 				'--input_data=/input/db_create.json',
-			])
+			]
+
+			const command =
+				process.env.NODE_ENV === 'development'
+					? [...cmd1, ...debugCmd, ...cmd2]
+					: [...cmd1, ...cmd2]
+
+			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
 				await this.scanFiles(owner)
@@ -204,22 +210,23 @@ export class ToolsService {
 			)
 
 			const dbPath = await this.filePath(path, owner, cookie)
-			// console.log(dbPath)
-			const { code, message } = await this.spawnable('docker', [
-				'run',
-				'-v',
-				`${tmpDir}:/input`,
-				'-v',
-				`${dbPath}:/output`,
-				'-v',
-				`${process.env.BIDS_SCRIPTS}:/scripts`,
-				'bids-converter',
+
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
+			const cmd2 = [
+				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.get',
 				'--input_data=/input/sub_get.json',
 				'--output_file=/input/sub_info.json',
-			])
+			]
+
+			const command =
+				process.env.NODE_ENV === 'development'
+					? [...cmd1, ...debugCmd, ...cmd2]
+					: [...cmd1, ...cmd2]
+
+			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
 				const sub = fs.readFileSync(`${tmpDir}/sub_info.json`, 'utf-8')
@@ -249,7 +256,8 @@ export class ToolsService {
 			)
 
 			const dbPath = await this.filePath(path, owner, cookie)
-			const dockerParams = [
+
+			const cmd1 = [
 				'run',
 				'-v',
 				`${tmpDir}:/import-data`,
@@ -257,16 +265,22 @@ export class ToolsService {
 				`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
 				'-v',
 				`${dbPath}:/output`,
-				'-v',
-				`${process.env.BIDS_SCRIPTS}:/scripts`,
-				'bids-converter',
+			]
+			const cmd2 = [
+				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.import',
 				'--input_data=/import-data/sub_import.json',
 			]
-			console.log({ dbPath, dockerParams: dockerParams.join(' ') })
-			const { code, message } = await this.spawnable('docker', dockerParams)
+
+			const command =
+				process.env.NODE_ENV === 'development'
+					? [...cmd1, ...debugCmd, ...cmd2]
+					: [...cmd1, ...cmd2]
+			console.log({ dbPath, command: command.join(' ') })
+
+			const { code, message } = await this.spawnable('docker', command)
 
 			const errorMatching =
 				/does not match/.test(message) ||
@@ -317,7 +331,8 @@ export class ToolsService {
 			)
 
 			const dbPath = await this.filePath(path, owner, cookie)
-			const dockerCmd = [
+
+			const cmd1 = [
 				'run',
 				'-v',
 				`${tmpDir}:/import-data`,
@@ -325,16 +340,21 @@ export class ToolsService {
 				`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
 				'-v',
 				`${dbPath}:/output`,
-				'-v',
-				`${process.env.BIDS_SCRIPTS}:/scripts`,
-				'bids-converter',
+			]
+			const cmd2 = [
+				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.edit.clinical',
 				'--input_data=/import-data/sub_edit_clinical.json',
 			]
 
-			const { code, message } = await this.spawnable('docker', dockerCmd)
+			const command =
+				process.env.NODE_ENV === 'development'
+					? [...cmd1, ...debugCmd, ...cmd2]
+					: [...cmd1, ...cmd2]
+
+			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
 				return editSubjectClinicalDto
