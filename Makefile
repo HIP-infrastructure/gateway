@@ -6,7 +6,7 @@ dep:
 
 #dep.init: @ Install all dependencies for Ubuntu
 dep.init:
-	curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+	curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 	sudo apt-get install -y nodejs
 	sudo npm i --location=global @nestjs/cli
 	sudo npm i --location=global pm2@latest
