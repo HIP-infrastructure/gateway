@@ -44,8 +44,11 @@ deploy.stop:
 deploy.dev: dep
 	# TODO: prevent the build if no .env
 	cp ../.env .env
-	# sudo -u www-data -E npm run start:dev	
-	sudo npm run start:dev	
+	sudo chown -R www-data: dist
+	sudo -u www-data -E npm run start:dev	
+
+deploy.dev.stop:
+	# TODO: 
 
 #help:	@ List available tasks on this project
 help:
