@@ -72,7 +72,7 @@ export interface BIDSDatabase {
 	DatasetDOI?: string
 }
 
-const debugCmd = ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`]
+const editScriptCmd = ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`]
 
 @Injectable()
 export class ToolsService {
@@ -176,7 +176,7 @@ export class ToolsService {
 
 			const command =
 				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...debugCmd, ...cmd2]
+					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
 
 			const { code, message } = await this.spawnable('docker', command)
@@ -223,7 +223,7 @@ export class ToolsService {
 
 			const command =
 				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...debugCmd, ...cmd2]
+					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
 
 			const { code, message } = await this.spawnable('docker', command)
@@ -276,7 +276,7 @@ export class ToolsService {
 
 			const command =
 				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...debugCmd, ...cmd2]
+					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
 			console.log({ dbPath, command: command.join(' ') })
 
@@ -351,7 +351,7 @@ export class ToolsService {
 
 			const command =
 				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...debugCmd, ...cmd2]
+					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
 
 			const { code, message } = await this.spawnable('docker', command)
