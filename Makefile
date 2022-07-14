@@ -10,8 +10,8 @@ dep.init:
 	sudo apt-get install -y nodejs
 	sudo npm i --location=global @nestjs/cli
 	sudo npm i --location=global pm2@latest
-	# pm2 startup systemd
-	# pm2 save
+	pm2 startup systemd
+	pm2 save
 
 #build: @ Builds the project
 build: dep b.clean b.bundle
