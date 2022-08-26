@@ -361,6 +361,7 @@ export class RemoteAppService {
 			parentId: serverId,
 			hippass: password,
 			nc: process.env.PRIVATE_WEBDAV_URL,
+			ab: process.env.PRIVATE_FS_AUTH_BACKEND_URL
 		}
 		const machine = createContainerMachine(context)
 		appService = interpret(machine).start()

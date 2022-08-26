@@ -31,7 +31,7 @@ export const invokeRemoteContainer = (
 				aid: id,
 				hipuser: user,
 				action,
-				...(startApp && { nc: context.nc }),
+				...(startApp && { nc: context.nc, ab: context.ab }),
 				...(startApp && { hippass: context.hippass }),
 				app: context.app,
 			}

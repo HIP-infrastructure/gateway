@@ -35,7 +35,8 @@ export interface ContainerContext {
 export interface WebdavOptions {
 	hippass: string
 	nc: string
-	app: string
+	app: string,
+	ab: string
 }
 
 export enum ContainerState {
