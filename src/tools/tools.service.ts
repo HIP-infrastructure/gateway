@@ -378,7 +378,7 @@ export class ToolsService {
 	public async search(cookie: any, term: string): Promise<ISearch> {
 		try {
 			const response = this.httpService.get(
-				`${process.env.PRIVATE_WEBDAV_URL}${NC_SEARCH_PATH}?term=${term}&cursor=0&limit=100`,
+				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${NC_SEARCH_PATH}?term=${term}&cursor=0&limit=100`,
 				{ headers: { cookie } }
 			)
 
@@ -465,7 +465,7 @@ export class ToolsService {
 	): Promise<DataError> {
 		try {
 			const response = this.httpService.get(
-				`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
+				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/hip/document/file?path=${path}`,
 				{ headers: { cookie } }
 			)
 
@@ -487,7 +487,7 @@ export class ToolsService {
 	private getFileContent(path: string, cookie: any): Promise<string> {
 		try {
 			const response = this.httpService.get(
-				`${process.env.PRIVATE_WEBDAV_URL}/apps/hip/document/file?path=${path}`,
+				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/hip/document/file?path=${path}`,
 				{ headers: { cookie } }
 			)
 
@@ -527,7 +527,7 @@ export class ToolsService {
 			process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 			const response = this.httpService.get(
-				`${process.env.PRIVATE_WEBDAV_URL}/apps/groupfolders/folders?format=json`,
+				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/groupfolders/folders?format=json`,
 				{
 					headers: {
 						'OCS-APIRequest': true,

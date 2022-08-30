@@ -360,7 +360,7 @@ export class RemoteAppService {
 			app: appName,
 			parentId: serverId,
 			hippass: password,
-			nc: process.env.PRIVATE_WEBDAV_URL,
+			nc: process.env.PRIVATE_FS_URL,
 			ab: process.env.PRIVATE_FS_AUTH_BACKEND_URL
 		}
 		const machine = createContainerMachine(context)

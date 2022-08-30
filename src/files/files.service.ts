@@ -54,7 +54,7 @@ export class FilesService {
 			"accept": "application/json, text/plain, */*"
 		}
 
-		const response = this.httpService.get(`${process.env.PRIVATE_WEBDAV_URL}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
+		const response = this.httpService.get(`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/ocs/v2.php/search/providers/files/search?term=${term}&cursor=0&limit=100`,
 			{ headers }
 		)
 
