@@ -143,8 +143,7 @@ export class ToolsService {
 
 			return bidsDatabases
 		} catch (e) {
-			console.log(e)
-			throw new HttpException(e.message, e.status)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
 		}
 	}
 
