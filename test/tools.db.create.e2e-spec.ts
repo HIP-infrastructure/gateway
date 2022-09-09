@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import * as request from 'supertest'
 import { ToolsModule } from '../src/tools/tools.module'
-import { CreateBidsDatabaseDto } from 'src/tools/dto/create-bids-database.dto'
+import { CreateBidsDatasetDto } from 'src/tools/dto/create-bids-dataset.dto'
 
 const path = require('path')
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
@@ -22,7 +22,7 @@ describe('ToolsController: db.create (e2e)', () => {
   })
 
   it('/ (GET)', () => {
-    const createBidsDatabaseDto: CreateBidsDatabaseDto = {
+    const CreateBidsDatasetDto: CreateBidsDatasetDto = {
       "owner": `${process.env.USER}`,
       "database": "mybidsdb",
       "path": "",
@@ -41,7 +41,7 @@ describe('ToolsController: db.create (e2e)', () => {
 
     return request(app.getHttpServer())
       .post('/tools/bids/database')
-      .send(createBidsDatabaseDto)
+      .send(CreateBidsDatasetDto)
       .expect(201)
   })
 })

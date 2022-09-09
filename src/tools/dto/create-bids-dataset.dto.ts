@@ -1,4 +1,4 @@
-export class CreateBidsDatabaseDto {
+export class CreateBidsDatasetDto {
     readonly owner: string
     readonly database: string
     readonly path: string

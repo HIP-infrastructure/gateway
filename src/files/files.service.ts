@@ -27,7 +27,7 @@ export interface Participant {
 	sex?: string
 	[key: string]: string | number
 }
-export interface BIDSDatabase {
+export interface BIDSDataset {
 	Name?: string
 	BIDSVersion?: string
 	License?: string

@@ -1,4 +1,4 @@
-export class BidsDatabaseDefinitionDto {
+export class BidsDatasetDefinitionDto {
     "BIDS_definitions": {
         "Anat": {
             "keylist": string[],
@@ -36,7 +36,7 @@ export class BidsDatabaseDefinitionDto {
 
 
 
-export class BidsDatabaseSchemaDto {
+export class BidsDatasetSchemaDto {
     "BIDS_definitions": {
         "Anat": {
             "keylist": [

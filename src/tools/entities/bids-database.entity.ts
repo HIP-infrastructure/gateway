@@ -1,4 +1,4 @@
-export class BidsDatabase {
+export class BidsDataset {
     id: string
     owner: string
     database: string

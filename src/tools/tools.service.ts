@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common'
 
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
-import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
+import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 
@@ -60,7 +60,7 @@ export interface Participant {
 	sex?: string
 	[key: string]: string | number
 }
-export interface BIDSDatabase {
+export interface BIDSDataset {
 	Name?: string
 	BIDSVersion?: string
 	License?: string
@@ -87,7 +87,7 @@ export class ToolsService {
 		if (uid) this.dataUserId = uid
 	}
 
-	public async getBIDSDatabases(cookie: any) {
+	public async getBIDSDatasets(cookie: any) {
 		try {
 			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchResults = s?.entries
@@ -106,7 +106,7 @@ export class ToolsService {
 					searchResult: searchResults[item.i],
 				}))
 
-			const bidsDatabasesPromises = participantSearchFiltered.map(ps =>
+			const bidsDatasetsPromises = participantSearchFiltered.map(ps =>
 				this.getDatasetContent(
 					`${ps.searchResult.attributes.path.replace(
 						PARTICIPANTS_FILE,
@@ -115,10 +115,10 @@ export class ToolsService {
 					cookie
 				)
 			)
-			const bidsDatabasesResults = await Promise.allSettled(
-				bidsDatabasesPromises
+			const bidsDatasetsResults = await Promise.allSettled(
+				bidsDatasetsPromises
 			)
-			const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults.reduce(
+			const bidsDatasets: BIDSDataset[] = bidsDatasetsResults.reduce(
 				(arr, item, i) => [
 					...arr,
 					item.status === 'fulfilled'
@@ -141,18 +141,18 @@ export class ToolsService {
 				[]
 			)
 
-			return bidsDatabases
+			return bidsDatasets
 		} catch (e) {
 			console.log(e)
-			throw new HttpException(e.message, e.status)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
 		}
 	}
 
-	public async createBidsDatabase(
-		createBidsDatabaseDto: CreateBidsDatabaseDto,
+	public async createBidsDataset(
+		CreateBidsDatasetDto: CreateBidsDatasetDto,
 		cookie: any
 	) {
-		const { owner, path } = createBidsDatabaseDto
+		const { owner, path } = CreateBidsDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
@@ -160,7 +160,7 @@ export class ToolsService {
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
 				`${tmpDir}/db_create.json`,
-				JSON.stringify(createBidsDatabaseDto)
+				JSON.stringify(CreateBidsDatasetDto)
 			)
 
 			const dbPath = await this.filePath(path, owner, cookie)
@@ -184,7 +184,7 @@ export class ToolsService {
 			if (code === 0) {
 				await this.scanFiles(owner)
 
-				return createBidsDatabaseDto
+				return CreateBidsDatasetDto
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
