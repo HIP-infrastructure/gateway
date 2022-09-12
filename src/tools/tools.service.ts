@@ -209,6 +209,23 @@ export class ToolsService {
 				JSON.stringify(bidsGetSubjectDto)
 			)
 
+			// Create an empty output JSON file with correct ownership
+			const output_file = `${tmpDir}/sub_info.json`
+			let empty_content = {}
+            fs.writeFileSync(
+				output_file,
+				JSON.stringify(empty_content)
+			)
+            console.log("Empty sub_info.json is created.");
+
+            fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+                if (err) {
+                    throw err;
+                }
+
+                console.log("sub_info.json ownership changed.");
+            });
+
 			const dbPath = await this.filePath(path, owner, cookie)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
@@ -225,6 +242,7 @@ export class ToolsService {
 				process.env.NODE_ENV === 'development'
 					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
+			console.log({ dbPath, command: command.join(' ') })
 
 			const { code, message } = await this.spawnable('docker', command)
 
