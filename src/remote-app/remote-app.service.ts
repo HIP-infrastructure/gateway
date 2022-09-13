@@ -22,6 +22,7 @@ import {
 	ContainerType,
 	WebdavOptions,
 } from './remote-app.types'
+import { FilesService } from '../files/files.service'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -33,7 +34,10 @@ export class RemoteAppService {
 	private readonly logger = new Logger('RemoteAppService')
 	private containerServices: any[] = []
 
-	constructor(private readonly cacheService: CacheService) {
+	constructor(
+		private readonly cacheService: CacheService,
+		private readonly filesService: FilesService
+	) {
 		// this.cacheService.flushall()
 		this.restoreCachedContainers()
 	}
@@ -243,7 +247,7 @@ export class RemoteAppService {
 		return {
 			data:
 				this.containerServices
-					.filter(service => service.state.context.user === uid)
+					// .filter(service => service.state.context.user === uid)
 					.map(service => {
 						const { id, name, user, url, error, type, app, parentId } = service
 							.state.context as Partial<ContainerContext & WebdavOptions>
@@ -318,15 +322,16 @@ export class RemoteAppService {
 	 * @param serverId {String} The id of the server
 	 * @param appId {String} The id of the app
 	 * @param appName {String} The name of the app to be started
-	 * @param password {String} The webdav password for the user
 	 * @return Promise<APIContainersResponse>
 	 */
 
-	async startAppWithWebdav(
+	async startApp(
 		serverId: string,
 		appId: string,
 		appName: string,
-		password: string
+		userId: string,
+		cookie: string,
+		requesttoken
 	): Promise<APIContainerResponse> {
 		// check existing server
 		const serverService = this.containerServices.find(
@@ -339,15 +344,20 @@ export class RemoteAppService {
 			}
 		}
 
-		// check for existing
-		// TODO: should test if appName exists in server as for now it's not
-		// possible to have the same app twice
+		// check existing app
 		let appService: any = this.containerServices.find(
 			s => s.machine.id === appId
 		)
 		if (appService) {
 			return appService.state.context
 		}
+
+		// get groupfolders mount point
+		const groupFolders = await this.filesService.groupFolders(
+			{ cookie, requesttoken },
+			userId
+		)
+		console.log(groupFolders)
 
 		const context: ContainerContext & WebdavOptions = {
 			id: appId,
@@ -359,9 +369,10 @@ export class RemoteAppService {
 			type: ContainerType.APP,
 			app: appName,
 			parentId: serverId,
-			hippass: password,
 			nc: process.env.PRIVATE_FS_URL,
-			ab: process.env.PRIVATE_FS_AUTH_BACKEND_URL
+			ab: process.env.PRIVATE_FS_AUTH_BACKEND_URL,
+			groupFolders,
+			cookie,
 		}
 		const machine = createContainerMachine(context)
 		appService = interpret(machine).start()
@@ -421,26 +432,25 @@ export class RemoteAppService {
 		}
 	}
 
-	/**
-	 * @Description: Start a new app container for a user with Webdav folder mounted
-	 * @param uid {String} The id of the user
-	 * @param appName {String} The name of the app to be started
-	 * @param password {String} The webdav password for the user
-	 * @return Promise<APIContainersResponse>
-	 */
-	async startNewSessionAndAppWithWebdav(
-		uid: string,
-		appName: string,
-		password: string
-	): Promise<APIContainerResponse> {
-		const id = `session-${Date.now().toString().slice(-3)}`
+	// /**
+	//  * @Description: Start a new app container for a user with Webdav folder mounted
+	//  * @param uid {String} The id of the user
+	//  * @param appName {String} The name of the app to be started
+	//  * @return Promise<APIContainersResponse>
+	//  */
+	// async startNewSessionAndAppWithWebdav(
+	// 	uid: string,
+	// 	appName: string,
+	// 	cookie: string
+	// ): Promise<APIContainerResponse> {
+	// 	const id = `session-${Date.now().toString().slice(-3)}`
 
-		const session = await this.startSessionWithUserId(id, uid)
-		const appId = `app-${Date.now().toString().slice(-3)}`
-		await this.startAppWithWebdav(session.data.id, appId, appName, password)
+	// 	const session = await this.startSessionWithUserId(id, uid)
+	// 	const appId = `app-${Date.now().toString().slice(-3)}`
+	// 	await this.startApp(session.data.id, appId, appName, cookie)
 
-		return { data: session.data, error: session.error }
-	}
+	// 	return { data: session.data, error: session.error }
+	// }
 
 	/**
 	 * @Description: Destroy server containers and apps sequentially
@@ -640,7 +650,6 @@ export class RemoteAppService {
 	}: {
 		context: Partial<ContainerContext & WebdavOptions>
 	}): Promise<any> => {
-		delete context.hippass
 		this.cacheService.set(`container:${context.id}`, context)
 		this.cacheService.sadd(`containers`, context.id)
 	}

@@ -31,8 +31,11 @@ export const invokeRemoteContainer = (
 				aid: id,
 				hipuser: user,
 				action,
-				...(startApp && { nc: context.nc, ab: context.ab }),
-				...(startApp && { hippass: context.hippass }),
+				...(startApp && { 
+					nc: context.nc, 
+					ab: context.ab,
+					groupFolders: JSON.stringify(context.groupFolders)
+				}),
 				app: context.app,
 			}
 			: {
@@ -44,7 +47,7 @@ export const invokeRemoteContainer = (
 	const url = `${process.env.REMOTE_APP_API}/control/${type}?${toParams(params)}`
 
 	// if (id === debugId) {
-	// logger.debug(url, `invokeRemoteContainer-${id}`)
+	logger.debug(url, `invokeRemoteContainer-${id}`)
 	// }
 
 
