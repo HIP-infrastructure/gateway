@@ -20,7 +20,8 @@ export class FilesController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		const result = await this.fileService.search(req.headers, term)
+		const { cookie, requesttoken } = req.headers
+		const result = await this.fileService.search({ cookie, requesttoken }, term)
 
 		return res.status(HttpStatus.OK).json(result)
 	}
