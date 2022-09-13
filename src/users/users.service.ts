@@ -28,7 +28,13 @@ export class UsersService {
 				email,
 				displayname,
 				groups,
-			}: UserDto) => ({ id, lastLogin, email, displayname, groups }))(data)
+			}: UserDto) => ({ 
+				id, 
+				lastLogin, 
+				email, 
+				displayname, 
+				groups: groups.map(group => group.toLowerCase())
+			}))(data)
 
 			return nextData
 		})

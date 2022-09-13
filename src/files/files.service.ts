@@ -80,7 +80,6 @@ export class FilesService {
 		}
 
 		const user = await this.usersService.findOne(tokens, userid)
-
 		const response = this.httpService.get(
 			`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/groupfolders/folders?format=json`,
 			{ headers }
@@ -90,10 +89,10 @@ export class FilesService {
 
 		const groupArray = Object.values(folders).map(
 			({ id, acl, mount_point, groups }) => ({
-				id,
+				id: id.toLowerCase(),
 				name: mount_point,
 				acl,
-				groups: Object.keys(groups),
+				groups: Object.keys(groups).map(group => group.toLowerCase()),
 			})
 		)
 
