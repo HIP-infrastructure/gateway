@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule'
 import { ToolsModule } from './tools/tools.module'
 import { ConfigModule } from '@nestjs/config'
 import { RedisModule } from '@liaoliaots/nestjs-redis'
+import { UsersModule } from './users/users.module';
 
 @Module({
 	imports: [
@@ -21,6 +22,7 @@ import { RedisModule } from '@liaoliaots/nestjs-redis'
 		}),
 		ToolsModule,
 		ConfigModule.forRoot(),
+		UsersModule
 	],
 	controllers: [AppController],
 	providers: [],
