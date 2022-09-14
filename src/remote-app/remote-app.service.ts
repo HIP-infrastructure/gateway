@@ -56,11 +56,6 @@ export class RemoteAppService {
 					type: ContainerAction.STATUS,
 				})
 
-				// if (currentContext.id === debugId) {
-				// 	this.logger.debug(JSON.stringify(remoteContext, null, 2), debugId)
-				// 	this.logger.debug(JSON.stringify(currentContext, null, 2), debugId)
-				// }
-
 				if (remoteContext.error) {
 					// this.logger.debug(JSON.stringify(remoteContext.error, null, 2))
 					service.send({
@@ -156,7 +151,6 @@ export class RemoteAppService {
 
 	async availableApps(): Promise<any> {
 		const url = `${process.env.REMOTE_APP_API}/control/app/list`
-		console.log(url)
 		const response = httpService.get(url, {
 			headers: {
 				Authorization: process.env.REMOTE_APP_BASIC_AUTH,
@@ -357,7 +351,6 @@ export class RemoteAppService {
 			{ cookie, requesttoken },
 			userId
 		)
-		console.log(groupFolders)
 
 		const context: ContainerContext & WebdavOptions = {
 			id: appId,

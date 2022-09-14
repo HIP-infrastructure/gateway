@@ -188,7 +188,7 @@ export class ToolsService {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
 		} catch (error) {
-			console.error(error)
+			this.logger.error(error)
 			throw new HttpException(
 				error.message,
 				error.status || HttpStatus.INTERNAL_SERVER_ERROR
@@ -234,7 +234,7 @@ export class ToolsService {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
 		} catch (error) {
-			console.error(error)
+			this.logger.error(error)
 			throw new HttpException(
 				error.message,
 				error.status || HttpStatus.INTERNAL_SERVER_ERROR
@@ -277,7 +277,6 @@ export class ToolsService {
 				process.env.NODE_ENV === 'development'
 					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
-			console.log({ dbPath, command: command.join(' ') })
 
 			const { code, message } = await this.spawnable('docker', command)
 
@@ -296,7 +295,7 @@ export class ToolsService {
 
 			throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 		} catch (err) {
-			console.error(err)
+			this.logger.error(err)
 			throw new HttpException(err.message, err.status)
 		}
 	}
@@ -310,7 +309,7 @@ export class ToolsService {
 			'bids/validator',
 			'/data',
 		]
-		// console.log(dockerParams.join(' '))
+
 		return this.spawnable('docker', dockerParams)
 	}
 
@@ -361,7 +360,7 @@ export class ToolsService {
 
 			throw new InternalServerErrorException(message)
 		} catch (err) {
-			console.error(err)
+			this.logger.error(err)
 			throw new HttpException(err.message, err.status)
 		}
 	}
@@ -383,7 +382,7 @@ export class ToolsService {
 
 			return firstValueFrom(response).then(r => r.data.ocs.data)
 		} catch (error) {
-			console.error(error)
+			this.logger.error(error)
 			throw new InternalServerErrorException()
 		}
 	}
@@ -453,7 +452,7 @@ export class ToolsService {
 
 			return participants
 		} catch (e) {
-			console.log(e)
+			this.logger.error(e)
 			throw new HttpException(e.message, e.status)
 		}
 	}
@@ -472,7 +471,7 @@ export class ToolsService {
 			const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
 			return { data: JSON.parse(cleaned) }
 		} catch (e) {
-			console.log(e)
+			this.logger.error(e)
 			return { error: e.message }
 		}
 	}
@@ -492,7 +491,7 @@ export class ToolsService {
 
 			return firstValueFrom(response).then(r => r.data)
 		} catch (e) {
-			console.log(e)
+			this.logger.error(e)
 			throw new HttpException(e.message, e.status)
 		}
 	}
@@ -509,7 +508,7 @@ export class ToolsService {
 				  }/__groupfolders/${id}/${path.replace(`${rootPath}/`, '')}`
 				: `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}`
 		} catch (error) {
-			console.log(error)
+			this.logger.error(error)
 			throw new InternalServerErrorException(
 				"Couldn't find a path for the file"
 			)
@@ -521,6 +520,9 @@ export class ToolsService {
 	 * @param {any} headersIn - The headers that are passed in from the controller.
 	 * @returns An array of groups
 	 */
+
+
+	// FIXME, get from user
 	private groups(cookie: any): Promise<any> {
 		try {
 			process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
@@ -541,7 +543,7 @@ export class ToolsService {
 				return []
 			})
 		} catch (e) {
-			console.error(e)
+			this.logger.error(e)
 			throw new InternalServerErrorException(e.message)
 		}
 	}
