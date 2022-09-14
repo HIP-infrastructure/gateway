@@ -89,8 +89,8 @@ export class FilesService {
 
 		const groupArray = Object.values(folders).map(
 			({ id, acl, mount_point, groups }) => ({
-				id: id.toLowerCase(),
-				name: mount_point,
+				id,
+				label: mount_point,
 				acl,
 				groups: Object.keys(groups).map(group => group.toLowerCase()),
 			})
@@ -99,6 +99,6 @@ export class FilesService {
 		return groupArray
 			.filter(g => !g.acl)
 			.filter(g => g.groups.some(group => user.groups.includes(group)))
-			.map(({ id, name }) => ({ id, name, path: `__groupfolders/${id}` }))
+			.map(({ id, label }) => ({ id, label, path: `__groupfolders/${id}` }))
 	}
 }
