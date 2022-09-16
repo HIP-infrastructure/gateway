@@ -316,11 +316,13 @@ export class ToolsService {
 
 				return createSubject
 			}
+			else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
 
-			throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 		} catch (err) {
 			this.logger.error(err)
-			throw new HttpException(err.message, err.status)
+			throw new HttpException(err.message, err.status || HttpStatus.INTERNAL_SERVER_ERROR)
 		}
 	}
 
