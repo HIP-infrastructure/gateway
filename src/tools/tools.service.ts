@@ -207,8 +207,8 @@ export class ToolsService {
 				`${tmpDir}/sub_get.json`,
 				JSON.stringify(bidsGetSubjectDto)
 			)
-
-            // Create an empty output JSON file with correct ownership
+			
+			// Create an empty output JSON file with correct ownership
 			const output_file = `${tmpDir}/sub_info.json`
 			let empty_content = {}
 			fs.writeFileSync(
