@@ -209,23 +209,20 @@ export class ToolsService {
 				JSON.stringify(bidsGetSubjectDto)
 			)
 
-			// Create an empty output JSON file with correct ownership
+            // Create an empty output JSON file with correct ownership
 			const output_file = `${tmpDir}/sub_info.json`
 			let empty_content = {}
-            fs.writeFileSync(
+			fs.writeFileSync(
 				output_file,
 				JSON.stringify(empty_content)
 			)
-            console.log("Empty sub_info.json is created.");
-
-            fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
-                if (err) {
-                    throw err;
-                }
-
-                console.log("sub_info.json ownership changed.");
-            });
-
+			
+			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+				if (err) {
+					throw err;
+				}
+			});
+			
 			const dbPath = await this.filePath(path, owner, cookie)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
