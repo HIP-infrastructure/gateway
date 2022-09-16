@@ -48,8 +48,7 @@ deploy.dev: dep
 	sudo -u www-data -E npm run start:dev	
 
 deploy.dev.stop:
-	# FIXME: Not sure if this command will hurt, probably. Fixme if it happens
-	-sudo killall sh 
+	for pid in $(ps -fu www-data  | grep gateway | awk '{ print $2 }'); do sudo kill -9 $pid; done 
 
 #help:	@ List available tasks on this project
 help:
