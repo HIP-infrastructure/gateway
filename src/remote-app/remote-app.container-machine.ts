@@ -34,7 +34,7 @@ export const invokeRemoteContainer = (
 				...(startApp && { 
 					nc: context.nc, 
 					ab: context.ab,
-					groupFolders: JSON.stringify(context.groupFolders)
+					gf: JSON.stringify(context.groupFolders)
 				}),
 				app: context.app,
 			}
