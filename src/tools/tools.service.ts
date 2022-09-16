@@ -307,7 +307,7 @@ export class ToolsService {
 
 			const errorMatching =
 				/does not match/.test(message) ||
-				/does not exist/.test(message) ||
+				// /does not exist/.test(message) ||  // Appears when success with "dataset_description.json does not exist"
 				/not imported/.test(message)
 
 			if (errorMatching) throw new BadRequestException(message)
