@@ -3,10 +3,10 @@ import { AppController } from './app.controller'
 import { FilesModule } from './files/files.module'
 import { RemoteAppModule } from './remote-app/remote-app.module'
 import { ScheduleModule } from '@nestjs/schedule'
-import { WorkflowsModule } from './workflows/workflows.module'
 import { ToolsModule } from './tools/tools.module'
 import { ConfigModule } from '@nestjs/config'
 import { RedisModule } from '@liaoliaots/nestjs-redis'
+import { UsersModule } from './users/users.module';
 
 @Module({
 	imports: [
@@ -20,9 +20,9 @@ import { RedisModule } from '@liaoliaots/nestjs-redis'
 				db: 1,
 			}
 		}),
-		WorkflowsModule,
 		ToolsModule,
-		ConfigModule.forRoot()
+		ConfigModule.forRoot(),
+		UsersModule
 	],
 	controllers: [AppController],
 	providers: [],

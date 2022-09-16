@@ -48,7 +48,8 @@ deploy.dev: dep
 	sudo -u www-data -E npm run start:dev	
 
 deploy.dev.stop:
-	# TODO: 
+	# FIXME: Not sure if this command will hurt, probably. Fixme if it happens
+	-sudo killall sh 
 
 #help:	@ List available tasks on this project
 help:

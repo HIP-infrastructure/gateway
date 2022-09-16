@@ -33,10 +33,15 @@ export interface ContainerContext {
 }
 
 export interface WebdavOptions {
-	hippass: string
 	nc: string
-	app: string,
+	app: string
 	ab: string
+	cookie: string
+	groupFolders?: {
+		label: string
+		id: number
+		path: string
+	}[]
 }
 
 export enum ContainerState {

@@ -24,6 +24,7 @@
         "@liaoliaots/nestjs-redis": "^8.1.1",
         "@nestjs/axios": "^0.0.8",
         "@nestjs/config": "^2.0.1",
+        "@nestjs/mapped-types": "*",
         "@nestjs/platform-express": "^8.4.5",
         "@nestjs/schedule": "^1.1.0",
         "class-transformer": "^0.5.1",
