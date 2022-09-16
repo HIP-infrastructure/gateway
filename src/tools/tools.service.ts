@@ -246,6 +246,11 @@ export class ToolsService {
 
 			const { code, message } = await this.spawnable('docker', command)
 
+			const errorMatching =
+				/IndexError: Could not find the subject in the BIDS dataset./.test(message)
+
+			if (errorMatching) throw new BadRequestException(message)
+
 			if (code === 0) {
 				const sub = fs.readFileSync(`${tmpDir}/sub_info.json`, 'utf-8')
 				return JSON.parse(sub)
