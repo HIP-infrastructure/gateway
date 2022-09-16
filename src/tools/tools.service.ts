@@ -314,6 +314,10 @@ export class ToolsService {
 
 			if (code === 0) {
 				await this.scanFiles(owner)
+				// To debug "Failed to fetch response error" obtained
+				// while importing "ieeg"...
+				const util = require('util')
+				console.log(util.inspect(createSubject, {depth: null}));
 
 				return createSubject
 			}
