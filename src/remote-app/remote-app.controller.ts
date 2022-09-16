@@ -1,10 +1,14 @@
 import {
 	Body,
 	Controller,
-	Get, HttpStatus, Logger,
+	Get,
+	HttpStatus,
+	Logger,
 	Param,
-	Post, Put, Request as Req,
-	Response as Res
+	Post,
+	Put,
+	Request as Req,
+	Response as Res,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { RemoteAppService } from './remote-app.service'
@@ -39,43 +43,43 @@ export class RemoteAppController {
 		return res.status(HttpStatus.CREATED).json(json)
 	}
 
-	@Post('/apps/:appName/start')
-	async startNewSessionAndAppWithWebdav(
-		@Param('appName') appName: string,
-		@Body('userId') userId: string,
-		@Body('password') password: string,
-		@Req() req: Request,
-		@Res() res: Response
-	) {
-		this.logger.log('/startNewSessionAndAppWithWebdav', appName)
-		const json = await this.remoteAppService.startNewSessionAndAppWithWebdav(
-			userId,
-			appName,
-			password
-		)
+	// @Post('/apps/:appName/start')
+	// async startNewSessionAndAppWithWebdav(
+	// 	@Param('appName') appName: string,
+	// 	@Body('userId') userId: string,
+	// 	@Body('password') password: string,
+	// 	@Req() req: Request,
+	// 	@Res() res: Response
+	// ) {
+	// 	this.logger.log('/startNewSessionAndAppWithWebdav', appName)
+	// 	const json = await this.remoteAppService.startNewSessionAndAppWithWebdav(
+	// 		userId,
+	// 		appName,
+	// 		password
+	// 	)
 
-		return res.status(HttpStatus.CREATED).json(json)
-	}
+	// 	return res.status(HttpStatus.CREATED).json(json)
+	// }
 
 	@Post('/containers/:sessionId/apps/:appId/start')
-	async startAppWithWebdav(
+	async startApp(
 		@Param('sessionId') sessionId: string,
 		@Param('appId') appId: string,
 		@Body('appName') appName: string,
 		@Body('userId') userId: string,
-		@Body('password') password: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.logger.log('/startAppWithWebdav', sessionId)
-		const json = await this.remoteAppService.startAppWithWebdav(
+		this.logger.log('/startApp', sessionId)
+		const { cookie, requesttoken } = req.headers
+		return await this.remoteAppService.startApp(
 			sessionId,
 			appId,
 			appName,
-			password
+			userId,
+			cookie,
+			requesttoken
 		)
-
-		return res.status(HttpStatus.CREATED).json(json)
 	}
 
 	@Put('/containers/:sessionId/apps/:appId/stop')
