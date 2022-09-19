@@ -34,7 +34,7 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.logger.log('/startSessionWithUserId', sessionId)
+		this.logger.debug('/startSessionWithUserId', sessionId)
 		const json = await this.remoteAppService.startSessionWithUserId(
 			sessionId,
 			userId
@@ -42,24 +42,6 @@ export class RemoteAppController {
 
 		return res.status(HttpStatus.CREATED).json(json)
 	}
-
-	// @Post('/apps/:appName/start')
-	// async startNewSessionAndAppWithWebdav(
-	// 	@Param('appName') appName: string,
-	// 	@Body('userId') userId: string,
-	// 	@Body('password') password: string,
-	// 	@Req() req: Request,
-	// 	@Res() res: Response
-	// ) {
-	// 	this.logger.log('/startNewSessionAndAppWithWebdav', appName)
-	// 	const json = await this.remoteAppService.startNewSessionAndAppWithWebdav(
-	// 		userId,
-	// 		appName,
-	// 		password
-	// 	)
-
-	// 	return res.status(HttpStatus.CREATED).json(json)
-	// }
 
 	@Post('/containers/:sessionId/apps/:appId/start')
 	async startApp(
@@ -70,7 +52,7 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.logger.log('/startApp', sessionId)
+		this.logger.debug('/startApp', sessionId)
 		const { cookie, requesttoken } = req.headers
 		return await this.remoteAppService.startApp(
 			sessionId,
@@ -90,7 +72,7 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.logger.log('/stopApp', appId)
+		this.logger.debug('/stopApp', appId)
 		const json = await this.remoteAppService.stopAppInSession(sessionId, appId)
 
 		return res.status(HttpStatus.CREATED).json(json)
