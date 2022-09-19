@@ -35,7 +35,7 @@ r.package:
 deploy: build
 	# TODO: prevent the build if no .env
 	cp ../.env .env
-	sudo pm2 start dist/main.js --name hip-gateway --watch
+	sudo pm2 start dist/main.js --name hip-gateway
 
 deploy.stop:
 	sudo pm2 stop hip-gateway
@@ -45,7 +45,7 @@ deploy.dev: dep
 	# TODO: prevent the build if no .env
 	cp ../.env .env
 	sudo chown -R www-data: dist
-	sudo -u www-data -E npm run start:dev	
+	sudo -u www-data -E npm run start:dev
 
 deploy.dev.stop:
 	for pid in $(ps -fu www-data  | grep gateway | awk '{ print $2 }'); do sudo kill -9 $pid; done 
