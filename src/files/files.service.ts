@@ -50,7 +50,7 @@ type DataError = {
 	error?: Record<string, string>
 }
 
-const DATASET_DESCRIPTION = 'dataset_description.json'
+const HIP_API = '/apps/hip/api/groupfolders?format=json'
 @Injectable()
 export class FilesService {
 	constructor(
@@ -77,10 +77,16 @@ export class FilesService {
 		return firstValueFrom(response).then(r => r.data.ocs.data)
 	}
 
-	public async groupFolders(
+	/**
+	 * It makes a GET request to the Nextcloud API to get a list of foldergroups
+	 * @param {any} tokens - The headers that are passed in from the controller.
+	 * @returns An array of groups
+	 */
+
+	public async userGroupFolders(
 		tokens: { cookie: string; requesttoken: any },
 		userid
-	): Promise<any> {
+	): Promise<{ id: number; label: string; path: string, groups: string[] }[]> {
 		try {
 			const headers = {
 				...tokens,
@@ -89,7 +95,7 @@ export class FilesService {
 
 			const user = await this.usersService.findOne(tokens, userid)
 			const response = this.httpService.get(
-				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/hip/api/groupfolders?format=json`,
+				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${HIP_API}`,
 				{ headers }
 			)
 
@@ -118,7 +124,7 @@ export class FilesService {
 			return groupArray
 				.filter(g => !g.acl)
 				.filter(g => g.groups.some(group => user.groups.includes(group)))
-				.map(({ id, label }) => ({ id, label, path: `__groupfolders/${id}` }))
+				.map(({ id, label, groups }) => ({ id, label, path: `__groupfolders/${id}`, groups }))
 		} catch (error) {
 			this.logger.debug(error)
 			throw new HttpException(

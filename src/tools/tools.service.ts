@@ -14,6 +14,7 @@ import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
+import { FilesService } from 'src/files/files.service'
 
 const userid = require('userid')
 const { spawn } = require('child_process')
@@ -27,6 +28,8 @@ type DataError = {
 const NC_SEARCH_PATH = '/ocs/v2.php/search/providers/files/search'
 const DATASET_DESCRIPTION = 'dataset_description.json'
 const PARTICIPANTS_FILE = 'participants.tsv'
+const HIP_API = '/apps/hip/document/file?path='
+
 interface ISearch {
 	name: string
 	isPaginated: true
@@ -80,14 +83,17 @@ export class ToolsService {
 	private dataUser: string
 	private dataUserId
 
-	constructor(private readonly httpService: HttpService) {
+	constructor(
+		private readonly httpService: HttpService,
+		private readonly fileService: FilesService
+	) {
 		this.dataUser = process.env.DATA_USER
 		const uid = parseInt(userid.uid(this.dataUser), 10)
 
 		if (uid) this.dataUserId = uid
 	}
 
-	public async getBIDSDatabases(cookie: any) {
+	public async getBIDSDatabases({ cookie, requesttoken }: any) {
 		try {
 			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchResults = s?.entries
@@ -149,12 +155,13 @@ export class ToolsService {
 
 	public async createBidsDatabase(
 		createBidsDatabaseDto: CreateBidsDatabaseDto,
-		cookie: any
+		{ cookie, requesttoken }: any
 	) {
 		const { owner, path } = createBidsDatabaseDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
+		this.logger.debug({ createBidsDatabaseDto, tmpDir })
 		try {
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
@@ -162,7 +169,7 @@ export class ToolsService {
 				JSON.stringify(createBidsDatabaseDto)
 			)
 
-			const dbPath = await this.filePath(path, owner, cookie)
+			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
@@ -177,6 +184,7 @@ export class ToolsService {
 				process.env.NODE_ENV === 'development'
 					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
 
 			const { code, message } = await this.spawnable('docker', command)
 
@@ -196,7 +204,10 @@ export class ToolsService {
 		}
 	}
 
-	async getSubject(bidsGetSubjectDto: BidsGetSubjectDto, cookie) {
+	async getSubject(
+		bidsGetSubjectDto: BidsGetSubjectDto,
+		{ cookie, requesttoken }
+	) {
 		const { owner, path } = bidsGetSubjectDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -224,7 +235,7 @@ export class ToolsService {
 				process.env.NODE_ENV === 'development'
 					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
-
+			this.logger.debug(command.join(' '))
 			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
@@ -242,10 +253,17 @@ export class ToolsService {
 		}
 	}
 
-	public async importSubject(createSubject: CreateSubjectDto, cookie) {
+	public async importSubject(
+		createSubject: CreateSubjectDto,
+		{ cookie, requesttoken }
+	) {
 		const { owner, path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
+
+		this.logger.debug({
+			createSubject,
+		})
 
 		try {
 			fs.mkdirSync(tmpDir, true)
@@ -254,7 +272,7 @@ export class ToolsService {
 				JSON.stringify(createSubject)
 			)
 
-			const dbPath = await this.filePath(path, owner, cookie)
+			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
 
 			const cmd1 = [
 				'run',
@@ -265,6 +283,7 @@ export class ToolsService {
 				'-v',
 				`${dbPath}:/output`,
 			]
+
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
@@ -277,6 +296,7 @@ export class ToolsService {
 				process.env.NODE_ENV === 'development'
 					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
 
 			const { code, message } = await this.spawnable('docker', command)
 
@@ -315,7 +335,7 @@ export class ToolsService {
 
 	public async subEditClinical(
 		editSubjectClinicalDto: EditSubjectClinicalDto,
-		cookie
+		{ cookie, requesttoken }
 	) {
 		let { owner, path } = editSubjectClinicalDto
 		const uniquId = Math.round(Date.now() + Math.random())
@@ -328,7 +348,7 @@ export class ToolsService {
 				JSON.stringify(editSubjectClinicalDto)
 			)
 
-			const dbPath = await this.filePath(path, owner, cookie)
+			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
 
 			const cmd1 = [
 				'run',
@@ -351,7 +371,7 @@ export class ToolsService {
 				process.env.NODE_ENV === 'development'
 					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
-
+			this.logger.debug(command.join(' '))
 			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
@@ -367,7 +387,7 @@ export class ToolsService {
 
 	public deleteSubject() {}
 
-	public async participants(path: string, cookie: any) {
+	public async participants(path: string, { cookie, requesttoken }: any) {
 		const nextPath = `${path}${PARTICIPANTS_FILE}`
 
 		return this.participantsWithPath(nextPath, cookie)
@@ -485,7 +505,7 @@ export class ToolsService {
 	private getFileContent(path: string, cookie: any): Promise<string> {
 		try {
 			const response = this.httpService.get(
-				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/hip/document/file?path=${path}`,
+				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${HIP_API}${path}`,
 				{ headers: { cookie } }
 			)
 
@@ -497,16 +517,30 @@ export class ToolsService {
 	}
 
 	/* A private method that is used to get the file path, either user based or for a group */
-	private async filePath(path: string, owner: string, cookie: any) {
+	private async filePath(
+		path: string,
+		userid: string,
+		{ cookie, requesttoken }: any
+	) {
+		this.logger.debug({ path, userid, cookie, requesttoken })
 		try {
-			const groups = await this.groups(cookie)
+			const groupFolders = await this.fileService.userGroupFolders(
+				{ cookie, requesttoken },
+				userid
+			)
+			this.logger.debug({ groupFolders })
+
 			const rootPath = path.split('/')[0]
-			const id = groups.find(g => g.mount_point === rootPath)?.id
-			return id
+			const id =
+				groupFolders.find(g => g.label === rootPath)?.id
+
+			const nextPath = id
 				? `${
 						process.env.PRIVATE_FILESYSTEM
 				  }/__groupfolders/${id}/${path.replace(`${rootPath}/`, '')}`
-				: `${process.env.PRIVATE_FILESYSTEM}/${owner}/files/${path}`
+				: `${process.env.PRIVATE_FILESYSTEM}/${userid}/files/${path}`
+
+			return nextPath
 		} catch (error) {
 			this.logger.error(error)
 			throw new InternalServerErrorException(
@@ -521,30 +555,29 @@ export class ToolsService {
 	 * @returns An array of groups
 	 */
 
-
 	// FIXME, get from user
-	private groups(cookie: any): Promise<any> {
-		try {
-			process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+	// private groups(cookie: any): Promise<any> {
+	// 	try {
+	// 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-			const response = this.httpService.get(
-				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/groupfolders/folders?format=json`,
-				{
-					headers: {
-						'OCS-APIRequest': true,
-						cookie,
-					},
-				}
-			)
+	// 		const response = this.httpService.get(
+	// 			`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/${}`,
+	// 			{
+	// 				headers: {
+	// 					'OCS-APIRequest': true,
+	// 					cookie,
+	// 				},
+	// 			}
+	// 		)
 
-			return firstValueFrom(response).then(r => {
-				if (r.data && r.data.ocs) return Object.values(r.data.ocs.data)
+	// 		return firstValueFrom(response).then(r => {
+	// 			if (r.data && r.data.ocs) return Object.values(r.data.ocs.data)
 
-				return []
-			})
-		} catch (e) {
-			this.logger.error(e)
-			throw new InternalServerErrorException(e.message)
-		}
-	}
+	// 			return []
+	// 		})
+	// 	} catch (e) {
+	// 		this.logger.error(e)
+	// 		throw new InternalServerErrorException(e.message)
+	// 	}
+	// }
 }
