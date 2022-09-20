@@ -1,7 +1,7 @@
-export class BidsDatabase {
+export class BidsDataset {
     id: string
     owner: string
-    database: string
+    dataset: string
     DatasetDescJSON: {
         Name: string
         BIDSVersion: string

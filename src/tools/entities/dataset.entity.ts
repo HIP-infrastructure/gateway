@@ -1,4 +1,4 @@
-import { BIDSDatabase } from "src/files/files.service"
+import { BIDSDataset } from "src/files/files.service"
 // import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 import { Patient } from "./patient.entity"
 
@@ -14,7 +14,7 @@ export class Dataset {
     type: string
 
     // @Column()
-    data: BIDSDatabase
+    data: BIDSDataset
 
     // @OneToMany(
         // type => Patient,

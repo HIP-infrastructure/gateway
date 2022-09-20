@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common'
 import { Request } from 'express'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
-import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
+import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { ToolsService } from './tools.service'
@@ -22,24 +22,24 @@ export class ToolsController {
 
 	// @UsePipes(ValidationPipe)
 	// @Get('/bids/database')
-	// findOneDatabase(@Query() getBidsDatabaseDto: GetBidsDatabaseDto) {
-	//     return this.toolsService.getBIDSDatabase(getBidsDatabaseDto)
+	// findOneDatabase(@Query() getBidsDatasetDto: GetBidsDatasetDto) {
+	//     return this.toolsService.getBIDSDataset(getBidsDatasetDto)
 	// }
 
-	@Get('/bids/databases')
+	@Get('/bids/datasets')
 	async getBids(@Req() req: Request) {
-		const { cookie, requesttoken } = req.headers
-		return this.toolsService.getBIDSDatabases({ cookie, requesttoken })
+		const { cookie } = req.headers
+		return this.toolsService.getBIDSDatasets(cookie)
 	}
 
 	@UsePipes(ValidationPipe)
-	@Post('/bids/database')
+	@Post('/bids/dataset')
 	createDatabase(
-		@Body() createBidsDatabaseDto: CreateBidsDatabaseDto,
+		@Body() CreateBidsDatasetDto: CreateBidsDatasetDto,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-		return this.toolsService.createBidsDatabase(createBidsDatabaseDto, { cookie, requesttoken })
+		const { cookie } = req.headers
+		return this.toolsService.createBidsDataset(CreateBidsDatasetDto, cookie)
 	}
 
 	// @Delete('/bids/database')

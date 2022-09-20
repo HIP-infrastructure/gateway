@@ -21,7 +21,7 @@ describe('ToolsController: db.get (e2e)', () => {
   })
 
   it.skip('/ (GET)', async () => {
-    const getBidsDatabaseDto = {
+    const getBidsDatasetDto = {
       "owner": `${process.env.USER}`,
       "database": "mybidsdb",
       "BIDS_definitions": ["Anat", "Ieeg", "DatasetDescJSON"]
@@ -29,7 +29,7 @@ describe('ToolsController: db.get (e2e)', () => {
 
     return await request(app.getHttpServer())
       .get('/tools/bids/database')
-      .send(getBidsDatabaseDto)
+      .send(getBidsDatasetDto)
       .expect(200)
       .expect((response) => {
         expect(response.body.BIDS_definitions.DatasetDescJSON.bids_version).toStrictEqual('1.4.1')

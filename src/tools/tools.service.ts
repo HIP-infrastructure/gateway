@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common'
 
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
-import { CreateBidsDatabaseDto } from './dto/create-bids-database.dto'
+import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { FilesService } from 'src/files/files.service'
@@ -63,7 +63,7 @@ export interface Participant {
 	sex?: string
 	[key: string]: string | number
 }
-export interface BIDSDatabase {
+export interface BIDSDataset {
 	Name?: string
 	BIDSVersion?: string
 	License?: string
@@ -93,7 +93,7 @@ export class ToolsService {
 		if (uid) this.dataUserId = uid
 	}
 
-	public async getBIDSDatabases({ cookie, requesttoken }: any) {
+	public async getBIDSDatasets(cookie: any) {
 		try {
 			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchResults = s?.entries
@@ -112,7 +112,7 @@ export class ToolsService {
 					searchResult: searchResults[item.i],
 				}))
 
-			const bidsDatabasesPromises = participantSearchFiltered.map(ps =>
+			const bidsDatasetsPromises = participantSearchFiltered.map(ps =>
 				this.getDatasetContent(
 					`${ps.searchResult.attributes.path.replace(
 						PARTICIPANTS_FILE,
@@ -121,10 +121,10 @@ export class ToolsService {
 					cookie
 				)
 			)
-			const bidsDatabasesResults = await Promise.allSettled(
-				bidsDatabasesPromises
+			const bidsDatasetsResults = await Promise.allSettled(
+				bidsDatasetsPromises
 			)
-			const bidsDatabases: BIDSDatabase[] = bidsDatabasesResults.reduce(
+			const bidsDatasets: BIDSDataset[] = bidsDatasetsResults.reduce(
 				(arr, item, i) => [
 					...arr,
 					item.status === 'fulfilled'
@@ -147,17 +147,17 @@ export class ToolsService {
 				[]
 			)
 
-			return bidsDatabases
+			return bidsDatasets
 		} catch (e) {
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
 		}
 	}
 
-	public async createBidsDatabase(
-		createBidsDatabaseDto: CreateBidsDatabaseDto,
-		{ cookie, requesttoken }: any
+	public async createBidsDataset(
+		CreateBidsDatasetDto: CreateBidsDatasetDto,
+		cookie: any
 	) {
-		const { owner, path } = createBidsDatabaseDto
+		const { owner, path } = CreateBidsDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
@@ -166,7 +166,7 @@ export class ToolsService {
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
 				`${tmpDir}/db_create.json`,
-				JSON.stringify(createBidsDatabaseDto)
+				JSON.stringify(CreateBidsDatasetDto)
 			)
 
 			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
@@ -191,7 +191,7 @@ export class ToolsService {
 			if (code === 0) {
 				await this.scanFiles(owner)
 
-				return createBidsDatabaseDto
+				return CreateBidsDatasetDto
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
@@ -218,7 +218,21 @@ export class ToolsService {
 				`${tmpDir}/sub_get.json`,
 				JSON.stringify(bidsGetSubjectDto)
 			)
-
+			
+			// Create an empty output JSON file with correct ownership
+			const output_file = `${tmpDir}/sub_info.json`
+			let empty_content = {}
+			fs.writeFileSync(
+				output_file,
+				JSON.stringify(empty_content)
+			)
+			
+			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+				if (err) {
+					throw err;
+				}
+			});
+			
 			const dbPath = await this.filePath(path, owner, cookie)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
@@ -236,7 +250,13 @@ export class ToolsService {
 					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
+
 			const { code, message } = await this.spawnable('docker', command)
+
+			const errorMatching =
+				/IndexError: Could not find the subject in the BIDS dataset./.test(message)
+
+			if (errorMatching) throw new BadRequestException(message)
 
 			if (code === 0) {
 				const sub = fs.readFileSync(`${tmpDir}/sub_info.json`, 'utf-8')
@@ -302,21 +322,27 @@ export class ToolsService {
 
 			const errorMatching =
 				/does not match/.test(message) ||
-				/does not exist/.test(message) ||
+				// /does not exist/.test(message) ||  // Appears when success with "dataset_description.json does not exist"
 				/not imported/.test(message)
 
 			if (errorMatching) throw new BadRequestException(message)
 
 			if (code === 0) {
 				await this.scanFiles(owner)
+				// To debug "Failed to fetch response error" obtained
+				// while importing "ieeg"...
+				const util = require('util')
+				console.log(util.inspect(createSubject, {depth: null}));
 
 				return createSubject
 			}
+			else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
 
-			throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 		} catch (err) {
 			this.logger.error(err)
-			throw new HttpException(err.message, err.status)
+			throw new HttpException(err.message, err.status || HttpStatus.INTERNAL_SERVER_ERROR)
 		}
 	}
 
