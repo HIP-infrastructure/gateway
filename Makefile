@@ -32,24 +32,15 @@ release: build r.package
 r.package:
 	tar -czvf release.tar.gz -C dist .
 
-deploy: build
-	# TODO: prevent the build if no .env
-	cp ../.env .env
-	sudo pm2 start dist/main.js --name hip-gateway --watch
-
-deploy.stop:
-	sudo pm2 stop hip-gateway
-
 #deploy.dev: @ Deploys the application to the development environment
 deploy.dev: dep
 	# TODO: prevent the build if no .env
 	cp ../.env .env
 	sudo chown -R www-data: dist
-	sudo -u www-data -E npm run start:dev	
+	sudo -u www-data -E npm run start:dev
 
 deploy.dev.stop:
-	# FIXME: Not sure if this command will hurt, probably. Fixme if it happens
-	-sudo killall sh 
+	for pid in $(ps -fu www-data  | grep gateway | awk '{ print $2 }'); do sudo kill -9 $pid; done 
 
 #help:	@ List available tasks on this project
 help:

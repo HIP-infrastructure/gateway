@@ -53,14 +53,14 @@ export class ToolsController {
 		@Query('sub') sub: string,
 		@Req() req: Request
 	) {
-		const { cookie } = req.headers
+		const { cookie, requesttoken } = req.headers
 		const bidsGetSubjectDto: BidsGetSubjectDto = {
 			owner,
 			path,
 			sub,
 		}
 
-		return this.toolsService.getSubject(bidsGetSubjectDto, cookie)
+		return this.toolsService.getSubject(bidsGetSubjectDto, { cookie, requesttoken })
 	}
 
 	@UsePipes(ValidationPipe)
@@ -69,9 +69,9 @@ export class ToolsController {
 		@Body() createSubjectDto: CreateSubjectDto,
 		@Req() req: Request
 	) {
-		const { cookie } = req.headers
+		const { cookie, requesttoken } = req.headers
 
-		return this.toolsService.importSubject(createSubjectDto, cookie)
+		return this.toolsService.importSubject(createSubjectDto, { cookie, requesttoken })
 	}
 
 	@UsePipes(ValidationPipe)
@@ -80,8 +80,9 @@ export class ToolsController {
 		@Body() editSubjectClinicalDto: EditSubjectClinicalDto,
 		@Req() req: Request
 	) {
-		const { cookie } = req.headers
-		return this.toolsService.subEditClinical(editSubjectClinicalDto, cookie)
+		const { cookie, requesttoken } = req.headers
+		
+		return this.toolsService.subEditClinical(editSubjectClinicalDto,  { cookie, requesttoken } )
 	}
 
 	// @Delete('/bids/subject')
@@ -94,7 +95,8 @@ export class ToolsController {
 		@Query('owner') owner: string,
 		@Req() req: Request
 	) {
-		const { cookie } = req.headers
-		return this.toolsService.participants(path, cookie)
+		const { cookie, requesttoken } = req.headers
+		
+		return this.toolsService.participants(path, { cookie, requesttoken } )
 	}
 }

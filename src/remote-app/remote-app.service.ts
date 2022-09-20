@@ -347,7 +347,7 @@ export class RemoteAppService {
 		}
 
 		// get groupfolders mount point
-		const groupFolders = await this.filesService.groupFolders(
+		const groupFolders = await this.filesService.userGroupFolders(
 			{ cookie, requesttoken },
 			userId
 		)
