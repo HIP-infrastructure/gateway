@@ -93,7 +93,7 @@ export class ToolsService {
 		if (uid) this.dataUserId = uid
 	}
 
-	public async getBIDSDatasets(cookie: any) {
+	public async getBIDSDatasets({ cookie, requesttoken }) {
 		try {
 			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchResults = s?.entries
@@ -121,9 +121,7 @@ export class ToolsService {
 					cookie
 				)
 			)
-			const bidsDatasetsResults = await Promise.allSettled(
-				bidsDatasetsPromises
-			)
+			const bidsDatasetsResults = await Promise.allSettled(bidsDatasetsPromises)
 			const bidsDatasets: BIDSDataset[] = bidsDatasetsResults.reduce(
 				(arr, item, i) => [
 					...arr,
@@ -154,19 +152,18 @@ export class ToolsService {
 	}
 
 	public async createBidsDataset(
-		CreateBidsDatasetDto: CreateBidsDatasetDto,
-		cookie: any
+		createBidsDatasetDto: CreateBidsDatasetDto,
+		{ cookie, requesttoken }
 	) {
-		const { owner, path } = CreateBidsDatasetDto
+		const { owner, path } = createBidsDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
-		this.logger.debug({ createBidsDatabaseDto, tmpDir })
 		try {
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
 				`${tmpDir}/db_create.json`,
-				JSON.stringify(CreateBidsDatasetDto)
+				JSON.stringify(createBidsDatasetDto)
 			)
 
 			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
@@ -191,7 +188,7 @@ export class ToolsService {
 			if (code === 0) {
 				await this.scanFiles(owner)
 
-				return CreateBidsDatasetDto
+				return createBidsDatasetDto
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
@@ -218,22 +215,19 @@ export class ToolsService {
 				`${tmpDir}/sub_get.json`,
 				JSON.stringify(bidsGetSubjectDto)
 			)
-			
+
 			// Create an empty output JSON file with correct ownership
 			const output_file = `${tmpDir}/sub_info.json`
 			let empty_content = {}
-			fs.writeFileSync(
-				output_file,
-				JSON.stringify(empty_content)
-			)
-			
+			fs.writeFileSync(output_file, JSON.stringify(empty_content))
+
 			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
 				if (err) {
-					throw err;
+					throw err
 				}
-			});
-			
-			const dbPath = await this.filePath(path, owner, cookie)
+			})
+
+			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
@@ -254,7 +248,9 @@ export class ToolsService {
 			const { code, message } = await this.spawnable('docker', command)
 
 			const errorMatching =
-				/IndexError: Could not find the subject in the BIDS dataset./.test(message)
+				/IndexError: Could not find the subject in the BIDS dataset./.test(
+					message
+				)
 
 			if (errorMatching) throw new BadRequestException(message)
 
@@ -280,10 +276,6 @@ export class ToolsService {
 		const { owner, path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
-
-		this.logger.debug({
-			createSubject,
-		})
 
 		try {
 			fs.mkdirSync(tmpDir, true)
@@ -332,17 +324,18 @@ export class ToolsService {
 				// To debug "Failed to fetch response error" obtained
 				// while importing "ieeg"...
 				const util = require('util')
-				console.log(util.inspect(createSubject, {depth: null}));
+				this.logger.debug(util.inspect(createSubject, { depth: null }))
 
 				return createSubject
-			}
-			else {
+			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
-
 		} catch (err) {
 			this.logger.error(err)
-			throw new HttpException(err.message, err.status || HttpStatus.INTERNAL_SERVER_ERROR)
+			throw new HttpException(
+				err.message,
+				err.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
 		}
 	}
 
@@ -548,17 +541,14 @@ export class ToolsService {
 		userid: string,
 		{ cookie, requesttoken }: any
 	) {
-		this.logger.debug({ path, userid, cookie, requesttoken })
 		try {
 			const groupFolders = await this.fileService.userGroupFolders(
 				{ cookie, requesttoken },
 				userid
 			)
-			this.logger.debug({ groupFolders })
 
 			const rootPath = path.split('/')[0]
-			const id =
-				groupFolders.find(g => g.label === rootPath)?.id
+			const id = groupFolders.find(g => g.label === rootPath)?.id
 
 			const nextPath = id
 				? `${
@@ -574,36 +564,4 @@ export class ToolsService {
 			)
 		}
 	}
-
-	/**
-	 * It makes a GET request to the Nextcloud API to get a list of groups
-	 * @param {any} headersIn - The headers that are passed in from the controller.
-	 * @returns An array of groups
-	 */
-
-	// FIXME, get from user
-	// private groups(cookie: any): Promise<any> {
-	// 	try {
-	// 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-
-	// 		const response = this.httpService.get(
-	// 			`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/${}`,
-	// 			{
-	// 				headers: {
-	// 					'OCS-APIRequest': true,
-	// 					cookie,
-	// 				},
-	// 			}
-	// 		)
-
-	// 		return firstValueFrom(response).then(r => {
-	// 			if (r.data && r.data.ocs) return Object.values(r.data.ocs.data)
-
-	// 			return []
-	// 		})
-	// 	} catch (e) {
-	// 		this.logger.error(e)
-	// 		throw new InternalServerErrorException(e.message)
-	// 	}
-	// }
 }

@@ -28,18 +28,23 @@ export class ToolsController {
 
 	@Get('/bids/datasets')
 	async getBids(@Req() req: Request) {
-		const { cookie } = req.headers
-		return this.toolsService.getBIDSDatasets(cookie)
+		const { cookie, requesttoken } = req.headers
+
+		return this.toolsService.getBIDSDatasets({ cookie, requesttoken })
 	}
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/dataset')
 	createDatabase(
-		@Body() CreateBidsDatasetDto: CreateBidsDatasetDto,
+		@Body() createBidsDatasetDto: CreateBidsDatasetDto,
 		@Req() req: Request
 	) {
-		const { cookie } = req.headers
-		return this.toolsService.createBidsDataset(CreateBidsDatasetDto, cookie)
+		const { cookie, requesttoken } = req.headers
+
+		return this.toolsService.createBidsDataset(createBidsDatasetDto, {
+			cookie,
+			requesttoken,
+		})
 	}
 
 	// @Delete('/bids/database')
@@ -60,7 +65,10 @@ export class ToolsController {
 			sub,
 		}
 
-		return this.toolsService.getSubject(bidsGetSubjectDto, { cookie, requesttoken })
+		return this.toolsService.getSubject(bidsGetSubjectDto, {
+			cookie,
+			requesttoken,
+		})
 	}
 
 	@UsePipes(ValidationPipe)
@@ -71,7 +79,10 @@ export class ToolsController {
 	) {
 		const { cookie, requesttoken } = req.headers
 
-		return this.toolsService.importSubject(createSubjectDto, { cookie, requesttoken })
+		return this.toolsService.importSubject(createSubjectDto, {
+			cookie,
+			requesttoken,
+		})
 	}
 
 	@UsePipes(ValidationPipe)
@@ -81,8 +92,11 @@ export class ToolsController {
 		@Req() req: Request
 	) {
 		const { cookie, requesttoken } = req.headers
-		
-		return this.toolsService.subEditClinical(editSubjectClinicalDto,  { cookie, requesttoken } )
+
+		return this.toolsService.subEditClinical(editSubjectClinicalDto, {
+			cookie,
+			requesttoken,
+		})
 	}
 
 	// @Delete('/bids/subject')
@@ -96,7 +110,7 @@ export class ToolsController {
 		@Req() req: Request
 	) {
 		const { cookie, requesttoken } = req.headers
-		
-		return this.toolsService.participants(path, { cookie, requesttoken } )
+
+		return this.toolsService.participants(path, { cookie, requesttoken })
 	}
 }
