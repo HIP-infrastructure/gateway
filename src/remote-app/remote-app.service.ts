@@ -241,7 +241,7 @@ export class RemoteAppService {
 		return {
 			data:
 				this.containerServices
-					// .filter(service => service.state.context.user === uid)
+					.filter(service => service.state.context.user === uid)
 					.map(service => {
 						const { id, name, user, url, error, type, app, parentId } = service
 							.state.context as Partial<ContainerContext & WebdavOptions>
