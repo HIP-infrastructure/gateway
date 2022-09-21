@@ -1,20 +1,14 @@
 .DEFAULT_GOAL := help
 
-#dep: @ Install all dependencies defined in package.json
-dep:
-	npm install
-
-#dep.init: @ Install all dependencies for Ubuntu
-dep.init:
-	curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+#install: @ Install all dependencies defined in package.json
+install:
+	curl -sL https://deb.nodesource.com/setup_current.x | sudo -E bash -
 	sudo apt-get install -y nodejs
 	sudo npm i --location=global @nestjs/cli
-	sudo npm i --location=global pm2@latest
-	pm2 startup systemd
-	pm2 save
+	npm install
 
 #build: @ Builds the project
-build: dep b.clean b.bundle
+build: b.clean b.bundle
 
 #b.clean: @ Removes all build artifacts
 b.clean:
