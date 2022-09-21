@@ -147,6 +147,7 @@ export class ToolsService {
 
 			return bidsDatasets
 		} catch (e) {
+			this.logger.error(e)
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
 		}
 	}
