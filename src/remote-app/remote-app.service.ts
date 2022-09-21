@@ -364,7 +364,7 @@ export class RemoteAppService {
 			parentId: serverId,
 			nc: process.env.PRIVATE_FS_URL,
 			ab: process.env.PRIVATE_FS_AUTH_BACKEND_URL,
-			groupFolders,
+			groupFolders: groupFolders.map(({id, label, path}) => ({id, label, path})),
 			cookie,
 		}
 		const machine = createContainerMachine(context)
