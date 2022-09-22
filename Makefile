@@ -2,13 +2,13 @@
 
 #install: @ Install all dependencies defined in package.json
 install:
-	curl -sL https://deb.nodesource.com/setup_current.x | sudo -E bash -
+	curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 	sudo apt-get install -y nodejs
 	sudo npm i --location=global @nestjs/cli
 	npm install
 
 #build: @ Builds the project
-build: b.clean b.bundle
+build: install b.clean b.bundle
 
 #b.clean: @ Removes all build artifacts
 b.clean:
@@ -27,7 +27,7 @@ r.package:
 	tar -czvf release.tar.gz -C dist .
 
 #deploy.dev: @ Deploys the application to the development environment
-deploy.dev:
+deploy.dev: install
 	# TODO: prevent the build if no .env
 	cp ../.env .env
 	sudo chown -R www-data: dist
