@@ -7,6 +7,7 @@ import { ToolsModule } from './tools/tools.module'
 import { ConfigModule } from '@nestjs/config'
 import { RedisModule } from '@liaoliaots/nestjs-redis'
 import { UsersModule } from './users/users.module';
+import { GroupsModule } from './groups/groups.module';
 
 @Module({
 	imports: [
@@ -22,7 +23,8 @@ import { UsersModule } from './users/users.module';
 		}),
 		ToolsModule,
 		ConfigModule.forRoot(),
-		UsersModule
+		UsersModule,
+		GroupsModule
 	],
 	controllers: [AppController],
 	providers: [],
