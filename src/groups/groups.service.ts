@@ -18,22 +18,22 @@ export class GroupsService {
       {
         label: 'CHUV',
         id: 'chuv',
-        logo: null,
+        logo: 'group__chuv__logo.png',
+        description: 'Centre hospitalier universitaire vaudois',
+        website: 'https://www.chuv.ch/',
+        linkedIn: 'https://www.linkedin.com/company/chuv/',
       },
       {
         label: 'AMU-TNG',
         id: 'amu-tng',
-        logo: null,
       },
       {
         label: 'APHM',
         id: 'aphm',
-        logo: null,
       },
       {
         label: 'CHRU-LILLE',
         id: 'chru-lille',
-        logo: null,
       },
       {
         label: 'CHU-LION',
