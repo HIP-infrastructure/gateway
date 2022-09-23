@@ -27,7 +27,7 @@ r.package:
 	tar -czvf release.tar.gz -C dist .
 
 #deploy.dev: @ Deploys the application to the development environment
-deploy.dev: install
+deploy.dev:
 	# TODO: prevent the build if no .env
 	cp ../.env .env
 	sudo chown -R www-data: dist
