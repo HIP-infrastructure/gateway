@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Request as Req, Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
+import { Request } from 'express'
 
 @Controller('groups')
 export class GroupsController {
@@ -12,8 +13,10 @@ export class GroupsController {
     return this.groupsService.findAll();
   }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.groupsService.findOne(+id);
-  // }
+  @Get(':groupid')
+	async findOne(@Param('groupid') groupid: string, @Req() req: Request) {
+		const { cookie, requesttoken } = req.headers
+		
+		return this.groupsService.findOne({ cookie, requesttoken }, groupid)
+	}
 }

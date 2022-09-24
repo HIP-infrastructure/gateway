@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common'
-import { CreateGroupDto } from './dto/create-group.dto'
-import { UpdateGroupDto } from './dto/update-group.dto'
+import { Injectable, Logger } from '@nestjs/common'
+import { HttpService } from '@nestjs/axios'
+import { firstValueFrom } from 'rxjs'
+
+import { GroupDto } from './dto/group.dto'
 
 @Injectable()
 export class GroupsService {
-	create(createGroupDto: CreateGroupDto) {
-		return 'This action adds a new group'
-	}
+	constructor(private readonly httpService: HttpService) {}
 
+  private logger = new Logger('UsersService')
+ 
 	findAll() {
 		return [
 			{
@@ -159,5 +161,19 @@ export class GroupsService {
 				logo: null,
 			},
 		]
+	}
+
+	async findOne(tokens: any, groupid: string): Promise<GroupDto> {
+		const headers = {
+			...tokens,
+			accept: 'application/json, text/plain, */*',
+		}
+
+		const response = this.httpService.get(
+			`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/ocs/v1.php/cloud/groups/${groupid}`,
+			{ headers }
+		)
+
+		return firstValueFrom(response).then(r => r.data.ocs.data)
 	}
 }

@@ -1,13 +1,17 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
 import { firstValueFrom } from 'rxjs'
 import { UserDto } from './dto/user.dto'
 
 @Injectable()
 export class UsersService {
+
 	constructor(
 		private readonly httpService: HttpService
 	) {}
+	
+	private logger = new Logger('UsersService')
+
 
 	async findOne(tokens: any, userid: string) {
 		const headers = {
@@ -32,7 +36,7 @@ export class UsersService {
 				id, 
 				lastLogin, 
 				email, 
-				displayname, 
+				displayName: displayname, 
 				groups: groups.map(group => group.toLowerCase())
 			}))(data)
 
