@@ -20,8 +20,8 @@ export class AppController {
 		return 'OK'
 	}
 
-	@Get('public/:fileId')
-	async serveAvatar(@Param('fileId') fileId, @Res() res): Promise<any> {
-		res.sendFile(fileId, { root: 'public' })
+	@Get('public/:path/:fileId')
+	async serveAvatar(@Param('fileId') fileId,@Param('path') path, @Res() res): Promise<any> {
+		res.sendFile(fileId, { root: `public/${path}` })
 	}
 }
