@@ -260,4 +260,5 @@ The HIP intends to provide functionality designed to enable and enhance collabor
     The ordinary courts of Lausanne, Switzerland, shall have exclusive jurisdiction, subject to appeal, if any.
 
 17.	__Contact Us__
-In case you have any queries, comments or concerns about these Terms & Conditions, please contact: [support@ebrains.eu](mailto:support@ebrains.eu) 
+
+    In case you have any queries, comments or concerns about these Terms & Conditions, please contact: [support@ebrains.eu](mailto:support@ebrains.eu) 
