@@ -21,7 +21,7 @@ export class GroupsService {
 				city: 'Marseille',
 				logo: 'media/amu-tng__logo.jpeg',
 				description:
-					'Plus grande université francophone pluridisciplinaire, Aix-Marseille Université accueille 80 000 étudiant.e.s et 8 000 personnels sur 5 grands campus aux standards internationaux. ',
+					'Aix-Marseille University',
 				website: 'https://www.univ-amu.fr/',
 				socialnetwork: {
 					twitter: 'https://twitter.com/univamu',
@@ -40,7 +40,7 @@ export class GroupsService {
 				country: 'Switzerland',
 				city: 'Lausanne',
 				logo: 'media/chuv__logo.png',
-				description: 'Centre hospitalier universitaire vaudois',
+				description: 'Centre Hospitalier Universitaire de Lausanne (CHUV)',
 				website: 'https://www.chuv.ch/',
 				socialnetwork: {
 					twitter: 'https://twitter.com/CHUVLausanne',
@@ -58,7 +58,7 @@ export class GroupsService {
 				city: 'Marseille',
 				logo: 'media/amu-tng__logo.jpeg',
 				description:
-					'Plus grande université francophone pluridisciplinaire, Aix-Marseille Université accueille 80 000 étudiant.e.s et 8 000 personnels sur 5 grands campus aux standards internationaux. ',
+					'Aix-Marseille University',
 				website: 'https://www.univ-amu.fr/',
 				socialnetwork: {
 					twitter: 'https://twitter.com/univamu',
@@ -96,7 +96,7 @@ export class GroupsService {
 				city: 'Lille',
 				logo: 'media/chru-lille__logo.png',
 				description:
-					"Hôpital Universitaire du Nord de l'Europe, un campus de recherche, de soins innovants et de formation",
+					"CHRU LILLE, Epilepsy Unit",
 				website: 'https://www.chu-lille.fr/',
 				socialnetwork: {
 					youtube: 'https://www.youtube.com/channel/UCvB81CdUUKNpaGCTaJFkNVQ',
@@ -114,7 +114,7 @@ export class GroupsService {
 				city: 'Lyon',
 				logo: 'media/chu-lion__logo.png',
 				description:
-					'Les HCL sont un centre hospitalier universitaire de 13 hôpitaux publics dans la métropole de Lyon. ',
+					'Hospices Civils de Lyon (GHE-HCL)',
 				website: 'https://www.chu-lille.fr/',
 				socialnetwork: {
 					youtube: 'https://www.youtube.com/ChudeLyon',
@@ -138,27 +138,88 @@ export class GroupsService {
 			{
 				label: 'HUS',
 				id: 'hus',
-				logo: null,
+				pi: 'Professor Eeeva-Liisa Metsähonkala',
+				email: 'eeva-liisa.metsahonkala@hus.fi',
+				country: 'Finland',
+				city: 'Helsinki',
+				logo: 'media/hus__logo.png',
+				description:
+					'Helsinki University Hospital (HUS), Hospital District of Helsinki and Uusimaa',
+				website: 'https://www.hus.fi/en',
+				socialnetwork: {
+					youtube: 'https://www.youtube.com/channel/UChHLhcahbu3iv-2rN7Rg6Sw',
+					instagram: 'https://www.instagram.com/hus_sairaala/',
+					twitter: 'https://twitter.com/HUS_fi',
+					facebook: 'https://www.facebook.com/HUS.fi',
+					linkedin: 'https://www.linkedin.com/company/huslinkedin/',
+				},
 			},
 			{
 				label: 'OU-SSE',
 				id: 'ou-sse',
-				logo: null,
+				pi: 'Professor Morten Lossius',
+				email: 'mortenl@ous-hf.no',
+				country: 'Norway',
+				city: 'Oslo',
+				logo: 'media/ou-sse__logo.png',
+				description:
+					'The Norwegian National Unit for Epilepsy, Oslo universitetssykehus',
+				website: 'https://oslo-universitetssykehus.no/',
+				socialnetwork: {
+					youtube: 'https://www.youtube.com/channel/UCRkdLJ014TTOXh8r8k6SciA',
+					instagram: 'https://www.instagram.com/oushf/',
+					twitter: 'https://twitter.com/oslounivsykehus',
+					facebook: 'https://www.facebook.com/oslouniversitetssykehus',
+					linkedin: 'https://www.linkedin.com/company/oslo-universitetssykehus/',
+				},
 			},
 			{
 				label: 'PSMAR',
 				id: 'psmar',
-				logo: null,
+				pi: 'Professor Rodrigo Rocamora Zuniga',
+				email: 'rrocamora@psmar.cat',
+				country: 'Spain',
+				city: 'Barcelona',
+				logo: 'media/psmar__logo.png',
+				description:
+					'Hospital del Mar-Parc de Salut Mar',
+				website: 'https://www.parcdesalutmar.cat/en/',
+				socialnetwork: {
+					youtube: 'https://www.youtube.com/HospitaldelMarIMAS',
+					instagram: 'https://www.instagram.com/hospitaldelmar/?hl=es',
+					twitter: 'https://twitter.com/hospitaldelmar',
+					linkedin: 'https://www.linkedin.com/company/hospital-del-mar--parc-de-salut-mar/?originalSubdomain=es',
+				},
 			},
 			{
 				label: 'UCBL',
 				id: 'ucbl',
-				logo: null,
+				pi: 'Dr. Jean-Philippe Lachaux ',
+				email: '',
+				country: 'France',
+				city: 'Lyon',
+				logo: 'media/lyon1__logo.png',
+				description:
+					'Université Claude Bernard Lyon 1',
+				website: 'https://www.univ-lyon1.fr/',
+				socialnetwork: {
+					youtube: 'https://www.youtube.com/UnivLyon1',
+					instagram: 'https://www.instagram.com/univlyon1/',
+					twitter: 'https://twitter.com/UnivLyon1',
+					facebook: 'https://www.facebook.com/UnivLyon1',
+				},
 			},
 			{
 				label: 'UMCU',
 				id: 'umcu',
-				logo: null,
+				pi: 'Professor Kees Braun',
+				email: 'K.Braun@umcutrecht.nl',
+				country: 'Netherlands',
+				city: 'Utrecht',
+				logo: 'media/umcu__logo.png',
+				description:
+					'University Medical Center Utrecht (Brain Center Rudolf Magnus)',
+				website: 'https://www.umcutrecht.nl/en/',
 			},
 		]
 	}
