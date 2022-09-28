@@ -502,13 +502,17 @@ export class ToolsService {
 		cookie: any
 	): Promise<DataError> {
 		try {
+			this.logger.debug(path)
 			const response = this.httpService.get(
 				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/hip/document/file?path=${path}`,
 				{ headers: { cookie } }
 			)
-
 			const data = await firstValueFrom(response).then(r => r.data)
+			
+			if (typeof data !== 'string')  return { data: null }
+
 			const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
+
 			return { data: JSON.parse(cleaned) }
 		} catch (e) {
 			this.logger.error(e)
