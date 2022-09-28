@@ -19,6 +19,7 @@ import { FilesService } from 'src/files/files.service'
 const userid = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
+import { join } from 'path';
 
 type DataError = {
 	data?: Record<string, string>
@@ -430,16 +431,9 @@ export class ToolsService {
 	private async scanFiles(
 		owner: string
 	): Promise<{ code: number; message?: string }> {
-		return this.spawnable('docker', [
-			'exec',
-			'--user',
-			`${this.dataUserId}:${this.dataUserId}`,
-			'nextcloud-docker_app_1', // FIXME
-			'php',
-			'occ',
-			'files:scan',
-			owner,
-		])
+		const scriptFolder = join(__dirname, '/../..')
+
+		return this.spawnable(`${scriptFolder}/scan_nextcloud_files.sh`, [owner])
 	}
 
 	private spawnable = (
@@ -502,7 +496,6 @@ export class ToolsService {
 		cookie: any
 	): Promise<DataError> {
 		try {
-			this.logger.debug(path)
 			const response = this.httpService.get(
 				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/hip/document/file?path=${path}`,
 				{ headers: { cookie } }
