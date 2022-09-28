@@ -22,6 +22,6 @@ export class AppController {
 
 	@Get('public/:path/:fileId')
 	async serveAvatar(@Param('fileId') fileId,@Param('path') path, @Res() res): Promise<any> {
-		res.sendFile(fileId, { root: `public/${path}` })
+		res.sendFile(fileId, { root: `gateway/public/${path}` })
 	}
 }

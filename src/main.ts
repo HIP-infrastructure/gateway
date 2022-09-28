@@ -6,6 +6,7 @@ import { join } from 'path';
 
 
 const globalPrefix = '/api/v1'
+const publicFolder = join(__dirname, '../public')
 
 async function bootstrap() {
 	const app = await NestFactory.create<NestExpressApplication>(AppModule)
@@ -13,7 +14,7 @@ async function bootstrap() {
 	app.setGlobalPrefix(globalPrefix)
 	app.enableCors()
 	app.use(cookieParser())
-	app.useStaticAssets(join(__dirname, '/../public'));
+	app.useStaticAssets(publicFolder);
 
 	await app.listen(4000)
 }
