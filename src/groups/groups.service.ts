@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
 import { firstValueFrom } from 'rxjs'
 
@@ -8,8 +8,8 @@ import { GroupDto } from './dto/group.dto'
 export class GroupsService {
 	constructor(private readonly httpService: HttpService) {}
 
-  private logger = new Logger('UsersService')
- 
+	private logger = new Logger('GroupsService')
+
 	findAll() {
 		return [
 			{
@@ -20,8 +20,7 @@ export class GroupsService {
 				country: 'France',
 				city: 'Marseille',
 				logo: 'media/amu-tng__logo.jpeg',
-				description:
-					'Aix-Marseille University',
+				description: 'Aix-Marseille University',
 				website: 'https://www.univ-amu.fr/',
 				socialnetwork: {
 					twitter: 'https://twitter.com/univamu',
@@ -57,8 +56,7 @@ export class GroupsService {
 				country: 'France',
 				city: 'Marseille',
 				logo: 'media/amu-tng__logo.jpeg',
-				description:
-					'Aix-Marseille University',
+				description: 'Aix-Marseille University',
 				website: 'https://www.univ-amu.fr/',
 				socialnetwork: {
 					twitter: 'https://twitter.com/univamu',
@@ -95,8 +93,7 @@ export class GroupsService {
 				country: 'France',
 				city: 'Lille',
 				logo: 'media/chru-lille__logo.png',
-				description:
-					"CHRU LILLE, Epilepsy Unit",
+				description: 'CHRU LILLE, Epilepsy Unit',
 				website: 'https://www.chu-lille.fr/',
 				socialnetwork: {
 					youtube: 'https://www.youtube.com/channel/UCvB81CdUUKNpaGCTaJFkNVQ',
@@ -113,8 +110,7 @@ export class GroupsService {
 				country: 'France',
 				city: 'Lyon',
 				logo: 'media/chu-lion__logo.png',
-				description:
-					'Hospices Civils de Lyon (GHE-HCL)',
+				description: 'Hospices Civils de Lyon (GHE-HCL)',
 				website: 'https://www.chu-lille.fr/',
 				socialnetwork: {
 					youtube: 'https://www.youtube.com/ChudeLyon',
@@ -170,7 +166,8 @@ export class GroupsService {
 					instagram: 'https://www.instagram.com/oushf/',
 					twitter: 'https://twitter.com/oslounivsykehus',
 					facebook: 'https://www.facebook.com/oslouniversitetssykehus',
-					linkedin: 'https://www.linkedin.com/company/oslo-universitetssykehus/',
+					linkedin:
+						'https://www.linkedin.com/company/oslo-universitetssykehus/',
 				},
 			},
 			{
@@ -181,14 +178,14 @@ export class GroupsService {
 				country: 'Spain',
 				city: 'Barcelona',
 				logo: 'media/psmar__logo.png',
-				description:
-					'Hospital del Mar-Parc de Salut Mar',
+				description: 'Hospital del Mar-Parc de Salut Mar',
 				website: 'https://www.parcdesalutmar.cat/en/',
 				socialnetwork: {
 					youtube: 'https://www.youtube.com/HospitaldelMarIMAS',
 					instagram: 'https://www.instagram.com/hospitaldelmar/?hl=es',
 					twitter: 'https://twitter.com/hospitaldelmar',
-					linkedin: 'https://www.linkedin.com/company/hospital-del-mar--parc-de-salut-mar/?originalSubdomain=es',
+					linkedin:
+						'https://www.linkedin.com/company/hospital-del-mar--parc-de-salut-mar/?originalSubdomain=es',
 				},
 			},
 			{
@@ -199,8 +196,7 @@ export class GroupsService {
 				country: 'France',
 				city: 'Lyon',
 				logo: 'media/lyon1__logo.png',
-				description:
-					'Université Claude Bernard Lyon 1',
+				description: 'Université Claude Bernard Lyon 1',
 				website: 'https://www.univ-lyon1.fr/',
 				socialnetwork: {
 					youtube: 'https://www.youtube.com/UnivLyon1',
