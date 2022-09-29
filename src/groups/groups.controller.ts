@@ -8,11 +8,6 @@ import { Request } from 'express'
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
 
-  @Get()
-  findAll() {
-    return this.groupsService.findAll();
-  }
-
   @Get(':groupid')
 	async findOne(@Param('groupid') groupid: string, @Req() req: Request) {
 		const { cookie, requesttoken } = req.headers
