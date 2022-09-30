@@ -21,8 +21,8 @@ export class AppController {
 	}
 
 	@Get('public/:path/:fileId')
-	async serveAvatar(@Param('fileId') fileId,@Param('path') path, @Res() res): Promise<any> {
-		const root = process.env.NODE_ENV === 'development' ? `gateway/public/${path}` : `public/${path}`
+	async servePublic(@Param('fileId') fileId,@Param('path') path, @Res() res): Promise<any> {
+		const root = process.env.NODE_ENV === 'development' ?  `public/${path}` : `gateway/public/${path}`
 		res.sendFile(fileId, { root })
 	}
 }
