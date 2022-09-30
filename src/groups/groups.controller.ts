@@ -1,17 +1,12 @@
-import { Request as Req, Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { GroupsService } from './groups.service';
-import { CreateGroupDto } from './dto/create-group.dto';
-import { UpdateGroupDto } from './dto/update-group.dto';
-import { Request } from 'express'
+import { Controller, Get, Param } from '@nestjs/common'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 @Controller('groups')
 export class GroupsController {
-  constructor(private readonly groupsService: GroupsService) {}
+  constructor(private readonly nextcloudService: NextcloudService) {}
 
-  @Get(':groupid')
-	async findOne(@Param('groupid') groupid: string, @Req() req: Request) {
-		const { cookie, requesttoken } = req.headers
-		
-		return this.groupsService.findOne({ cookie, requesttoken }, groupid)
+  @Get(':groupid/users')
+	async findOne(@Param('groupid') groupid: string) {		
+		return this.nextcloudService.usersForGroup(groupid)
 	}
 }

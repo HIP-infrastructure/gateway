@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import { HttpModule } from '@nestjs/axios'
-import { GroupsService } from './groups.service'
 import { GroupsController } from './groups.controller'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 @Module({
 	imports: [HttpModule],
 	controllers: [GroupsController],
-	providers: [GroupsService],
+	providers: [NextcloudService],
 })
 export class GroupsModule {}

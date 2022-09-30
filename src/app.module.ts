@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config'
 import { RedisModule } from '@liaoliaots/nestjs-redis'
 import { UsersModule } from './users/users.module';
 import { GroupsModule } from './groups/groups.module';
+import { NextcloudService } from './nextcloud/nextcloud.service';
 
 @Module({
 	imports: [
@@ -27,7 +28,7 @@ import { GroupsModule } from './groups/groups.module';
 		GroupsModule
 	],
 	controllers: [AppController],
-	providers: [],
+	providers: [NextcloudService],
 })
 export class AppModule { }
 
