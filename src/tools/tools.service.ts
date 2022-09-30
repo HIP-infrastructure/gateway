@@ -14,12 +14,11 @@ import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
-import { FilesService } from 'src/files/files.service'
-
 const userid = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
-import { join } from 'path';
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
+import { join } from 'path'
 
 type DataError = {
 	data?: Record<string, string>
@@ -86,7 +85,7 @@ export class ToolsService {
 
 	constructor(
 		private readonly httpService: HttpService,
-		private readonly fileService: FilesService
+		private readonly nextcloudService: NextcloudService
 	) {
 		this.dataUser = process.env.DATA_USER
 		const uid = parseInt(userid.uid(this.dataUser), 10)
@@ -94,7 +93,7 @@ export class ToolsService {
 		if (uid) this.dataUserId = uid
 	}
 
-	public async getBIDSDatasets({ cookie, requesttoken }) {
+	public async getBIDSDatasets({ cookie }) {
 		try {
 			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchResults = s?.entries
@@ -154,13 +153,13 @@ export class ToolsService {
 	}
 
 	public async createBidsDataset(
-		createBidsDatasetDto: CreateBidsDatasetDto,
-		{ cookie, requesttoken }
+		createBidsDatasetDto: CreateBidsDatasetDto
 	) {
 		const { owner, path } = createBidsDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
+		this.logger.debug({ path })
 		try {
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
@@ -168,7 +167,7 @@ export class ToolsService {
 				JSON.stringify(createBidsDatasetDto)
 			)
 
-			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
+			const dbPath = await this.filePath(path, owner)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
@@ -188,8 +187,7 @@ export class ToolsService {
 			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
-				await this.scanFiles(owner)
-
+				await this.nextcloudService.scanFiles(owner, path)
 				return createBidsDatasetDto
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -204,8 +202,7 @@ export class ToolsService {
 	}
 
 	async getSubject(
-		bidsGetSubjectDto: BidsGetSubjectDto,
-		{ cookie, requesttoken }
+		bidsGetSubjectDto: BidsGetSubjectDto
 	) {
 		const { owner, path } = bidsGetSubjectDto
 		const uniquId = Math.round(Date.now() + Math.random())
@@ -229,7 +226,7 @@ export class ToolsService {
 				}
 			})
 
-			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
+			const dbPath = await this.filePath(path, owner)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
@@ -272,9 +269,7 @@ export class ToolsService {
 	}
 
 	public async importSubject(
-		createSubject: CreateSubjectDto,
-		{ cookie, requesttoken }
-	) {
+		createSubject: CreateSubjectDto	) {
 		const { owner, path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -286,7 +281,7 @@ export class ToolsService {
 				JSON.stringify(createSubject)
 			)
 
-			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
+			const dbPath = await this.filePath(path, owner)
 
 			const cmd1 = [
 				'run',
@@ -322,7 +317,7 @@ export class ToolsService {
 			if (errorMatching) throw new BadRequestException(message)
 
 			if (code === 0) {
-				await this.scanFiles(owner)
+				await this.nextcloudService.scanFiles(owner, path)
 				// To debug "Failed to fetch response error" obtained
 				// while importing "ieeg"...
 				const util = require('util')
@@ -355,8 +350,7 @@ export class ToolsService {
 	}
 
 	public async subEditClinical(
-		editSubjectClinicalDto: EditSubjectClinicalDto,
-		{ cookie, requesttoken }
+		editSubjectClinicalDto: EditSubjectClinicalDto
 	) {
 		let { owner, path } = editSubjectClinicalDto
 		const uniquId = Math.round(Date.now() + Math.random())
@@ -369,7 +363,7 @@ export class ToolsService {
 				JSON.stringify(editSubjectClinicalDto)
 			)
 
-			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
+			const dbPath = await this.filePath(path, owner)
 
 			const cmd1 = [
 				'run',
@@ -408,7 +402,7 @@ export class ToolsService {
 
 	public deleteSubject() {}
 
-	public async participants(path: string, { cookie, requesttoken }: any) {
+	public async participants(path: string, { cookie }: any) {
 		const nextPath = `${path}${PARTICIPANTS_FILE}`
 
 		return this.participantsWithPath(nextPath, cookie)
@@ -428,13 +422,6 @@ export class ToolsService {
 		}
 	}
 
-	private async scanFiles(
-		owner: string
-	): Promise<{ code: number; message?: string }> {
-		const scriptFolder = join(__dirname, '/../..')
-
-		return this.spawnable(`${scriptFolder}/scan_nextcloud_files.sh`, [owner])
-	}
 
 	private spawnable = (
 		command,
@@ -501,8 +488,8 @@ export class ToolsService {
 				{ headers: { cookie } }
 			)
 			const data = await firstValueFrom(response).then(r => r.data)
-			
-			if (typeof data !== 'string')  return { data: null }
+
+			if (typeof data !== 'string') return { data: null }
 
 			const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
 
@@ -537,11 +524,9 @@ export class ToolsService {
 	private async filePath(
 		path: string,
 		userid: string,
-		{ cookie, requesttoken }: any
 	) {
 		try {
-			const groupFolders = await this.fileService.userGroupFolders(
-				{ cookie, requesttoken },
+			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
 				userid
 			)
 

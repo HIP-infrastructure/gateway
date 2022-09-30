@@ -1,7 +1,7 @@
 import { HttpModule } from '@nestjs/axios'
 import { Module } from '@nestjs/common'
 import { FilesModule } from 'src/files/files.module'
-import { FilesService } from 'src/files/files.service'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { UsersModule } from 'src/users/users.module'
 import { UsersService } from 'src/users/users.service'
 import { CacheService } from '../cache/cache.service'
@@ -12,6 +12,6 @@ import { RemoteAppService } from './remote-app.service'
 @Module({
 	imports: [HttpModule, FilesModule, UsersModule],
 	controllers: [RemoteAppController],
-	providers: [RemoteAppService, CacheService, FilesService, UsersService],
+	providers: [RemoteAppService, CacheService, NextcloudService, UsersService],
 })
 export class RemoteAppModule { }

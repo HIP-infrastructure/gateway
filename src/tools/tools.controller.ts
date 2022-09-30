@@ -10,6 +10,7 @@ import {
 	ValidationPipe,
 } from '@nestjs/common'
 import { Request } from 'express'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
@@ -18,7 +19,10 @@ import { ToolsService } from './tools.service'
 
 @Controller('tools')
 export class ToolsController {
-	constructor(private readonly toolsService: ToolsService) {}
+	constructor(
+		private readonly toolsService: ToolsService,
+		private readonly nextcloudService: NextcloudService
+	) {}
 
 	// @UsePipes(ValidationPipe)
 	// @Get('/bids/database')
@@ -28,23 +32,19 @@ export class ToolsController {
 
 	@Get('/bids/datasets')
 	async getBids(@Req() req: Request) {
-		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.getBIDSDatasets({ cookie, requesttoken })
+		const { cookie } = req.headers
+		await this.nextcloudService.validate(req)
+		return this.toolsService.getBIDSDatasets({ cookie })
 	}
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/dataset')
-	createDatabase(
+	async createDatabase(
 		@Body() createBidsDatasetDto: CreateBidsDatasetDto,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.createBidsDataset(createBidsDatasetDto, {
-			cookie,
-			requesttoken,
-		})
+		await this.nextcloudService.validate(req)
+		return this.toolsService.createBidsDataset(createBidsDatasetDto)
 	}
 
 	// @Delete('/bids/database')
@@ -52,51 +52,40 @@ export class ToolsController {
 
 	@UsePipes(ValidationPipe)
 	@Get('/bids/subject')
-	getSubject(
+	async getSubject(
 		@Query('path') path: string,
 		@Query('owner') owner: string,
 		@Query('sub') sub: string,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
+		await this.nextcloudService.validate(req)
 		const bidsGetSubjectDto: BidsGetSubjectDto = {
 			owner,
 			path,
 			sub,
 		}
 
-		return this.toolsService.getSubject(bidsGetSubjectDto, {
-			cookie,
-			requesttoken,
-		})
+		return this.toolsService.getSubject(bidsGetSubjectDto)
 	}
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/subject')
-	importSubject(
+	async importSubject(
 		@Body() createSubjectDto: CreateSubjectDto,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.importSubject(createSubjectDto, {
-			cookie,
-			requesttoken,
-		})
+		await this.nextcloudService.validate(req)
+		return this.toolsService.importSubject(createSubjectDto)
 	}
 
 	@UsePipes(ValidationPipe)
 	@Patch('/bids/subject')
-	editClinical(
+	async editClinical(
 		@Body() editSubjectClinicalDto: EditSubjectClinicalDto,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.subEditClinical(editSubjectClinicalDto, {
-			cookie,
-			requesttoken,
-		})
+		await this.nextcloudService.validate(req)
+		return this.toolsService.subEditClinical(editSubjectClinicalDto)
 	}
 
 	// @Delete('/bids/subject')
@@ -104,13 +93,13 @@ export class ToolsController {
 
 	@UsePipes(ValidationPipe)
 	@Get(`/bids/participants`)
-	getParticipants(
+	async getParticipants(
 		@Query('path') path: string,
 		@Query('owner') owner: string,
 		@Req() req: Request
 	) {
 		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.participants(path, { cookie, requesttoken })
+		await this.nextcloudService.validate(req)
+		return this.toolsService.participants(path, { cookie })
 	}
 }

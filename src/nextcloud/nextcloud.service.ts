@@ -1,13 +1,14 @@
 const { spawn } = require('child_process')
-import { join } from 'path'
+import { HttpService } from '@nestjs/axios'
+import { Request } from 'express'
 import {
-	BadRequestException,
 	HttpException,
 	HttpStatus,
 	Injectable,
-	InternalServerErrorException,
 	Logger,
+	UnauthorizedException,
 } from '@nestjs/common'
+import { firstValueFrom } from 'rxjs'
 
 const OCC_DOCKER_ARGS = [
 	'exec',
@@ -26,11 +27,19 @@ export interface User {
 	groups?: string[]
 }
 
+interface GroupFolder {
+	id: number
+	label: string
+	path: string
+}
+
 @Injectable()
 export class NextcloudService {
 	private readonly logger = new Logger('NextcloudService')
 
-	async user(userid: string): Promise<User> {
+	constructor(private readonly httpService: HttpService) {}
+
+	public async user(userid: string): Promise<User> {
 		try {
 			const args = ['user:info', userid]
 			const message = await this.spawnable(args)
@@ -41,20 +50,18 @@ export class NextcloudService {
 				displayName: user.display_name,
 				email: user.email,
 				lastLogin: user.last_seen,
-				groups: user.groups
+				groups: user.groups,
 			}
-
 		} catch (error) {}
 	}
 
-	async usersForGroup(groupid: string): Promise<string[]> {
+	public async usersForGroup(groupid: string): Promise<string[]> {
 		try {
 			const args = ['group:list']
 			const message = await this.spawnable(args)
 			const jsonMessage = JSON.parse(message)
-			const users = jsonMessage[groupid]
 
-			return users || []
+			return jsonMessage[groupid] || []
 		} catch (error) {
 			this.logger.error({ error })
 			throw new HttpException(
@@ -64,9 +71,113 @@ export class NextcloudService {
 		}
 	}
 
-	private spawnable = (
-		args: string[]
-	): Promise<string> => {
+	/**
+	 * It makes a GET request to the Nextcloud API to get a list of foldergroups
+	 * filtered by the user's groups.
+	 * @returns An array of groups
+	 */
+
+	public async groupFoldersForUserId(userid: string): Promise<GroupFolder[]> {
+		try {
+			const user = await this.user(userid)
+			const groupfolders = await this.groupFolders()
+
+			const groupArray = Object.values(groupfolders).map(
+				({ id, acl, mount_point, groups }) => ({
+					id,
+					label: mount_point,
+					acl,
+					groups: Object.keys(groups).map(group => group.toLowerCase()),
+				})
+			)
+
+			return groupArray
+				.filter(g => !g.acl)
+				.filter(g => g.groups.some(group => user.groups.includes(group)))
+				.map(({ id, label }) => ({ id, label, path: `__groupfolders/${id}` }))
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
+		}
+	}
+
+	public async groupFolders() {
+		try {
+			const args = ['groupfolders:list']
+			const message = await this.spawnable(args)
+
+			return JSON.parse(message)
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
+		}
+	}
+
+	/*
+	 * path is the relative path to the user's home directory eg: myFolder (in data/nicedexter/files/myFolder)
+	*/
+
+	public async scanFiles(userid: string, path: string): Promise<string> {
+		try {
+			const ncPath = `${userid}/files/${path}`
+			const args = ['files:scan', '--path', ncPath]
+			const message = await this.spawnable(args)
+
+			return message
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
+		}
+	}
+
+	public async validate(req: Request): Promise<any> {
+		try {
+			const { cookie, requesttoken }: any = req.headers
+
+			if (!cookie || !requesttoken) {
+				throw new UnauthorizedException()
+			}
+
+			const headers = {
+				cookie,
+				requesttoken,
+				accept: 'application/json, text/plain, */*',
+				'content-type': 'application/json',
+			}
+
+			const response = this.httpService.put(
+				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/user_status/heartbeat`,
+				{ status: 'online' },
+				{ headers }
+			)
+			const { userId } = await firstValueFrom(response).then(r => {
+				return r.data
+			})
+
+			if (!userId) {
+				throw new UnauthorizedException()
+			}
+
+			return true
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
+		}
+	}
+
+	private spawnable = (args: string[]): Promise<string> => {
 		const child = spawn('docker', [
 			...OCC_DOCKER_ARGS,
 			...args,

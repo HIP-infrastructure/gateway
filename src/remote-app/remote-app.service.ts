@@ -22,7 +22,7 @@ import {
 	ContainerType,
 	WebdavOptions,
 } from './remote-app.types'
-import { FilesService } from '../files/files.service'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -36,7 +36,7 @@ export class RemoteAppService {
 
 	constructor(
 		private readonly cacheService: CacheService,
-		private readonly filesService: FilesService
+		private readonly nextcloudService: NextcloudService
 	) {
 		// this.cacheService.flushall()
 		this.restoreCachedContainers()
@@ -140,7 +140,6 @@ export class RemoteAppService {
 						break
 				}
 			} catch (error) {
-				// this.logger.log(error, 'pollRemoteState error')
 				service.state.context = {
 					...currentContext,
 					// ...error,
@@ -347,10 +346,7 @@ export class RemoteAppService {
 		}
 
 		// get groupfolders mount point
-		const groupFolders = await this.filesService.userGroupFolders(
-			{ cookie, requesttoken },
-			userId
-		)
+		const groupFolders = await this.nextcloudService.groupFoldersForUserId(userId)
 
 		const context: ContainerContext & WebdavOptions = {
 			id: appId,
@@ -465,12 +461,6 @@ export class RemoteAppService {
 				},
 			}
 		}
-
-		// this.logger.log(service, 'destroyAppsAndSession')
-		// this.logger.log(
-		// 	`${JSON.stringify(appServices, null, 2)}`,
-		// 	'destroyAppsAndSession'
-		// )
 
 		const currentContext = service.state.context
 		// stale: remove already exited apps and session
@@ -683,10 +673,5 @@ export class RemoteAppService {
 
 			return service
 		})
-
-		// this.logger.log(
-		// 	`${JSON.stringify(this.containerServices, null, 2)}`,
-		// 	'restoreCachedContainers'
-		// )
 	}
 }
