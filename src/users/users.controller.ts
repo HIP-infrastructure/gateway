@@ -1,15 +1,12 @@
-import { Controller, Get, Param, Request as Req } from '@nestjs/common'
-import { Request } from 'express'
-import { UsersService } from './users.service'
+import { Controller, Get, Param } from '@nestjs/common'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 @Controller('users')
 export class UsersController {
-	constructor(private readonly usersService: UsersService) {}
+	constructor(private readonly nextcloudService: NextcloudService) {}
 
 	@Get(':userid')
-	async findOne(@Param('userid') userid: string, @Req() req: Request) {
-		const { cookie, requesttoken } = req.headers
-		
-		return this.usersService.findOne({ cookie, requesttoken }, userid)
+	async findOne(@Param('userid') userid: string) {
+		return this.nextcloudService.user(userid)
 	}
 }
