@@ -9,6 +9,7 @@ import {
 	InternalServerErrorException,
 	Logger,
 } from '@nestjs/common'
+import { Client } from '@elastic/elasticsearch'
 
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
@@ -147,6 +148,51 @@ export class ToolsService {
 			)
 
 			return bidsDatasets
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
+		}
+	}
+
+	public async indexBIDSDatasets({ cookie, requesttoken }) {
+		try {
+			// Get elasticsearch server url
+			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
+			this.logger.log(ELASTICSEARCH_URL)
+			// get list dataset_description.json content
+			const bidsDatasets = await this.getBIDSDatasets({ cookie, requesttoken })
+			this.logger.log(bidsDatasets)
+			// create a new client to our elasticsearch node
+			const es_opt = {
+				node: `${ELASTICSEARCH_URL}`
+			}
+			const elastic_client = new Client(es_opt)
+			// format list of datasets to make elastic_client happy
+			const body = bidsDatasets.flatMap((dataset: BIDSDataset) => [
+				{ 
+					index: {
+						_index: `datasets_${this.dataUser}`,
+						_type: "bids",
+						_id: dataset.Name.replace(/\s/g, "").toLowerCase()
+					}
+				},
+				dataset,//{"query": {"match_all": { }}},
+			]);
+			this.logger.log(body)
+			// indexing the list of datasets
+			const { body: bulkResponse } = await elastic_client.bulk({
+				refresh: true,
+				body,
+			});
+			if (bulkResponse.errors) {
+				this.logger.log(bulkResponse.errors);
+			}
+			// counting Index
+			const { body: count } = await elastic_client.count({ index: `datasets_${this.dataUser}` });
+			this.logger.log(count);
+
+			return bidsDatasets
+
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)

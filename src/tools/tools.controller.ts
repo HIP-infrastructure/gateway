@@ -33,6 +33,15 @@ export class ToolsController {
 		return this.toolsService.getBIDSDatasets({ cookie, requesttoken })
 	}
 
+	@Post('/bids/datasets')
+	async indexBIDSDatasets(
+			@Req() req: Request
+		) {
+		const { cookie, requesttoken } = req.headers
+
+		return this.toolsService.indexBIDSDatasets({ cookie, requesttoken })
+	}
+
 	@UsePipes(ValidationPipe)
 	@Post('/bids/dataset')
 	createDatabase(
