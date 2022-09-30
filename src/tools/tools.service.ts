@@ -156,7 +156,7 @@ export class ToolsService {
 
 	public async indexBIDSDatasets({ cookie, requesttoken }) {
 		try {
-			// Get elasticsearch server url
+			// get elasticsearch server url
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
 			this.logger.log(ELASTICSEARCH_URL)
 			// get list dataset_description.json content
@@ -176,10 +176,10 @@ export class ToolsService {
 						_id: dataset.Name.replace(/\s/g, "").toLowerCase()
 					}
 				},
-				dataset,//{"query": {"match_all": { }}},
+				dataset,
 			]);
 			this.logger.log(body)
-			// indexing the list of datasets
+			// index the list of datasets
 			const { body: bulkResponse } = await elastic_client.bulk({
 				refresh: true,
 				body,
@@ -187,7 +187,7 @@ export class ToolsService {
 			if (bulkResponse.errors) {
 				this.logger.log(bulkResponse.errors);
 			}
-			// counting Index
+			// count indexed data
 			const { body: count } = await elastic_client.count({ index: `datasets_${this.dataUser}` });
 			this.logger.log(count);
 
