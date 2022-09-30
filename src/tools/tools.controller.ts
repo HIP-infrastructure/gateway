@@ -24,12 +24,6 @@ export class ToolsController {
 		private readonly nextcloudService: NextcloudService
 	) {}
 
-	// @UsePipes(ValidationPipe)
-	// @Get('/bids/database')
-	// findOneDatabase(@Query() getBidsDatasetDto: GetBidsDatasetDto) {
-	//     return this.toolsService.getBIDSDataset(getBidsDatasetDto)
-	// }
-
 	@Get('/bids/datasets')
 	async getBids(@Req() req: Request) {
 		const { cookie } = req.headers

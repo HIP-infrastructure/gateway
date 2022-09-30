@@ -1,12 +1,8 @@
 import { HttpService } from '@nestjs/axios'
-import {
-	HttpException,
-	ServiceUnavailableException,
-	Injectable,
-	Logger,
-} from '@nestjs/common'
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { Interval } from '@nestjs/schedule'
 import { firstValueFrom } from 'rxjs'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { interpret } from 'xstate'
 import { CacheService } from '../cache/cache.service'
 import {
@@ -22,7 +18,6 @@ import {
 	ContainerType,
 	WebdavOptions,
 } from './remote-app.types'
-import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -346,7 +341,9 @@ export class RemoteAppService {
 		}
 
 		// get groupfolders mount point
-		const groupFolders = await this.nextcloudService.groupFoldersForUserId(userId)
+		const groupFolders = await this.nextcloudService.groupFoldersForUserId(
+			userId
+		)
 
 		const context: ContainerContext & WebdavOptions = {
 			id: appId,
@@ -360,7 +357,11 @@ export class RemoteAppService {
 			parentId: serverId,
 			nc: process.env.PRIVATE_FS_URL,
 			ab: process.env.PRIVATE_FS_AUTH_BACKEND_URL,
-			groupFolders: groupFolders.map(({id, label, path}) => ({id, label, path})),
+			groupFolders: groupFolders.map(({ id, label, path }) => ({
+				id,
+				label,
+				path,
+			})),
 			cookie,
 		}
 		const machine = createContainerMachine(context)

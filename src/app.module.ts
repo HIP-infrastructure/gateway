@@ -1,15 +1,14 @@
+import { RedisModule } from '@liaoliaots/nestjs-redis'
 import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { ScheduleModule } from '@nestjs/schedule'
 import { AppController } from './app.controller'
 import { FilesModule } from './files/files.module'
+import { GroupsModule } from './groups/groups.module'
+import { NextcloudModule } from './nextcloud/nextcloud.module'
 import { RemoteAppModule } from './remote-app/remote-app.module'
-import { ScheduleModule } from '@nestjs/schedule'
 import { ToolsModule } from './tools/tools.module'
-import { ConfigModule } from '@nestjs/config'
-import { RedisModule } from '@liaoliaots/nestjs-redis'
-import { UsersModule } from './users/users.module';
-import { GroupsModule } from './groups/groups.module';
-import { NextcloudService } from './nextcloud/nextcloud.service';
-import { NextcloudModule } from './nextcloud/nextcloud.module';
+import { UsersModule } from './users/users.module'
 
 @Module({
 	imports: [

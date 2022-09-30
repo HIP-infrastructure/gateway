@@ -1,16 +1,18 @@
 import {
 	Controller,
-	Get, HttpStatus, Logger,
-	Param, Request as Req,
+	Get,
+	HttpStatus,
+	Logger,
+	Param,
+	Request as Req,
 	Response as Res,
-	Query
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { FilesService } from './files.service'
 
 @Controller('files')
 export class FilesController {
-	constructor(private fileService: FilesService) { }
+	constructor(private fileService: FilesService) {}
 
 	private logger = new Logger('FilesService')
 

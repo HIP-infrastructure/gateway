@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Request as Req } from '@nestjs/common'
-import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { Request } from 'express'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 @Controller('groups')
 export class GroupsController {

@@ -10,6 +10,7 @@ import {
 	Logger,
 } from '@nestjs/common'
 
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
@@ -17,8 +18,6 @@ import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 const userid = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
-import { NextcloudService } from 'src/nextcloud/nextcloud.service'
-import { join } from 'path'
 
 type DataError = {
 	data?: Record<string, string>
@@ -152,9 +151,7 @@ export class ToolsService {
 		}
 	}
 
-	public async createBidsDataset(
-		createBidsDatasetDto: CreateBidsDatasetDto
-	) {
+	public async createBidsDataset(createBidsDatasetDto: CreateBidsDatasetDto) {
 		const { owner, path } = createBidsDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -201,9 +198,7 @@ export class ToolsService {
 		}
 	}
 
-	async getSubject(
-		bidsGetSubjectDto: BidsGetSubjectDto
-	) {
+	async getSubject(bidsGetSubjectDto: BidsGetSubjectDto) {
 		const { owner, path } = bidsGetSubjectDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -268,8 +263,7 @@ export class ToolsService {
 		}
 	}
 
-	public async importSubject(
-		createSubject: CreateSubjectDto	) {
+	public async importSubject(createSubject: CreateSubjectDto) {
 		const { owner, path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -349,9 +343,7 @@ export class ToolsService {
 		return this.spawnable('docker', dockerParams)
 	}
 
-	public async subEditClinical(
-		editSubjectClinicalDto: EditSubjectClinicalDto
-	) {
+	public async subEditClinical(editSubjectClinicalDto: EditSubjectClinicalDto) {
 		let { owner, path } = editSubjectClinicalDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -421,7 +413,6 @@ export class ToolsService {
 			throw new InternalServerErrorException()
 		}
 	}
-
 
 	private spawnable = (
 		command,
@@ -521,10 +512,7 @@ export class ToolsService {
 	}
 
 	/* A private method that is used to get the file path, either user based or for a group */
-	private async filePath(
-		path: string,
-		userid: string,
-	) {
+	private async filePath(path: string, userid: string) {
 		try {
 			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
 				userid

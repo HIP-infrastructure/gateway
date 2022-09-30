@@ -1,11 +1,4 @@
-import {
-	Controller,
-	Get,
-	Param,
-	Request as Req,
-	Logger,
-	UnauthorizedException,
-} from '@nestjs/common'
+import { Controller, Get, Logger, Param, Request as Req } from '@nestjs/common'
 import { Request } from 'express'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 

@@ -1,13 +1,6 @@
 import { HttpService } from '@nestjs/axios'
-import {
-	Injectable,
-	Logger,
-	HttpException,
-	InternalServerErrorException,
-	HttpStatus,
-} from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
-import { UsersService } from 'src/users/users.service'
 
 interface ISearch {
 	name: string
@@ -53,10 +46,7 @@ type DataError = {
 const HIP_API = '/apps/hip/api/groupfolders?format=json'
 @Injectable()
 export class FilesService {
-	constructor(
-		private readonly httpService: HttpService,
-		private readonly usersService: UsersService
-	) {}
+	constructor(private readonly httpService: HttpService) {}
 
 	private logger = new Logger('Files Service')
 

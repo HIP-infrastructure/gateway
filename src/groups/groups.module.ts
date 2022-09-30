@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common'
 import { HttpModule } from '@nestjs/axios'
-import { GroupsController } from './groups.controller'
+import { Module } from '@nestjs/common'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
+import { GroupsController } from './groups.controller'
 
 @Module({
 	imports: [HttpModule],
