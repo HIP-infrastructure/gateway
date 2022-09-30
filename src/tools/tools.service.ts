@@ -9,7 +9,7 @@ import {
 	InternalServerErrorException,
 	Logger,
 } from '@nestjs/common'
-import { Client } from '@elastic/elasticsearch'
+import { Client, RequestParams, ApiResponse } from '@elastic/elasticsearch'
 
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
@@ -193,6 +193,50 @@ export class ToolsService {
 
 			return bidsDatasets
 
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
+		}
+	}
+
+	/*
+	Method that reproduces:
+	curl -XPOST 'localhost:9200/datasets_www-data/_search' -H 'Content-Type: application/json' -d '{"query": { "query_string": { "query": "Tom" } }}'
+	TO BE TESTED !
+	*/
+	public async searchBidsDatasets(
+		text_query: string
+	) {
+		try {
+			// get elasticsearch server url
+			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
+			this.logger.log(ELASTICSEARCH_URL)
+
+			// define search query in JSON format expected by elasticsearch
+			const query_params: RequestParams.Search = {
+				index: `datasets_$(this.dataUser)`,
+				body: {
+					query: {
+						query_string: {
+					  		query: text_query
+						}
+					}
+				}
+			}
+
+			// create a new client to our elasticsearch node
+			const es_opt = {
+				node: `${ELASTICSEARCH_URL}`
+			}
+			const elastic_client = new Client(es_opt)
+
+			// perform and return the search query
+			return elastic_client
+				.search(query_params)
+				.then( (result: ApiResponse) => {
+					return result.body.json()
+				})
+			
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
