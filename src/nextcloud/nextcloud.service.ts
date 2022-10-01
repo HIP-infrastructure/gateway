@@ -80,9 +80,8 @@ export class NextcloudService {
 	public async groupFoldersForUserId(userid: string): Promise<GroupFolder[]> {
 		try {
 			const user = await this.user(userid)
-			const groupfolders = await this.groupFolders()
-
-			const groupArray = Object.values(groupfolders).map(
+			const groupFolders = await this.groupFolders()
+			const groupArray = Object.values(groupFolders).map(
 				({ id, acl, mount_point, groups }) => ({
 					id,
 					label: mount_point,
@@ -121,7 +120,7 @@ export class NextcloudService {
 
 	/*
 	 * path is the relative path to the user's home directory eg: myFolder (in data/nicedexter/files/myFolder)
-	*/
+	 */
 
 	public async scanFiles(userid: string, path: string): Promise<string> {
 		try {

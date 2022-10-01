@@ -12,18 +12,21 @@ import {
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { RemoteAppService } from './remote-app.service'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 @Controller('remote-app')
 export class RemoteAppController {
-	constructor(private readonly remoteAppService: RemoteAppService) {}
+	constructor(
+		private readonly remoteAppService: RemoteAppService,
+		private readonly nextcloudService: NextcloudService) {}
 
 	private readonly logger = new Logger('RemoteAppController')
 
 	@Get('/containers/:userId')
-	getContainers(@Param('userId') userId: string, @Req() req: Request) {
+	async getContainers(@Param('userId') userId: string, @Req() req: Request) {
 		// Admin endpoint to see every containers
 		// 	return this.remoteAppService.getAllContainers()
-
+		await this.nextcloudService.validate(req)
 		return this.remoteAppService.getContainers(userId)
 	}
 
@@ -35,6 +38,8 @@ export class RemoteAppController {
 		@Res() res: Response
 	) {
 		this.logger.debug('/startSessionWithUserId', sessionId)
+		await this.nextcloudService.validate(req)
+
 		const json = await this.remoteAppService.startSessionWithUserId(
 			sessionId,
 			userId
@@ -54,6 +59,8 @@ export class RemoteAppController {
 	) {
 		this.logger.debug('/startApp', sessionId)
 		const { cookie, requesttoken } = req.headers
+		await this.nextcloudService.validate(req)
+
 		return await this.remoteAppService.startApp(
 			sessionId,
 			appId,
@@ -73,6 +80,8 @@ export class RemoteAppController {
 		@Res() res: Response
 	) {
 		this.logger.debug('/stopApp', appId)
+		await this.nextcloudService.validate(req)
+
 		const json = await this.remoteAppService.stopAppInSession(sessionId, appId)
 
 		return res.status(HttpStatus.CREATED).json(json)
@@ -85,6 +94,7 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
+		await this.nextcloudService.validate(req)
 		const json = this.remoteAppService.removeAppsAndSession(sessionId)
 
 		return res.status(HttpStatus.OK).json(json)
@@ -97,6 +107,7 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
+		await this.nextcloudService.validate(req)
 		const json = this.remoteAppService.pauseAppsAndSession(sessionId)
 
 		return res.status(HttpStatus.OK).json(json)
@@ -109,6 +120,7 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
+		await this.nextcloudService.validate(req)
 		const json = this.remoteAppService.resumeAppsAndSession(sessionId)
 
 		return res.status(HttpStatus.OK).json(json)
@@ -126,7 +138,8 @@ export class RemoteAppController {
 	}
 
 	@Get('/containers/forceRemove/:sessionId')
-	async forceRemove(@Param('sessionId') sessionId: string) {
+	async forceRemove(@Param('sessionId') sessionId: string, @Req() req: Request) {
+		await this.nextcloudService.validate(req)
 		this.remoteAppService.forceRemove(sessionId)
 	}
 }
