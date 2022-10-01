@@ -19,6 +19,7 @@ const userid = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
 
+
 type DataError = {
 	data?: Record<string, string>
 	error?: Record<string, string>
@@ -27,7 +28,6 @@ type DataError = {
 const NC_SEARCH_PATH = '/ocs/v2.php/search/providers/files/search'
 const DATASET_DESCRIPTION = 'dataset_description.json'
 const PARTICIPANTS_FILE = 'participants.tsv'
-const HIP_API = '/apps/hip/document/file?path='
 
 interface ISearch {
 	name: string
@@ -110,7 +110,6 @@ export class ToolsService {
 					participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
 					searchResult: searchResults[item.i],
 				}))
-
 			const bidsDatasetsPromises = participantSearchFiltered.map(ps =>
 				this.getDatasetContent(
 					`${ps.searchResult.attributes.path.replace(
@@ -444,7 +443,7 @@ export class ToolsService {
 
 	private async participantsWithPath(path: string, cookie: any) {
 		try {
-			const tsv = await this.getFileContent(path, cookie)
+			const tsv = await this.getFileContent(path, cookie)			
 			const [tsvheaders, ...rows] = tsv
 				.trim()
 				.split('\n')
@@ -474,17 +473,19 @@ export class ToolsService {
 		cookie: any
 	): Promise<DataError> {
 		try {
-			const response = this.httpService.get(
-				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/hip/document/file?path=${path}`,
-				{ headers: { cookie } }
-			)
-			const data = await firstValueFrom(response).then(r => r.data)
-
-			if (typeof data !== 'string') return { data: null }
-
-			const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
-
-			return { data: JSON.parse(cleaned) }
+			const userid = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
+			const filePath = await this.filePath(path, userid)
+			
+			return new Promise((resolve, reject) => {
+				fs.readFile(filePath, 'utf8', function (err, data) {
+				if (err) {
+					reject(err);
+				}
+					if (typeof data !== 'string') return { data: null }
+					const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
+					resolve({ data: JSON.parse(cleaned) });
+				});
+			});	  
 		} catch (e) {
 			this.logger.error(e)
 			return { error: e.message }
@@ -497,14 +498,19 @@ export class ToolsService {
 	 * @param {any} headers - This is the headers that you need to pass to the webdav server.
 	 * @returns The file content
 	 */
-	private getFileContent(path: string, cookie: any): Promise<string> {
+	private async getFileContent(path: string, cookie: any): Promise<string> {
 		try {
-			const response = this.httpService.get(
-				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${HIP_API}${path}`,
-				{ headers: { cookie } }
-			)
-
-			return firstValueFrom(response).then(r => r.data)
+			const userid = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
+			const filePath = await this.filePath(path, userid)
+			
+			return new Promise((resolve, reject) => {
+				fs.readFile(filePath, 'utf8', function (err, data) {
+				if (err) {
+					reject(err);
+				}
+					resolve(data);
+				});
+			});	  
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status)
