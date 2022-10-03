@@ -24,11 +24,11 @@ export class UsersController {
 	async settings(@Param('userid') userid: string, @Req() req: Request) {
 		const validatedId = await this.nextcloudService.validate(req)
 		if (userid === validatedId) {
-			return Promise.all(NEXTCLOUD_HIP_SETTINGS.map((setting, i) => {
-				return setTimeout(() => {
+			return Promise.all(
+				NEXTCLOUD_HIP_SETTINGS.map((setting, i) => {
 					return this.nextcloudService.userSettings(userid, setting)
-				}, i * 1000)
-			}))
+				})
+			)
 		}
 	}
 
