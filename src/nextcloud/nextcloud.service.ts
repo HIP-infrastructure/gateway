@@ -118,8 +118,38 @@ export class NextcloudService {
 		}
 	}
 
+	public async userSettings(userid: string, settings: string): Promise<string> {
+		try {
+			const args = ['user:setting', userid, settings || '']
+			const message = await this.spawnable(args)
+
+			return JSON.parse(message)
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
+		}
+	}
+
+	public async scanUserFiles(userid: string): Promise<string> {
+		try {
+			const args = ['files:scan', userid]
+			const message = await this.spawnable(args)
+
+			return message
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
+		}
+	}
+
 	/*
-	 * path is the relative path to the user's home directory eg: myFolder (in data/nicedexter/files/myFolder)
+	 * path is the relative path to the user's home directory eg: path: myFolder (in data/nicedexter/files/myFolder)
 	 */
 
 	public async scanFiles(userid: string, path: string): Promise<string> {
@@ -166,7 +196,7 @@ export class NextcloudService {
 				throw new UnauthorizedException()
 			}
 
-			return true
+			return userId
 		} catch (error) {
 			this.logger.error({ error })
 			throw new HttpException(
