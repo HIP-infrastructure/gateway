@@ -1,6 +1,5 @@
 const { spawn } = require('child_process')
 import { HttpService } from '@nestjs/axios'
-import { Request } from 'express'
 import {
 	HttpException,
 	HttpStatus,
@@ -8,6 +7,7 @@ import {
 	Logger,
 	UnauthorizedException,
 } from '@nestjs/common'
+import { Request } from 'express'
 import { firstValueFrom } from 'rxjs'
 
 const OCC_DOCKER_ARGS = [
@@ -23,14 +23,52 @@ export interface User {
 	id: string
 	displayName?: string | null
 	email?: string | null
-	lastLogin: number
+	lastLogin: string
 	groups?: string[]
+	enabled: boolean
+}
+
+interface NCUser {
+	user_id: string
+	display_name: string
+	email: string
+	cloud_id: string
+	enabled: boolean
+	groups: string[]
+	quota: string
+	storage: {
+		free: number
+		used: number
+		total: number
+		relative: number
+		quota: number
+	}
+	last_seen: string
+	user_directory: string
+	backend: 'Database'
 }
 
 interface GroupFolder {
 	id: number
 	label: string
 	path: string
+}
+
+interface NCGroups {
+	[key: string]: string[]
+}
+interface NCGroupFolder {
+	id: number
+	mount_point: string
+	groups: NCGroups
+	quota: number
+	size: number
+	acl: boolean
+	manage: {
+		type: 'user'
+		id: string
+		displayname: string
+	}
 }
 
 @Injectable()
@@ -43,7 +81,7 @@ export class NextcloudService {
 		try {
 			const args = ['user:info', userid]
 			const message = await this.spawnable(args)
-			const user = JSON.parse(message)
+			const user: NCUser = JSON.parse(message)
 
 			return {
 				id: user.user_id,
@@ -51,17 +89,24 @@ export class NextcloudService {
 				email: user.email,
 				lastLogin: user.last_seen,
 				groups: user.groups,
+				enabled: user.enabled,
 			}
-		} catch (error) {}
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
+		}
 	}
 
 	public async usersForGroup(groupid: string): Promise<string[]> {
 		try {
 			const args = ['group:list']
 			const message = await this.spawnable(args)
-			const jsonMessage = JSON.parse(message)
+			const groups: NCGroups = JSON.parse(message)
 
-			return jsonMessage[groupid] || []
+			return groups[groupid] || []
 		} catch (error) {
 			this.logger.error({ error })
 			throw new HttpException(
@@ -80,7 +125,8 @@ export class NextcloudService {
 	public async groupFoldersForUserId(userid: string): Promise<GroupFolder[]> {
 		try {
 			const user = await this.user(userid)
-			const groupFolders = await this.groupFolders()
+			const groupFolders: NCGroupFolder[] = await this.groupFolders()
+
 			const groupArray = Object.values(groupFolders).map(
 				({ id, acl, mount_point, groups }) => ({
 					id,
@@ -94,21 +140,6 @@ export class NextcloudService {
 				.filter(g => !g.acl)
 				.filter(g => g.groups.some(group => user.groups.includes(group)))
 				.map(({ id, label }) => ({ id, label, path: `__groupfolders/${id}` }))
-		} catch (error) {
-			this.logger.error({ error })
-			throw new HttpException(
-				error.message,
-				error.status ?? HttpStatus.BAD_REQUEST
-			)
-		}
-	}
-
-	public async groupFolders() {
-		try {
-			const args = ['groupfolders:list']
-			const message = await this.spawnable(args)
-
-			return JSON.parse(message)
 		} catch (error) {
 			this.logger.error({ error })
 			throw new HttpException(
@@ -152,7 +183,7 @@ export class NextcloudService {
 	 * path is the relative path to the user's home directory eg: path: myFolder (in data/nicedexter/files/myFolder)
 	 */
 
-	public async scanFiles(userid: string, path: string): Promise<string> {
+	public async scanPath(userid: string, path: string): Promise<string> {
 		try {
 			const ncPath = `${userid}/files/${path}`
 			const args = ['files:scan', '--path', ncPath]
@@ -168,7 +199,7 @@ export class NextcloudService {
 		}
 	}
 
-	public async validate(req: Request): Promise<any> {
+	public async validate(req: Request): Promise<string> {
 		try {
 			const { cookie, requesttoken }: any = req.headers
 
@@ -197,6 +228,22 @@ export class NextcloudService {
 			}
 
 			return userId
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
+		}
+	}
+
+	private async groupFolders(): Promise<NCGroupFolder[]> {
+		try {
+			const args = ['groupfolders:list']
+			const message = await this.spawnable(args)
+			const groupFolders: NCGroupFolder[] = JSON.parse(message)
+
+			return groupFolders
 		} catch (error) {
 			this.logger.error({ error })
 			throw new HttpException(

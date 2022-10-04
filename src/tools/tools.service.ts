@@ -183,7 +183,7 @@ export class ToolsService {
 			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
-				await this.nextcloudService.scanFiles(owner, path)
+				await this.nextcloudService.scanPath(owner, path)
 				return createBidsDatasetDto
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -310,7 +310,7 @@ export class ToolsService {
 			if (errorMatching) throw new BadRequestException(message)
 
 			if (code === 0) {
-				await this.nextcloudService.scanFiles(owner, path)
+				await this.nextcloudService.scanPath(owner, path)
 				// To debug "Failed to fetch response error" obtained
 				// while importing "ieeg"...
 				const util = require('util')
