@@ -6,6 +6,7 @@ import {
 	Logger,
 	Param,
 	Post,
+	Query,
 	Put,
 	Request as Req,
 	Response as Res,
@@ -23,10 +24,19 @@ export class RemoteAppController {
 	private readonly logger = new Logger('RemoteAppController')
 
 	@Get('/containers/:userId')
-	async getContainers(@Param('userId') userId: string, @Req() req: Request) {
-		// Admin endpoint to see every containers
-		// 	return this.remoteAppService.getAllContainers()
+	async getContainers(
+		@Param('userId') userId: string,
+		@Query('isAdmin') isAdmin: string, 
+		@Req() req: Request
+	) {
 		await this.nextcloudService.validate(req)
+		if (isAdmin === '1') {
+			const { groups } = await this.nextcloudService.user(userId)
+			if (groups.includes('admin')) {
+				return this.remoteAppService.getAllContainers()
+			} 
+		}
+
 		return this.remoteAppService.getContainers(userId)
 	}
 
