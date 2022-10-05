@@ -154,7 +154,7 @@ export class ToolsService {
 		}
 	}
 
-	public async indexBIDSDatasets({ cookie, requesttoken }) {
+	public async indexBIDSDatasets(owner, { cookie, requesttoken }) {
 		try {
 			// get elasticsearch server url
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
@@ -171,8 +171,7 @@ export class ToolsService {
 			const body = bidsDatasets.flatMap((dataset: BIDSDataset) => [
 				{ 
 					index: {
-						_index: `datasets_${this.dataUser}`,
-						_type: "bids",
+						_index: `datasets_${owner}`,
 						_id: dataset.Name.replace(/\s/g, "").toLowerCase()
 					}
 				},
@@ -188,7 +187,9 @@ export class ToolsService {
 				this.logger.log(bulkResponse.errors);
 			}
 			// count indexed data
-			const { body: count } = await elastic_client.count({ index: `datasets_${this.dataUser}` });
+			const { body: count } = await elastic_client.count({
+				index: `datasets_${owner}`
+			});
 			this.logger.log(count);
 
 			return bidsDatasets

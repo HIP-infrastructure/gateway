@@ -35,11 +35,13 @@ export class ToolsController {
 
 	@Post('/bids/datasets')
 	async indexBIDSDatasets(
+			@Query('owner') owner: string,
 			@Req() req: Request
 		) {
 		const { cookie, requesttoken } = req.headers
 
-		return this.toolsService.indexBIDSDatasets({ cookie, requesttoken })
+		return this.toolsService.indexBIDSDatasets(owner, { cookie, requesttoken })
+	}
 	}
 
 	@UsePipes(ValidationPipe)
