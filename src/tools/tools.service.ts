@@ -1,5 +1,8 @@
 import { firstValueFrom } from 'rxjs'
 
+import { mappings } from '../mappings/datasets_mapping.json'
+
+
 import { HttpService } from '@nestjs/axios'
 import {
 	BadRequestException,
@@ -167,6 +170,31 @@ export class ToolsService {
 				node: `${ELASTICSEARCH_URL}`
 			}
 			const elastic_client = new Client(es_opt)
+
+			// create index for datasets if not existing
+
+			this.logger.log(`Check if index datasets_${owner} exist...`)
+			const exists = await elastic_client.indices.exists({
+				index: `datasets_${owner}`,
+			})
+			this.logger.log(JSON.stringify(exists))
+			
+			if (exists.body === false) {
+                this.logger.log('Create new index ', `datasets_${owner}`)
+                try {
+                    await elastic_client.indices.create({
+                        index: `datasets_${owner}`,
+                        body: {
+                            mappings: mappings,
+                        },
+                    })
+                    this.logger.log('Done')
+                } catch (error) {
+                    this.logger.warn('Failed to create index...')
+                    this.logger.warn(JSON.stringify(error))
+                }
+			}
+
 			// format list of datasets to make elastic_client happy
 			const body = bidsDatasets.flatMap((dataset: BIDSDataset) => [
 				{ 

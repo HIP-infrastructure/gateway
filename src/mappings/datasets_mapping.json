@@ -1,0 +1,77 @@
+{
+	"mappings": {
+		"properties": {
+			"Acknowledgements": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"Authors": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"BIDSVersion": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"DatasetDOI": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"Funding": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"HowToAcknowledge": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"License": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"Name": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"ReferencesAndLinks": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"id": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"participants": {
+				"properties": {
+					"Subject_ready": {
+						"type": "text",
+						"fields": {
+							"keyword": { "type": "keyword", "ignore_above": 256 }
+						}
+					},
+					"age": { "type": "integer" },
+					"participant_id": {
+						"type": "text",
+						"fields": {
+							"keyword": { "type": "keyword", "ignore_above": 256 }
+						}
+					},
+					"sex": {
+						"type": "text",
+						"fields": {
+							"keyword": { "type": "keyword", "ignore_above": 256 }
+						}
+					}
+				}
+			},
+			"path": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"resourceUrl": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			}
+		}
+	}
+}
