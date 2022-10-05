@@ -86,14 +86,14 @@
         }
     },
     {
-        "label": "CHU-LION",
-        "id": "chu-lion",
+        "label": "CHU-LYON",
+        "id": "chu-lyon",
         "pi": "Professor Alexis Arzimanoglou",
         "country": "France",
         "city": "Lyon",
-        "logo": "media/chu-lion__logo.png",
+        "logo": "media/chu-lyon__logo.png",
         "description": "Hospices Civils de Lyon (GHE-HCL)",
-        "website": "https://www.chu-lille.fr/",
+        "website": "https://www.chu-lyon.fr/",
         "socialnetwork": {
             "youtube": "https://www.youtube.com/ChudeLyon",
             "instagram": "https://www.instagram.com/hospicescivilslyon/",
