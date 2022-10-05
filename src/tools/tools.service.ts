@@ -205,14 +205,15 @@ export class ToolsService {
 				},
 				dataset,
 			]);
-			this.logger.log(body)
+			this.logger.log(JSON.stringify(body))
 			// index the list of datasets
 			const { body: bulkResponse } = await elastic_client.bulk({
 				refresh: true,
 				body,
 			});
 			if (bulkResponse.errors) {
-				this.logger.log(bulkResponse.errors);
+				this.logger.log('Errors for (re)indexing datasets');
+				this.logger.log(JSON.stringify(bulkResponse));
 			}
 			// count indexed data
 			const { body: count } = await elastic_client.count({
