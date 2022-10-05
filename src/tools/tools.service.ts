@@ -235,6 +235,7 @@ export class ToolsService {
 	TO BE TESTED !
 	*/
 	public async searchBidsDatasets(
+		owner: string,
 		text_query: string
 	) {
 		try {
@@ -244,7 +245,7 @@ export class ToolsService {
 
 			// define search query in JSON format expected by elasticsearch
 			const query_params: RequestParams.Search = {
-				index: `datasets_$(this.dataUser)`,
+				index: `datasets_${owner}`,
 				body: {
 					query: {
 						query_string: {
