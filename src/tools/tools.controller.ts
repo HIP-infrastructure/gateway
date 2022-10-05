@@ -42,6 +42,33 @@ export class ToolsController {
 
 		return this.toolsService.indexBIDSDatasets(owner, { cookie, requesttoken })
 	}
+
+	@UsePipes(ValidationPipe)
+	@Post('/bids/datasets/search')
+	async searchBIDSDatasets(
+			@Query('owner') owner: string,
+			@Query('query') query: string
+		) {
+		const search_results = await this.toolsService.searchBidsDatasets(owner, query)
+		console.log('Search results: ', JSON.stringify(search_results))
+
+		const found_datasets = search_results.hits.hits.map(dataset => ({
+			// query metadata fields returned by elastic
+			id: dataset._id,
+			...(dataset._source)
+			
+		}))
+
+		console.log('Reformatted search output: ', JSON.stringify(found_datasets))
+
+
+		if (found_datasets.length > 0) {
+			return found_datasets
+		}
+		else {
+			return null
+		}
+		
 	}
 
 	@UsePipes(ValidationPipe)
