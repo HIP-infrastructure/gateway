@@ -264,7 +264,7 @@ export class ToolsService {
 			return elastic_client
 				.search(query_params)
 				.then( (result: ApiResponse) => {
-					return result.body.json()
+					return result.body
 				})
 			
 		} catch (e) {
