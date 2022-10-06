@@ -41,9 +41,6 @@ export class ToolsController {
 		return this.toolsService.createBidsDataset(createBidsDatasetDto)
 	}
 
-	// @Delete('/bids/database')
-	// removeOneDatabase() { }
-
 	@UsePipes(ValidationPipe)
 	@Get('/bids/subject')
 	async getSubject(
@@ -81,9 +78,6 @@ export class ToolsController {
 		await this.nextcloudService.validate(req)
 		return this.toolsService.subEditClinical(editSubjectClinicalDto)
 	}
-
-	// @Delete('/bids/subject')
-	// removeOneSubject() { }
 
 	@UsePipes(ValidationPipe)
 	@Get(`/bids/participants`)

@@ -73,9 +73,6 @@ export interface BIDSDataset {
 	ReferencesAndLinks?: string[]
 	DatasetDOI?: string
 }
-
-const editScriptCmd = ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`]
-
 @Injectable()
 export class ToolsService {
 	private readonly logger = new Logger('ToolsService')
@@ -174,10 +171,7 @@ export class ToolsService {
 				'--input_data=/input/db_create.json',
 			]
 
-			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
-					: [...cmd1, ...cmd2]
+			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
 			const { code, message } = await this.spawnable('docker', command)
@@ -232,10 +226,7 @@ export class ToolsService {
 				'--output_file=/input/sub_info.json',
 			]
 
-			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
-					: [...cmd1, ...cmd2]
+			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
 			const { code, message } = await this.spawnable('docker', command)
@@ -294,10 +285,7 @@ export class ToolsService {
 				'--input_data=/import-data/sub_import.json',
 			]
 
-			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
-					: [...cmd1, ...cmd2]
+			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
 			const { code, message } = await this.spawnable('docker', command)
@@ -373,10 +361,7 @@ export class ToolsService {
 				'--input_data=/import-data/sub_edit_clinical.json',
 			]
 
-			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
-					: [...cmd1, ...cmd2]
+			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 			const { code, message } = await this.spawnable('docker', command)
 
