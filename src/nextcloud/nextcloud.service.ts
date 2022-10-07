@@ -19,6 +19,9 @@ const OCC_DOCKER_ARGS = [
 	'occ',
 ]
 
+const LOGGED_IN_PATH = '/apps/hip/api/isloggedin'
+const USER_ID_PATH = '/apps/hip/api/uid'
+
 export interface User {
 	id: string
 	displayName?: string | null
@@ -76,6 +79,70 @@ export class NextcloudService {
 	private readonly logger = new Logger('NextcloudService')
 
 	constructor(private readonly httpService: HttpService) {}
+
+	// This takes a request object and checks if the user is logged in
+	public async authenticate(req: Request): Promise<boolean> {
+		try {
+			const { cookie, requesttoken }: any = req.headers
+			if (!cookie || !requesttoken) {
+				throw new UnauthorizedException()
+			}
+
+			const url = `${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${LOGGED_IN_PATH}`
+			const response = this.httpService.get(
+				url,
+				{
+					headers: {
+						cookie,
+						requesttoken,
+						accept: 'application/json, text/plain, */*',
+						'content-type': 'application/json',
+					},
+				}
+			)
+
+			const isLoggedIn = await firstValueFrom(response).then(r => {
+				return r.data
+			})
+
+			return isLoggedIn
+		} catch (error) {
+			this.logger.error(` ${error.status} ${error.message}`)
+			throw new UnauthorizedException()
+		}
+	}
+
+	// This takes a request object and returns the user id
+	public async uid(req: Request): Promise<string> {
+		try {
+			const { cookie, requesttoken }: any = req.headers
+			if (!cookie || !requesttoken) {
+				throw new UnauthorizedException()
+			}
+
+			const url = `${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${USER_ID_PATH}`
+			const response = this.httpService.get(
+				url,
+				{
+					headers: {
+						cookie,
+						requesttoken,
+						accept: 'application/json, text/plain, */*',
+						'content-type': 'application/json',
+					},
+				}
+			)
+
+			const uid = await firstValueFrom(response).then(r => {
+				return r.data
+			})
+
+			return uid
+		} catch (error) {
+			this.logger.error(` ${error.status} ${error.message}`)
+			throw new UnauthorizedException()
+		}
+	}
 
 	public async user(userid: string): Promise<User> {
 		try {
@@ -190,44 +257,6 @@ export class NextcloudService {
 			const message = await this.spawnable(args)
 
 			return message
-		} catch (error) {
-			this.logger.error({ error })
-			throw new HttpException(
-				error.message,
-				error.status ?? HttpStatus.BAD_REQUEST
-			)
-		}
-	}
-
-	public async validate(req: Request): Promise<string> {
-		try {
-			const { cookie, requesttoken }: any = req.headers
-
-			if (!cookie || !requesttoken) {
-				throw new UnauthorizedException()
-			}
-
-			const headers = {
-				cookie,
-				requesttoken,
-				accept: 'application/json, text/plain, */*',
-				'content-type': 'application/json',
-			}
-
-			const response = this.httpService.put(
-				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/user_status/heartbeat`,
-				{ status: 'online' },
-				{ headers }
-			)
-			const { userId } = await firstValueFrom(response).then(r => {
-				return r.data
-			})
-
-			if (!userId) {
-				throw new UnauthorizedException()
-			}
-
-			return userId
 		} catch (error) {
 			this.logger.error({ error })
 			throw new HttpException(

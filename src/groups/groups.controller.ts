@@ -7,8 +7,9 @@ export class GroupsController {
 	constructor(private readonly nextcloudService: NextcloudService) {}
 
 	@Get(':groupid/users')
-	async findOne(@Param('groupid') groupid: string, @Req() req: Request) {
-		await this.nextcloudService.validate(req)
-		return this.nextcloudService.usersForGroup(groupid)
+	async findOne(@Param('groupid') groupid: string, @Req() req: Request): Promise<string[]> {
+		return await this.nextcloudService.authenticate(req).then(() => {
+			return this.nextcloudService.usersForGroup(groupid)
+		})
 	}
 }

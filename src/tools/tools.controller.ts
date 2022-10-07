@@ -26,9 +26,10 @@ export class ToolsController {
 
 	@Get('/bids/datasets')
 	async getBids(@Req() req: Request) {
-		const { cookie } = req.headers
-		await this.nextcloudService.validate(req)
-		return this.toolsService.getBIDSDatasets({ cookie })
+		await this.nextcloudService.authenticate(req).then(() => {
+			const { cookie } = req.headers
+			return this.toolsService.getBIDSDatasets({ cookie })
+		})
 	}
 
 	@UsePipes(ValidationPipe)
@@ -37,8 +38,9 @@ export class ToolsController {
 		@Body() createBidsDatasetDto: CreateBidsDatasetDto,
 		@Req() req: Request
 	) {
-		await this.nextcloudService.validate(req)
-		return this.toolsService.createBidsDataset(createBidsDatasetDto)
+		return await this.nextcloudService.authenticate(req).then(() => {
+			return this.toolsService.createBidsDataset(createBidsDatasetDto)
+		})
 	}
 
 	@UsePipes(ValidationPipe)
@@ -49,14 +51,15 @@ export class ToolsController {
 		@Query('sub') sub: string,
 		@Req() req: Request
 	) {
-		await this.nextcloudService.validate(req)
-		const bidsGetSubjectDto: BidsGetSubjectDto = {
-			owner,
-			path,
-			sub,
-		}
+		return await this.nextcloudService.authenticate(req).then(() => {
+			const bidsGetSubjectDto: BidsGetSubjectDto = {
+				owner,
+				path,
+				sub,
+			}
 
-		return this.toolsService.getSubject(bidsGetSubjectDto)
+			return this.toolsService.getSubject(bidsGetSubjectDto)
+		})
 	}
 
 	@UsePipes(ValidationPipe)
@@ -65,8 +68,9 @@ export class ToolsController {
 		@Body() createSubjectDto: CreateSubjectDto,
 		@Req() req: Request
 	) {
-		await this.nextcloudService.validate(req)
-		return this.toolsService.importSubject(createSubjectDto)
+		return await this.nextcloudService.authenticate(req).then(() => {
+			return this.toolsService.importSubject(createSubjectDto)
+		})
 	}
 
 	@UsePipes(ValidationPipe)
@@ -75,8 +79,9 @@ export class ToolsController {
 		@Body() editSubjectClinicalDto: EditSubjectClinicalDto,
 		@Req() req: Request
 	) {
-		await this.nextcloudService.validate(req)
-		return this.toolsService.subEditClinical(editSubjectClinicalDto)
+		return await this.nextcloudService.authenticate(req).then(() => {
+			return this.toolsService.subEditClinical(editSubjectClinicalDto)
+		})
 	}
 
 	@UsePipes(ValidationPipe)
@@ -86,8 +91,9 @@ export class ToolsController {
 		@Query('owner') owner: string,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-		await this.nextcloudService.validate(req)
-		return this.toolsService.participants(path, { cookie })
+		return await this.nextcloudService.authenticate(req).then(() => {
+			const { cookie, requesttoken } = req.headers
+			return this.toolsService.participants(path, { cookie })
+		})
 	}
 }

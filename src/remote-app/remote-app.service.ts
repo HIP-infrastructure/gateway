@@ -263,8 +263,6 @@ export class RemoteAppService {
 			return service.state.context
 		}
 
-		this.logger.debug(`Starting new container for ${uid}`)
-
 		const sessionNamesArray = this.containerServices
 			.filter(s => s.state.context.type === ContainerType.SERVER)
 			.filter(s => s.state.context.user === uid)
@@ -286,15 +284,11 @@ export class RemoteAppService {
 		this.handleTransitionFor(service)
 		service.send({ type: ContainerAction.START })
 		this.containerServices.push(service)
-		this.logger.debug(`serverMachine`)
-
 
 		const nextContext: ContainerContext = {
 			...service.state.context,
 			state: service.state.value,
 		}
-
-		this.logger.debug({ nextContext})
 
 		return nextContext
 	}
@@ -311,9 +305,7 @@ export class RemoteAppService {
 		serverId: string,
 		appId: string,
 		appName: string,
-		userId: string,
-		cookie: string,
-		requesttoken
+		userId: string
 	): Promise<ContainerContext> {
 		// check existing server
 		const serverService = this.containerServices.find(
@@ -356,7 +348,6 @@ export class RemoteAppService {
 				label,
 				path,
 			})),
-			cookie,
 		}
 		const machine = createContainerMachine(context)
 		appService = interpret(machine).start()

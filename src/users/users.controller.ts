@@ -16,13 +16,14 @@ export class UsersController {
 
 	@Get(':userid')
 	async findOne(@Param('userid') userid: string, @Req() req: Request) {
-		await this.nextcloudService.validate(req)
-		return this.nextcloudService.user(userid)
+		return this.nextcloudService.authenticate(req).then(() => {
+			return this.nextcloudService.user(userid)
+		})
 	}
 
 	@Get(':userid/set-workspace')
 	async settings(@Param('userid') userid: string, @Req() req: Request) {
-		const validatedId = await this.nextcloudService.validate(req)
+		const validatedId = await this.nextcloudService.uid(req)
 		if (userid === validatedId) {
 			return Promise.all(
 				NEXTCLOUD_HIP_SETTINGS.map((setting, i) => {
@@ -34,7 +35,7 @@ export class UsersController {
 
 	@Get(':userid/scan-files')
 	async scanFiles(@Param('userid') userid: string, @Req() req: Request) {
-		const validatedId = await this.nextcloudService.validate(req)
+		const validatedId = await this.nextcloudService.uid(req)
 		if (userid === validatedId) {
 			return this.nextcloudService.scanUserFiles(userid)
 		}

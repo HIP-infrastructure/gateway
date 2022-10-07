@@ -27,7 +27,6 @@ export interface WebdavOptions {
 	nc: string
 	app: string
 	ab: string
-	cookie: string
 	groupFolders?: {
 		label: string
 		id: number

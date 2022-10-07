@@ -26,18 +26,6 @@ export class RemoteAppController {
 
 	private readonly logger = new Logger('RemoteAppController')
 
-	private async auth(req: Request, userId: string) {
-		return this.nextcloudService.validate(req).then(id => {
-			if (id !== userId) {
-				throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
-			}
-
-			return true
-		}).catch(error => {
-			throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
-		})
-	}
-
 	@Get('/apps')
 	availableApps() {
 		return this.remoteAppService.availableApps()
@@ -49,15 +37,16 @@ export class RemoteAppController {
 		@Query('isAdmin') isAdmin: string,
 		@Req() req: Request
 	) {
-		await this.nextcloudService.validate(req)
-		if (isAdmin === '1') {
-			const { groups } = await this.nextcloudService.user(userId)
-			if (groups.includes('admin')) {
-				return this.remoteAppService.getAllContainers()
+		return this.nextcloudService.authenticate(req).then(async () => {
+			if (isAdmin === '1') {
+				const { groups } = await this.nextcloudService.user(userId)
+				if (groups.includes('admin')) {
+					return this.remoteAppService.getAllContainers()
+				}
 			}
-		}
 
-		return this.remoteAppService.getContainers(userId)
+			return this.remoteAppService.getContainers(userId)
+		})
 	}
 
 	@Post('/containers')
@@ -68,7 +57,7 @@ export class RemoteAppController {
 		@Res() res: Response
 	) {
 		this.logger.debug(`/startSessionWithUserId for ${userId}`)
-		return this.auth(req, userId).then(() => {
+		return this.nextcloudService.authenticate(req).then(() => {
 			const c = this.remoteAppService.startSessionWithUserId(sessionId, userId)
 			return res.status(HttpStatus.OK).json(c)
 		})
@@ -83,17 +72,9 @@ export class RemoteAppController {
 		@Req() req: Request
 	) {
 		this.logger.debug(`/createApp + ${appName} for ${userId}`)
-		const { cookie, requesttoken } = req.headers
-		await this.nextcloudService.validate(req)
+		await this.nextcloudService.authenticate(req)
 
-		return this.remoteAppService.startApp(
-			sessionId,
-			appId,
-			appName,
-			userId,
-			cookie,
-			requesttoken
-		)
+		return this.remoteAppService.startApp(sessionId, appId, appName, userId)
 	}
 
 	@Delete('/containers/:sessionId')
@@ -103,8 +84,8 @@ export class RemoteAppController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.logger.debug('/removeAppsAndSession', sessionId)
-		return this.auth(req, userId).then(() => {
+		this.logger.debug(`/removeAppsAndSession at ${sessionId} for ${userId}`)
+		return this.nextcloudService.authenticate(req).then(() => {
 			const c = this.remoteAppService.removeAppsAndSession(sessionId, userId)
 			return res.status(HttpStatus.OK).json(c)
 		})
@@ -117,15 +98,16 @@ export class RemoteAppController {
 		@Body('cmd') cmd: string,
 		@Req() req: Request
 	) {
-		await this.nextcloudService.validate(req)
+		this.logger.debug(`/pauseOrResumeAppsAndSession  ${cmd} for ${userId}`)
+		return this.nextcloudService.authenticate(req).then(() => {
+			if (cmd === 'pause') {
+				return this.remoteAppService.pauseAppsAndSession(sessionId)
+			} else if (cmd === 'resume') {
+				return this.remoteAppService.resumeAppsAndSession(sessionId)
+			}
 
-		if (cmd === 'pause') {
-			return this.remoteAppService.pauseAppsAndSession(sessionId)
-		} else if (cmd === 'resume') {
-			return this.remoteAppService.resumeAppsAndSession(sessionId)
-		}
-
-		return HttpStatus.NOT_FOUND
+			return HttpStatus.NOT_FOUND
+		})
 	}
 
 	@Delete('/containers/:sessionId/apps/:appId')
@@ -135,10 +117,10 @@ export class RemoteAppController {
 		@Body('userId') userId: string,
 		@Req() req: Request
 	) {
-		this.logger.debug('/stopApp', appId)
-		await this.nextcloudService.validate(req)
-
-		return await this.remoteAppService.stopAppInSession(sessionId, appId)
+		this.logger.debug(`/stopApp ${appId} for ${userId}`)
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return await this.remoteAppService.stopAppInSession(sessionId, appId)
+		})
 	}
 
 	@Delete('/containers/force/:sessionId')
@@ -146,7 +128,9 @@ export class RemoteAppController {
 		@Param('sessionId') sessionId: string,
 		@Req() req: Request
 	) {
-		await this.nextcloudService.validate(req)
-		return this.remoteAppService.forceRemove(sessionId)
+		this.logger.debug(`/forceRemove for ${sessionId}`)
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.remoteAppService.forceRemove(sessionId)
+		})
 	}
 }
