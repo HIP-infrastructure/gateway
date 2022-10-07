@@ -152,7 +152,6 @@ export class ToolsService {
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
-		this.logger.debug({ path })
 		try {
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(

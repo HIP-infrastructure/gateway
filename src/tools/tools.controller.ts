@@ -2,14 +2,16 @@ import {
 	Body,
 	Controller,
 	Get,
+	HttpStatus,
 	Patch,
 	Post,
 	Query,
 	Request as Req,
+	Response as Res,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common'
-import { Request } from 'express'
+import { Request, Response } from 'express'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
@@ -25,10 +27,12 @@ export class ToolsController {
 	) {}
 
 	@Get('/bids/datasets')
-	async getBids(@Req() req: Request) {
-		await this.nextcloudService.authenticate(req).then(() => {
+	async getBids(@Req() req: Request, @Res() res: Response) {
+		await this.nextcloudService.authenticate(req).then(async () => {
 			const { cookie } = req.headers
-			return this.toolsService.getBIDSDatasets({ cookie })
+			const ds = await this.toolsService.getBIDSDatasets({ cookie })
+
+			return res.status(HttpStatus.OK).json(ds)
 		})
 	}
 
@@ -92,7 +96,7 @@ export class ToolsController {
 		@Req() req: Request
 	) {
 		return await this.nextcloudService.authenticate(req).then(() => {
-			const { cookie, requesttoken } = req.headers
+			const { cookie } = req.headers
 			return this.toolsService.participants(path, { cookie })
 		})
 	}
