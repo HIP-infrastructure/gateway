@@ -14,6 +14,12 @@ export class UsersController {
 
 	constructor(private readonly nextcloudService: NextcloudService) {}
 
+
+	@Get('/isLoggedIn')
+	async isLoggedIn(@Req() req: Request) {
+		return this.nextcloudService.authenticate(req)
+	}
+
 	@Get(':userid')
 	async findOne(@Param('userid') userid: string, @Req() req: Request) {
 		return this.nextcloudService.authenticate(req).then(() => {
