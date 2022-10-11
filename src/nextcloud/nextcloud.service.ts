@@ -51,7 +51,7 @@ interface NCUser {
 	backend: 'Database'
 }
 
-interface GroupFolder {
+export interface GroupFolder {
 	id: number
 	label: string
 	path: string
@@ -89,17 +89,14 @@ export class NextcloudService {
 			}
 
 			const url = `${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${LOGGED_IN_PATH}`
-			const response = this.httpService.get(
-				url,
-				{
-					headers: {
-						cookie,
-						requesttoken,
-						accept: 'application/json, text/plain, */*',
-						'content-type': 'application/json',
-					},
-				}
-			)
+			const response = this.httpService.get(url, {
+				headers: {
+					cookie,
+					requesttoken,
+					accept: 'application/json, text/plain, */*',
+					'content-type': 'application/json',
+				},
+			})
 
 			const isLoggedIn = await firstValueFrom(response).then(r => {
 				return r.data
@@ -121,17 +118,14 @@ export class NextcloudService {
 			}
 
 			const url = `${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${USER_ID_PATH}`
-			const response = this.httpService.get(
-				url,
-				{
-					headers: {
-						cookie,
-						requesttoken,
-						accept: 'application/json, text/plain, */*',
-						'content-type': 'application/json',
-					},
-				}
-			)
+			const response = this.httpService.get(url, {
+				headers: {
+					cookie,
+					requesttoken,
+					accept: 'application/json, text/plain, */*',
+					'content-type': 'application/json',
+				},
+			})
 
 			const uid = await firstValueFrom(response).then(r => {
 				return r.data
@@ -144,13 +138,16 @@ export class NextcloudService {
 		}
 	}
 
-	public async user(userid: string): Promise<User> {
+	public async user(
+		userid: string,
+		isOwner: boolean = false
+	): Promise<User & Partial<NCUser>> {
 		try {
 			const args = ['user:info', userid]
 			const message = await this.spawnable(args)
 			const user: NCUser = JSON.parse(message)
 
-			return {
+			const nextUser = {
 				id: user.user_id,
 				displayName: user.display_name,
 				email: user.email,
@@ -158,6 +155,15 @@ export class NextcloudService {
 				groups: user.groups,
 				enabled: user.enabled,
 			}
+
+			if (isOwner)
+				return {
+					...nextUser,
+					storage: user.storage,
+					quota: user.quota,
+				}
+
+			return nextUser
 		} catch (error) {
 			this.logger.error({ error })
 			throw new HttpException(

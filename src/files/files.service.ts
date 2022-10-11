@@ -72,43 +72,52 @@ export class FilesService {
 		return firstValueFrom(response).then(r => r.data.ocs.data)
 	}
 
-	public files(userId: string, path: string) {
+	public async files(userId: string, path: string) {
 		try {
-			const fsPath = `${process.env.PRIVATE_FILESYSTEM}/${userId}/files${path}`
+			let relativePath
+			if (/groupfolder/.test(path)) {
+				const filePath = path.split('/').slice(2)
+				const groupPath = await this.groupPath(filePath[0], userId)
+				relativePath = `${groupPath}/${filePath.slice(1).join('/')}`
+			} else {
+				relativePath = `${userId}/files${path}`
+			}
+
+			const fsPath = `${process.env.PRIVATE_FILESYSTEM}/${relativePath}`
 			const files = fs.readdirSync(fsPath, { withFileTypes: true })
 
-			return files.map(file => ({
-				name: file.name,
-				parentPath: path,
-				path: `${path === '/' ? '' : path}/${file.name}`,
-				size: file.size,
-				isDirectory: file.isDirectory(),
-			}))
+			return Promise.resolve(
+				files.map(file => ({
+					name: file.name,
+					parentPath: path,
+					path: `${path === '/' ? '' : path}/${file.name}`,
+					isDirectory: file.isDirectory(),
+				}))
+			)
 		} catch (e) {
 			this.logger.error(e)
 			throw new BadRequestException('ENOTDIR: not a directory')
 		}
 	}
 
-	private async filePath(path: string, userId: string) {
+	private async groupPath(name: string, userId: string) {
 		try {
 			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
 				userId
 			)
 
-			const rootPath = path.split('/')[0]
-			const id = groupFolders.find(g => g.label === rootPath)?.id
+			const path = groupFolders.find(
+				g => g.label.toLowerCase() === name.toLowerCase()
+			)?.path
 
-			const nextPath = id
-				? `/__groupfolders/${id}/${path.replace(`${rootPath}/`, '')}`
-				: `/${userId}/files/${path}`
+			if (!path) {
+				throw new BadRequestException('ENOTDIR: not a directory')
+			}
 
-			return `${process.env.PRIVATE_FILESYSTEM}/${nextPath}`
+			return path
 		} catch (error) {
 			this.logger.error(error)
-			// throw new InternalServerErrorException(
-			// 	"Couldn't find a path for the file"
-			// )
+			throw new BadRequestException('ENOTDIR: not a directory')
 		}
 	}
 }
