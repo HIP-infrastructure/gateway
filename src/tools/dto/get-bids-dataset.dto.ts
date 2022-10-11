@@ -1,6 +1,6 @@
-export class GetBidsDatabaseDto {
-    readonly owner: string
-    readonly dataset: string
-    readonly path: string
-    readonly BIDS_definitions: string[]
+export class BidsGetDatasetDto {
+    // readonly owner: string
+    // readonly path: string
+    owner: string
+    path: string
 }

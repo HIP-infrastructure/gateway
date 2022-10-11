@@ -17,12 +17,14 @@ import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
+import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
 import { FilesService } from 'src/files/files.service'
 
 const userid = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
 import { join } from 'path'
+import { BidsDataset } from './entities/bids-database.entity'
 
 type DataError = {
 	data?: Record<string, string>
@@ -80,6 +82,10 @@ export interface BIDSDataset {
 }
 
 const editScriptCmd = ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`]
+
+const isFulfilled = <T>(
+	p: PromiseSettledResult<T>
+): p is PromiseFulfilledResult<T> => p.status === 'fulfilled'
 
 @Injectable()
 export class ToolsService {
@@ -156,7 +162,37 @@ export class ToolsService {
 		}
 	}
 
-	public async indexBIDSDatasets(owner, { cookie, requesttoken }) {
+	public async getBIDSDatasetsIndexedContent(
+		owner: string,
+		{ cookie, requesttoken }
+	) {
+		try {
+			const s = await this.search(cookie, PARTICIPANTS_FILE)
+			const searchResults = s?.entries
+
+			const bidsDatasetsPromises = searchResults.map(r => {
+				// TODO: Handle / get dataset owner
+				const bidsGetDatasetDto = new BidsGetDatasetDto()
+				bidsGetDatasetDto.owner = owner
+				bidsGetDatasetDto.path = `${r.attributes.path
+					.replace(PARTICIPANTS_FILE, '')
+					.substring(1)}`
+				return this.getDatasetIndexedContent(bidsGetDatasetDto, {
+					cookie,
+					requesttoken,
+				})
+			})
+
+			const bidsDatasets = (await Promise.allSettled(bidsDatasetsPromises))
+				.filter(isFulfilled)
+				.map(p => p.value)
+
+			return bidsDatasets
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
+		}
+	}
 
 	public async indexBIDSDatasets(owner: string, { cookie, requesttoken }: any) {
 		try {
@@ -624,6 +660,87 @@ export class ToolsService {
 		} catch (e) {
 			this.logger.error(e)
 			return { error: e.message }
+		}
+	}
+
+	/**
+	 * It takes a path and a set of headers, and returns the JSON-formatted content summary of the
+	 * BIDS dataset at that path, later used for dataset indexing.
+	 * @param {BidsGetDatasetDto} bidsGetDatasetDto - object storing the owner and path to the dataset you want to get
+	 * @param {any} headers - This is the headers that you need to pass to the webdav server.
+	 * @returns The file content
+	 */
+	private async getDatasetIndexedContent(
+		bidsGetDatasetDto: BidsGetDatasetDto,
+		{ cookie, requesttoken }: any
+	): Promise<BIDSDataset> {
+		const { owner, path } = bidsGetDatasetDto
+		const uniquId = Math.round(Date.now() + Math.random())
+		const tmpDir = `/tmp/${uniquId}`
+
+		try {
+			bidsGetDatasetDto.path = await this.filePath(path, owner, {
+				cookie,
+				requesttoken,
+			})
+			fs.mkdirSync(tmpDir, true)
+			fs.writeFileSync(
+				`${tmpDir}/dataset_get.json`,
+				JSON.stringify(bidsGetDatasetDto)
+			)
+
+			// Create an empty output JSON file with correct ownership
+			const output_file = `${tmpDir}/dataset_info.json`
+			let empty_content = {}
+			fs.writeFileSync(output_file, JSON.stringify(empty_content))
+
+			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+				if (err) {
+					throw err
+				}
+			})
+
+			// Set paths and command to be run
+			const dsPath = await this.filePath(path, owner, { cookie, requesttoken })
+
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dsPath}:/output`]
+			const cmd2 = [
+				'bids-tools',
+				this.dataUser,
+				this.dataUserId,
+				'--command=dataset.get',
+				'--input_data=/input/dataset_get.json',
+				'--output_file=/input/dataset_info.json',
+			]
+
+			const command =
+				process.env.NODE_ENV === 'development'
+					? [...cmd1, ...editScriptCmd, ...cmd2]
+					: [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the bids-tool docker image with the defined command
+			const { code, message } = await this.spawnable('docker', command)
+
+			// Handle output and error(s)
+			const errorMatching = /IndexError: Could not find the BIDS dataset./.test(
+				message
+			)
+			if (errorMatching) throw new BadRequestException(message)
+
+			if (code === 0) {
+				// Extract resulting JSON content if the run succeeds
+				const sub = fs.readFileSync(`${tmpDir}/dataset_info.json`, 'utf-8')
+				return JSON.parse(sub)
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
 		}
 	}
 
