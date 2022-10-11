@@ -2,7 +2,6 @@ import { firstValueFrom } from 'rxjs'
 
 import { mappings } from '../mappings/datasets_mapping.json'
 
-
 import { HttpService } from '@nestjs/axios'
 import {
 	BadRequestException,
@@ -23,7 +22,7 @@ import { FilesService } from 'src/files/files.service'
 const userid = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
-import { join } from 'path';
+import { join } from 'path'
 
 type DataError = {
 	data?: Record<string, string>
@@ -158,71 +157,71 @@ export class ToolsService {
 	}
 
 	public async indexBIDSDatasets(owner, { cookie, requesttoken }) {
+
+	public async indexBIDSDatasets(owner: string, { cookie, requesttoken }: any) {
 		try {
 			// get elasticsearch server url
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
-			this.logger.log(ELASTICSEARCH_URL)
-			// get list dataset_description.json content
-			const bidsDatasets = await this.getBIDSDatasets({ cookie, requesttoken })
-			this.logger.log(bidsDatasets)
+
+			// get a list of dataset indexed content
+			const bidsDatasets = await this.getBIDSDatasetsIndexedContent(owner, {
+				cookie,
+				requesttoken,
+			})
+
 			// create a new client to our elasticsearch node
 			const es_opt = {
-				node: `${ELASTICSEARCH_URL}`
+				node: `${ELASTICSEARCH_URL}`,
 			}
 			const elastic_client = new Client(es_opt)
 
 			// create index for datasets if not existing
-
-			this.logger.log(`Check if index datasets_${owner} exist...`)
 			const exists = await elastic_client.indices.exists({
 				index: `datasets_${owner}`,
 			})
-			this.logger.log(JSON.stringify(exists))
-			
+
 			if (exists.body === false) {
-                this.logger.log('Create new index ', `datasets_${owner}`)
-                try {
-                    await elastic_client.indices.create({
-                        index: `datasets_${owner}`,
-                        body: {
-                            mappings: mappings,
-                        },
-                    })
-                    this.logger.log('Done')
-                } catch (error) {
-                    this.logger.warn('Failed to create index...')
-                    this.logger.warn(JSON.stringify(error))
-                }
+				try {
+					await elastic_client.indices.create({
+						index: `datasets_${owner}`,
+						body: {
+							mappings: mappings,
+						},
+					})
+					this.logger.debug('New user index created')
+				} catch (error) {
+					this.logger.warn('Failed to create user index...')
+					this.logger.warn(JSON.stringify(error))
+				}
 			}
 
 			// format list of datasets to make elastic_client happy
 			const body = bidsDatasets.flatMap((dataset: BIDSDataset) => [
-				{ 
+				{
 					index: {
 						_index: `datasets_${owner}`,
-						_id: dataset.Name.replace(/\s/g, "").toLowerCase()
-					}
+						_id: dataset.Name.replace(/\s/g, '').toLowerCase(),
+					},
 				},
 				dataset,
-			]);
-			this.logger.log(JSON.stringify(body))
+			])
+
 			// index the list of datasets
 			const { body: bulkResponse } = await elastic_client.bulk({
 				refresh: true,
 				body,
-			});
+			})
 			if (bulkResponse.errors) {
-				this.logger.log('Errors for (re)indexing datasets');
-				this.logger.log(JSON.stringify(bulkResponse));
+				this.logger.error('Errors for (re)indexing datasets')
+				this.logger.error(JSON.stringify(bulkResponse))
 			}
 			// count indexed data
 			const { body: count } = await elastic_client.count({
-				index: `datasets_${owner}`
-			});
-			this.logger.log(count);
+				index: `datasets_${owner}`,
+			})
+			this.logger.debug(count)
 
 			return bidsDatasets
-
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
@@ -234,14 +233,10 @@ export class ToolsService {
 	curl -XPOST 'localhost:9200/datasets_www-data/_search' -H 'Content-Type: application/json' -d '{"query": { "query_string": { "query": "Tom" } }}'
 	TO BE TESTED !
 	*/
-	public async searchBidsDatasets(
-		owner: string,
-		text_query: string
-	) {
+	public async searchBidsDatasets(owner: string, text_query: string) {
 		try {
 			// get elasticsearch server url
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
-			this.logger.log(ELASTICSEARCH_URL)
 
 			// define search query in JSON format expected by elasticsearch
 			const query_params: RequestParams.Search = {
@@ -249,25 +244,22 @@ export class ToolsService {
 				body: {
 					query: {
 						query_string: {
-					  		query: text_query
-						}
-					}
-				}
+							query: text_query,
+						},
+					},
+				},
 			}
 
 			// create a new client to our elasticsearch node
 			const es_opt = {
-				node: `${ELASTICSEARCH_URL}`
+				node: `${ELASTICSEARCH_URL}`,
 			}
 			const elastic_client = new Client(es_opt)
 
 			// perform and return the search query
-			return elastic_client
-				.search(query_params)
-				.then( (result: ApiResponse) => {
-					return result.body
-				})
-			
+			return elastic_client.search(query_params).then((result: ApiResponse) => {
+				return result.body
+			})
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
@@ -621,9 +613,10 @@ export class ToolsService {
 				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/hip/document/file?path=${path}`,
 				{ headers: { cookie } }
 			)
+
 			const data = await firstValueFrom(response).then(r => r.data)
-			
-			if (typeof data !== 'string')  return { data: null }
+
+			if (typeof data !== 'string') return { data: null }
 
 			const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
 

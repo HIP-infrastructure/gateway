@@ -34,10 +34,7 @@ export class ToolsController {
 	}
 
 	@Post('/bids/datasets')
-	async indexBIDSDatasets(
-			@Query('owner') owner: string,
-			@Req() req: Request
-		) {
+	async indexBIDSDatasets(@Query('owner') owner: string, @Req() req: Request) {
 		const { cookie, requesttoken } = req.headers
 
 		return this.toolsService.indexBIDSDatasets(owner, { cookie, requesttoken })
@@ -46,29 +43,25 @@ export class ToolsController {
 	@UsePipes(ValidationPipe)
 	@Post('/bids/datasets/search')
 	async searchBIDSDatasets(
-			@Query('owner') owner: string,
-			@Query('query') query: string
-		) {
-		const search_results = await this.toolsService.searchBidsDatasets(owner, query)
-		console.log('Search results: ', JSON.stringify(search_results))
+		@Query('owner') owner: string,
+		@Query('query') query: string
+	) {
+		const search_results = await this.toolsService.searchBidsDatasets(
+			owner,
+			query
+		)
 
 		const found_datasets = search_results.hits.hits.map(dataset => ({
 			// query metadata fields returned by elastic
 			id: dataset._id,
-			...(dataset._source)
-			
+			...dataset._source,
 		}))
-
-		console.log('Reformatted search output: ', JSON.stringify(found_datasets))
-
 
 		if (found_datasets.length > 0) {
 			return found_datasets
-		}
-		else {
+		} else {
 			return null
 		}
-		
 	}
 
 	@UsePipes(ValidationPipe)
