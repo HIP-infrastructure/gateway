@@ -1,6 +1,9 @@
 import { HttpService } from '@nestjs/axios'
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
+const fs = require('fs')
+const path = require('path')
 
 interface ISearch {
 	name: string
@@ -43,10 +46,12 @@ type DataError = {
 	error?: Record<string, string>
 }
 
-const HIP_API = '/apps/hip/api/groupfolders?format=json'
 @Injectable()
 export class FilesService {
-	constructor(private readonly httpService: HttpService) {}
+	constructor(
+		private readonly httpService: HttpService,
+		private readonly nextcloudService: NextcloudService
+	) {}
 
 	private logger = new Logger('Files Service')
 
@@ -65,5 +70,45 @@ export class FilesService {
 		)
 
 		return firstValueFrom(response).then(r => r.data.ocs.data)
+	}
+
+	public files(userId: string, path: string) {
+		try {
+			const fsPath = `${process.env.PRIVATE_FILESYSTEM}/${userId}/files${path}`
+			const files = fs.readdirSync(fsPath, { withFileTypes: true })
+
+			return files.map(file => ({
+				name: file.name,
+				parentPath: path,
+				path: `${path === '/' ? '' : path}/${file.name}`,
+				size: file.size,
+				isDirectory: file.isDirectory(),
+			}))
+		} catch (e) {
+			this.logger.error(e)
+			throw new BadRequestException('ENOTDIR: not a directory')
+		}
+	}
+
+	private async filePath(path: string, userId: string) {
+		try {
+			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
+				userId
+			)
+
+			const rootPath = path.split('/')[0]
+			const id = groupFolders.find(g => g.label === rootPath)?.id
+
+			const nextPath = id
+				? `/__groupfolders/${id}/${path.replace(`${rootPath}/`, '')}`
+				: `/${userId}/files/${path}`
+
+			return `${process.env.PRIVATE_FILESYSTEM}/${nextPath}`
+		} catch (error) {
+			this.logger.error(error)
+			// throw new InternalServerErrorException(
+			// 	"Couldn't find a path for the file"
+			// )
+		}
 	}
 }
