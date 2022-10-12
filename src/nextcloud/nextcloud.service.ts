@@ -31,7 +31,7 @@ export interface User {
 	enabled: boolean
 }
 
-interface NCUser {
+export interface NCUser {
 	user_id: string
 	display_name: string
 	email: string

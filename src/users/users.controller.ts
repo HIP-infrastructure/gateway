@@ -1,6 +1,6 @@
 import { Controller, Get, Logger, Param, Request as Req } from '@nestjs/common'
 import { Request } from 'express'
-import { NextcloudService } from 'src/nextcloud/nextcloud.service'
+import { NextcloudService, NCUser } from 'src/nextcloud/nextcloud.service'
 
 const NEXTCLOUD_HIP_SETTINGS = [
 	'text workspace_enabled 0',
