@@ -10,15 +10,6 @@ export type ContainerStateMachine = StateMachine<
 	}
 >
 
-export interface APIContainersResponse {
-	data: ContainerContext[]
-	error: Error
-}
-
-export interface APIContainerResponse {
-	data: ContainerContext
-	error: Error
-}
 
 export interface ContainerContext {
 	id: string
@@ -36,7 +27,6 @@ export interface WebdavOptions {
 	nc: string
 	app: string
 	ab: string
-	cookie: string
 	groupFolders?: {
 		label: string
 		id: number

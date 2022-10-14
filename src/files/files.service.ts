@@ -1,13 +1,9 @@
 import { HttpService } from '@nestjs/axios'
-import {
-	Injectable,
-	Logger,
-	HttpException,
-	InternalServerErrorException,
-	HttpStatus,
-} from '@nestjs/common'
+import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
-import { UsersService } from 'src/users/users.service'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
+const fs = require('fs')
+const path = require('path')
 
 interface ISearch {
 	name: string
@@ -50,12 +46,11 @@ type DataError = {
 	error?: Record<string, string>
 }
 
-const HIP_API = '/apps/hip/api/groupfolders?format=json'
 @Injectable()
 export class FilesService {
 	constructor(
 		private readonly httpService: HttpService,
-		private readonly usersService: UsersService
+		private readonly nextcloudService: NextcloudService
 	) {}
 
 	private logger = new Logger('Files Service')
@@ -77,60 +72,52 @@ export class FilesService {
 		return firstValueFrom(response).then(r => r.data.ocs.data)
 	}
 
-	/**
-	 * It makes a GET request to the Nextcloud API to get a list of foldergroups
-	 * @param {any} tokens - The headers that are passed in from the controller.
-	 * @returns An array of groups
-	 */
-
-	public async userGroupFolders(
-		tokens: { cookie: string; requesttoken: any },
-		userid
-	): Promise<{ id: number; label: string; path: string, groups: string[] }[]> {
+	public async files(userId: string, path: string) {
 		try {
-			const headers = {
-				...tokens,
-				accept: 'application/json, text/plain, */*',
+			let relativePath
+			if (/groupfolder/.test(path)) {
+				const filePath = path.split('/').slice(2)
+				const groupPath = await this.groupPath(filePath[0], userId)
+				relativePath = `${groupPath}/${filePath.slice(1).join('/')}`
+			} else {
+				relativePath = `${userId}/files${path}`
 			}
 
-			const user = await this.usersService.findOne(tokens, userid)
-			const response = this.httpService.get(
-				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${HIP_API}`,
-				{ headers }
+			const fsPath = `${process.env.PRIVATE_FILESYSTEM}/${relativePath}`
+			const files = fs.readdirSync(fsPath, { withFileTypes: true })
+
+			return Promise.resolve(
+				files.map(file => ({
+					name: file.name,
+					parentPath: path,
+					path: `${path === '/' ? '' : path}/${file.name}`,
+					isDirectory: file.isDirectory(),
+				}))
+			)
+		} catch (e) {
+			this.logger.error(e)
+			throw new BadRequestException('ENOTDIR: not a directory')
+		}
+	}
+
+	private async groupPath(name: string, userId: string) {
+		try {
+			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
+				userId
 			)
 
-			const folders = await firstValueFrom(response).then(r => {
-				const statuscode = r.data?.docs?.meta?.statuscode
-				if (statuscode >= 400) {
-					throw new HttpException(r.data?.ocs?.meta?.message, statuscode)
-				}
+			const path = groupFolders.find(
+				g => g.label.toLowerCase() === name.toLowerCase()
+			)?.path
 
-				if (!r.data) {
-					throw new InternalServerErrorException()
-				}
+			if (!path) {
+				throw new BadRequestException('ENOTDIR: not a directory')
+			}
 
-				return r.data || {}
-			})
-
-			const groupArray = Object.values(folders).map(
-				({ id, acl, mount_point, groups }) => ({
-					id,
-					label: mount_point,
-					acl,
-					groups: Object.keys(groups).map(group => group.toLowerCase()),
-				})
-			)
-
-			return groupArray
-				.filter(g => !g.acl)
-				.filter(g => g.groups.some(group => user.groups.includes(group)))
-				.map(({ id, label, groups }) => ({ id, label, path: `__groupfolders/${id}`, groups }))
+			return path
 		} catch (error) {
-			this.logger.debug(error)
-			throw new HttpException(
-				error.message,
-				error.status || HttpStatus.INTERNAL_SERVER_ERROR
-			)
+			this.logger.error(error)
+			throw new BadRequestException('ENOTDIR: not a directory')
 		}
 	}
 }

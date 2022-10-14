@@ -6,127 +6,131 @@ import {
 	Logger,
 	Param,
 	Post,
+	Query,
 	Put,
+	Delete,
 	Request as Req,
 	Response as Res,
+	HttpException,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { RemoteAppService } from './remote-app.service'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 @Controller('remote-app')
 export class RemoteAppController {
-	constructor(private readonly remoteAppService: RemoteAppService) {}
+	constructor(
+		private readonly remoteAppService: RemoteAppService,
+		private readonly nextcloudService: NextcloudService
+	) {}
 
 	private readonly logger = new Logger('RemoteAppController')
-
-	@Get('/containers/:userId')
-	getContainers(@Param('userId') userId: string, @Req() req: Request) {
-		// Admin endpoint to see every containers
-		// 	return this.remoteAppService.getAllContainers()
-
-		return this.remoteAppService.getContainers(userId)
-	}
-
-	@Post('/containers/:sessionId/start')
-	async startSessionWithUserId(
-		@Param('sessionId') sessionId: string,
-		@Body('userId') userId: string,
-		@Req() req: Request,
-		@Res() res: Response
-	) {
-		this.logger.debug('/startSessionWithUserId', sessionId)
-		const json = await this.remoteAppService.startSessionWithUserId(
-			sessionId,
-			userId
-		)
-
-		return res.status(HttpStatus.CREATED).json(json)
-	}
-
-	@Post('/containers/:sessionId/apps/:appId/start')
-	async startApp(
-		@Param('sessionId') sessionId: string,
-		@Param('appId') appId: string,
-		@Body('appName') appName: string,
-		@Body('userId') userId: string,
-		@Req() req: Request,
-		@Res() res: Response
-	) {
-		this.logger.debug('/startApp', sessionId)
-		const { cookie, requesttoken } = req.headers
-		return await this.remoteAppService.startApp(
-			sessionId,
-			appId,
-			appName,
-			userId,
-			cookie,
-			requesttoken
-		)
-	}
-
-	@Put('/containers/:sessionId/apps/:appId/stop')
-	async stopApp(
-		@Param('sessionId') sessionId: string,
-		@Param('appId') appId: string,
-		@Body('userId') userId: string,
-		@Req() req: Request,
-		@Res() res: Response
-	) {
-		this.logger.debug('/stopApp', appId)
-		const json = await this.remoteAppService.stopAppInSession(sessionId, appId)
-
-		return res.status(HttpStatus.CREATED).json(json)
-	}
-
-	@Put('/containers/:sessionId/remove')
-	async removeAppsAndSession(
-		@Param('sessionId') sessionId: string,
-		@Body('userId') userId: string,
-		@Req() req: Request,
-		@Res() res: Response
-	) {
-		const json = this.remoteAppService.removeAppsAndSession(sessionId)
-
-		return res.status(HttpStatus.OK).json(json)
-	}
-
-	@Put('/containers/:sessionId/pause')
-	async pauseAppsAndSession(
-		@Param('sessionId') sessionId: string,
-		@Body('userId') userId: string,
-		@Req() req: Request,
-		@Res() res: Response
-	) {
-		const json = this.remoteAppService.pauseAppsAndSession(sessionId)
-
-		return res.status(HttpStatus.OK).json(json)
-	}
-
-	@Put('/containers/:sessionId/resume')
-	async resumeAppsAndSession(
-		@Param('sessionId') sessionId: string,
-		@Body('userId') userId: string,
-		@Req() req: Request,
-		@Res() res: Response
-	) {
-		const json = this.remoteAppService.resumeAppsAndSession(sessionId)
-
-		return res.status(HttpStatus.OK).json(json)
-	}
 
 	@Get('/apps')
 	availableApps() {
 		return this.remoteAppService.availableApps()
 	}
 
-	// DEBUG methods
-	@Get('/containers/fetch')
-	pollRemoteState() {
-		this.remoteAppService.pollRemoteState()
+	@Get('/containers')
+	async getContainers(
+		@Query('userId') userId: string,
+		@Query('isAdmin') isAdmin: string,
+		@Req() req: Request
+	) {
+		return this.nextcloudService.authenticate(req).then(async () => {
+			if (isAdmin === '1') {
+				const { groups } = await this.nextcloudService.user(userId)
+				if (groups.includes('admin')) {
+					return this.remoteAppService.getAllContainers()
+				}
+			}
+
+			return this.remoteAppService.getContainers(userId)
+		})
 	}
 
-	@Get('/containers/forceRemove/:sessionId')
-	async forceRemove(@Param('sessionId') sessionId: string) {
-		this.remoteAppService.forceRemove(sessionId)
+	@Post('/containers')
+	async createSession(
+		@Body('userId') userId: string,
+		@Body('sessionId') sessionId: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		this.logger.debug(`/startSessionWithUserId for ${userId}`)
+		return this.nextcloudService.authenticate(req).then(() => {
+			const c = this.remoteAppService.startSessionWithUserId(sessionId, userId)
+			return res.status(HttpStatus.OK).json(c)
+		})
+	}
+
+	@Post('/containers/:sessionId/apps')
+	async createApp(
+		@Param('sessionId') sessionId: string,
+		@Body('appName') appName: string,
+		@Body('appId') appId: string,
+		@Body('userId') userId: string,
+		@Req() req: Request
+	) {
+		this.logger.debug(`/createApp + ${appName} for ${userId}`)
+		await this.nextcloudService.authenticate(req)
+
+		return this.remoteAppService.startApp(sessionId, appId, appName, userId)
+	}
+
+	@Delete('/containers/:sessionId')
+	async removeAppsAndSession(
+		@Param('sessionId') sessionId: string,
+		@Body('userId') userId: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		this.logger.debug(`/removeAppsAndSession at ${sessionId} for ${userId}`)
+		return this.nextcloudService.authenticate(req).then(() => {
+			const c = this.remoteAppService.removeAppsAndSession(sessionId, userId)
+			return res.status(HttpStatus.OK).json(c)
+		})
+	}
+
+	@Put('/containers/:sessionId')
+	async pauseOrResumeAppsAndSession(
+		@Param('sessionId') sessionId: string,
+		@Body('userId') userId: string,
+		@Body('cmd') cmd: string,
+		@Req() req: Request
+	) {
+		this.logger.debug(`/pauseOrResumeAppsAndSession  ${cmd} for ${userId}`)
+		return this.nextcloudService.authenticate(req).then(() => {
+			if (cmd === 'pause') {
+				return this.remoteAppService.pauseAppsAndSession(sessionId)
+			} else if (cmd === 'resume') {
+				return this.remoteAppService.resumeAppsAndSession(sessionId)
+			}
+
+			return HttpStatus.NOT_FOUND
+		})
+	}
+
+	@Delete('/containers/:sessionId/apps/:appId')
+	async stopApp(
+		@Param('sessionId') sessionId: string,
+		@Param('appId') appId: string,
+		@Body('userId') userId: string,
+		@Req() req: Request
+	) {
+		this.logger.debug(`/stopApp ${appId} for ${userId}`)
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return await this.remoteAppService.stopAppInSession(sessionId, appId)
+		})
+	}
+
+	@Delete('/containers/force/:sessionId')
+	async forceRemove(
+		@Param('sessionId') sessionId: string,
+		@Req() req: Request
+	) {
+		this.logger.debug(`/forceRemove for ${sessionId}`)
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.remoteAppService.forceRemove(sessionId)
+		})
 	}
 }

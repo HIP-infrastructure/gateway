@@ -2,14 +2,17 @@ import {
 	Body,
 	Controller,
 	Get,
+	HttpStatus,
 	Patch,
 	Post,
 	Query,
 	Request as Req,
+	Response as Res,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common'
-import { Request } from 'express'
+import { Request, Response } from 'express'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
@@ -18,19 +21,19 @@ import { ToolsService } from './tools.service'
 
 @Controller('tools')
 export class ToolsController {
-	constructor(private readonly toolsService: ToolsService) {}
-
-	// @UsePipes(ValidationPipe)
-	// @Get('/bids/database')
-	// findOneDatabase(@Query() getBidsDatasetDto: GetBidsDatasetDto) {
-	//     return this.toolsService.getBIDSDataset(getBidsDatasetDto)
-	// }
+	constructor(
+		private readonly toolsService: ToolsService,
+		private readonly nextcloudService: NextcloudService
+	) {}
 
 	@Get('/bids/datasets')
-	async getBids(@Req() req: Request) {
-		const { cookie, requesttoken } = req.headers
+	async getBids(@Req() req: Request, @Res() res: Response) {
+		await this.nextcloudService.authenticate(req).then(async () => {
+			const { cookie } = req.headers
+			const ds = await this.toolsService.getBIDSDatasets({ cookie })
 
-		return this.toolsService.getBIDSDatasets({ cookie, requesttoken })
+			return res.status(HttpStatus.OK).json(ds)
+		})
 	}
 
 	@Post('/bids/datasets')
@@ -68,82 +71,66 @@ export class ToolsController {
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/dataset')
-	createDatabase(
+	async createDatabase(
 		@Body() createBidsDatasetDto: CreateBidsDatasetDto,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.createBidsDataset(createBidsDatasetDto, {
-			cookie,
-			requesttoken,
+		return await this.nextcloudService.authenticate(req).then(() => {
+			return this.toolsService.createBidsDataset(createBidsDatasetDto)
 		})
 	}
 
-	// @Delete('/bids/database')
-	// removeOneDatabase() { }
-
 	@UsePipes(ValidationPipe)
 	@Get('/bids/subject')
-	getSubject(
+	async getSubject(
 		@Query('path') path: string,
 		@Query('owner') owner: string,
 		@Query('sub') sub: string,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-		const bidsGetSubjectDto: BidsGetSubjectDto = {
-			owner,
-			path,
-			sub,
-		}
+		return await this.nextcloudService.authenticate(req).then(() => {
+			const bidsGetSubjectDto: BidsGetSubjectDto = {
+				owner,
+				path,
+				sub,
+			}
 
-		return this.toolsService.getSubject(bidsGetSubjectDto, {
-			cookie,
-			requesttoken,
+			return this.toolsService.getSubject(bidsGetSubjectDto)
 		})
 	}
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/subject')
-	importSubject(
+	async importSubject(
 		@Body() createSubjectDto: CreateSubjectDto,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.importSubject(createSubjectDto, {
-			cookie,
-			requesttoken,
+		return await this.nextcloudService.authenticate(req).then(() => {
+			return this.toolsService.importSubject(createSubjectDto)
 		})
 	}
 
 	@UsePipes(ValidationPipe)
 	@Patch('/bids/subject')
-	editClinical(
+	async editClinical(
 		@Body() editSubjectClinicalDto: EditSubjectClinicalDto,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.subEditClinical(editSubjectClinicalDto, {
-			cookie,
-			requesttoken,
+		return await this.nextcloudService.authenticate(req).then(() => {
+			return this.toolsService.subEditClinical(editSubjectClinicalDto)
 		})
 	}
 
-	// @Delete('/bids/subject')
-	// removeOneSubject() { }
-
 	@UsePipes(ValidationPipe)
 	@Get(`/bids/participants`)
-	getParticipants(
+	async getParticipants(
 		@Query('path') path: string,
 		@Query('owner') owner: string,
 		@Req() req: Request
 	) {
-		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.participants(path, { cookie, requesttoken })
+		return await this.nextcloudService.authenticate(req).then(() => {
+			const { cookie } = req.headers
+			return this.toolsService.participants(path, { cookie })
+		})
 	}
 }

@@ -13,18 +13,19 @@ import {
 } from '@nestjs/common'
 import { Client, RequestParams, ApiResponse } from '@elastic/elasticsearch'
 
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
 import { FilesService } from 'src/files/files.service'
+import { BidsDataset } from './entities/bids-database.entity'
 
 const userid = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
 import { join } from 'path'
-import { BidsDataset } from './entities/bids-database.entity'
 
 type DataError = {
 	data?: Record<string, string>
@@ -34,7 +35,6 @@ type DataError = {
 const NC_SEARCH_PATH = '/ocs/v2.php/search/providers/files/search'
 const DATASET_DESCRIPTION = 'dataset_description.json'
 const PARTICIPANTS_FILE = 'participants.tsv'
-const HIP_API = '/apps/hip/document/file?path='
 
 interface ISearch {
 	name: string
@@ -95,7 +95,7 @@ export class ToolsService {
 
 	constructor(
 		private readonly httpService: HttpService,
-		private readonly fileService: FilesService
+		private readonly nextcloudService: NextcloudService
 	) {
 		this.dataUser = process.env.DATA_USER
 		const uid = parseInt(userid.uid(this.dataUser), 10)
@@ -103,7 +103,7 @@ export class ToolsService {
 		if (uid) this.dataUserId = uid
 	}
 
-	public async getBIDSDatasets({ cookie, requesttoken }) {
+	public async getBIDSDatasets({ cookie }) {
 		try {
 			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchResults = s?.entries
@@ -121,7 +121,6 @@ export class ToolsService {
 					participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
 					searchResult: searchResults[item.i],
 				}))
-
 			const bidsDatasetsPromises = participantSearchFiltered.map(ps =>
 				this.getDatasetContent(
 					`${ps.searchResult.attributes.path.replace(
@@ -307,10 +306,7 @@ export class ToolsService {
 		}
 	}
 
-	public async createBidsDataset(
-		createBidsDatasetDto: CreateBidsDatasetDto,
-		{ cookie, requesttoken }
-	) {
+	public async createBidsDataset(createBidsDatasetDto: CreateBidsDatasetDto) {
 		const { owner, path } = createBidsDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -322,7 +318,7 @@ export class ToolsService {
 				JSON.stringify(createBidsDatasetDto)
 			)
 
-			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
+			const dbPath = await this.filePath(path, owner)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
@@ -333,17 +329,13 @@ export class ToolsService {
 				'--input_data=/input/db_create.json',
 			]
 
-			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
-					: [...cmd1, ...cmd2]
+			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
 			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
-				await this.scanFiles(owner)
-
+				await this.nextcloudService.scanPath(owner, path)
 				return createBidsDatasetDto
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -357,10 +349,7 @@ export class ToolsService {
 		}
 	}
 
-	async getSubject(
-		bidsGetSubjectDto: BidsGetSubjectDto,
-		{ cookie, requesttoken }
-	) {
+	async getSubject(bidsGetSubjectDto: BidsGetSubjectDto) {
 		const { owner, path } = bidsGetSubjectDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -383,7 +372,7 @@ export class ToolsService {
 				}
 			})
 
-			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
+			const dbPath = await this.filePath(path, owner)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
@@ -395,10 +384,7 @@ export class ToolsService {
 				'--output_file=/input/sub_info.json',
 			]
 
-			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
-					: [...cmd1, ...cmd2]
+			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
 			const { code, message } = await this.spawnable('docker', command)
@@ -425,10 +411,7 @@ export class ToolsService {
 		}
 	}
 
-	public async importSubject(
-		createSubject: CreateSubjectDto,
-		{ cookie, requesttoken }
-	) {
+	public async importSubject(createSubject: CreateSubjectDto) {
 		const { owner, path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -440,7 +423,7 @@ export class ToolsService {
 				JSON.stringify(createSubject)
 			)
 
-			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
+			const dbPath = await this.filePath(path, owner)
 
 			const cmd1 = [
 				'run',
@@ -460,10 +443,7 @@ export class ToolsService {
 				'--input_data=/import-data/sub_import.json',
 			]
 
-			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
-					: [...cmd1, ...cmd2]
+			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
 			const { code, message } = await this.spawnable('docker', command)
@@ -476,7 +456,7 @@ export class ToolsService {
 			if (errorMatching) throw new BadRequestException(message)
 
 			if (code === 0) {
-				await this.scanFiles(owner)
+				await this.nextcloudService.scanPath(owner, path)
 				// To debug "Failed to fetch response error" obtained
 				// while importing "ieeg"...
 				const util = require('util')
@@ -508,10 +488,7 @@ export class ToolsService {
 		return this.spawnable('docker', dockerParams)
 	}
 
-	public async subEditClinical(
-		editSubjectClinicalDto: EditSubjectClinicalDto,
-		{ cookie, requesttoken }
-	) {
+	public async subEditClinical(editSubjectClinicalDto: EditSubjectClinicalDto) {
 		let { owner, path } = editSubjectClinicalDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -523,7 +500,7 @@ export class ToolsService {
 				JSON.stringify(editSubjectClinicalDto)
 			)
 
-			const dbPath = await this.filePath(path, owner, { cookie, requesttoken })
+			const dbPath = await this.filePath(path, owner)
 
 			const cmd1 = [
 				'run',
@@ -542,10 +519,7 @@ export class ToolsService {
 				'--input_data=/import-data/sub_edit_clinical.json',
 			]
 
-			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
-					: [...cmd1, ...cmd2]
+			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 			const { code, message } = await this.spawnable('docker', command)
 
@@ -562,7 +536,7 @@ export class ToolsService {
 
 	public deleteSubject() {}
 
-	public async participants(path: string, { cookie, requesttoken }: any) {
+	public async participants(path: string, { cookie }: any) {
 		const nextPath = `${path}${PARTICIPANTS_FILE}`
 
 		return this.participantsWithPath(nextPath, cookie)
@@ -580,14 +554,6 @@ export class ToolsService {
 			this.logger.error(error)
 			throw new InternalServerErrorException()
 		}
-	}
-
-	private async scanFiles(
-		owner: string
-	): Promise<{ code: number; message?: string }> {
-		const scriptFolder = join(__dirname, '/../..')
-
-		return this.spawnable(`${scriptFolder}/scan_nextcloud_files.sh`, [owner])
 	}
 
 	private spawnable = (
@@ -620,7 +586,7 @@ export class ToolsService {
 
 	private async participantsWithPath(path: string, cookie: any) {
 		try {
-			const tsv = await this.getFileContent(path, cookie)
+			const tsv = await this.getFileContent(path, cookie)			
 			const [tsvheaders, ...rows] = tsv
 				.trim()
 				.split('\n')
@@ -650,18 +616,19 @@ export class ToolsService {
 		cookie: any
 	): Promise<DataError> {
 		try {
-			const response = this.httpService.get(
-				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}/apps/hip/document/file?path=${path}`,
-				{ headers: { cookie } }
-			)
-
-			const data = await firstValueFrom(response).then(r => r.data)
-
-			if (typeof data !== 'string') return { data: null }
-
-			const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
-
-			return { data: JSON.parse(cleaned) }
+			const userid = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
+			const filePath = await this.filePath(path, userid)
+			
+			return new Promise((resolve, reject) => {
+				fs.readFile(filePath, 'utf8', function (err, data) {
+				if (err) {
+					reject(err);
+				}
+					if (typeof data !== 'string') return { data: null }
+					const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
+					resolve({ data: JSON.parse(cleaned) });
+				});
+			});
 		} catch (e) {
 			this.logger.error(e)
 			return { error: e.message }
@@ -755,14 +722,19 @@ export class ToolsService {
 	 * @param {any} headers - This is the headers that you need to pass to the webdav server.
 	 * @returns The file content
 	 */
-	private getFileContent(path: string, cookie: any): Promise<string> {
+	private async getFileContent(path: string, cookie: any): Promise<string> {
 		try {
-			const response = this.httpService.get(
-				`${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${HIP_API}${path}`,
-				{ headers: { cookie } }
-			)
-
-			return firstValueFrom(response).then(r => r.data)
+			const userid = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
+			const filePath = await this.filePath(path, userid)
+			
+			return new Promise((resolve, reject) => {
+				fs.readFile(filePath, 'utf8', function (err, data) {
+				if (err) {
+					reject(err);
+				}
+					resolve(data);
+				});
+			});	  
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status)
@@ -770,14 +742,9 @@ export class ToolsService {
 	}
 
 	/* A private method that is used to get the file path, either user based or for a group */
-	private async filePath(
-		path: string,
-		userid: string,
-		{ cookie, requesttoken }: any
-	) {
+	private async filePath(path: string, userid: string) {
 		try {
-			const groupFolders = await this.fileService.userGroupFolders(
-				{ cookie, requesttoken },
+			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
 				userid
 			)
 

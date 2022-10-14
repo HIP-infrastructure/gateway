@@ -1,22 +1,38 @@
-import { Request as Req, Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { GroupsService } from './groups.service';
-import { CreateGroupDto } from './dto/create-group.dto';
-import { UpdateGroupDto } from './dto/update-group.dto';
+import { Controller, Get, Param, Request as Req } from '@nestjs/common'
 import { Request } from 'express'
+import { NextcloudService, User, GroupFolder } from 'src/nextcloud/nextcloud.service'
+
+const isFulfilled = <T,>(
+	p: PromiseSettledResult<T>
+): p is PromiseFulfilledResult<T> => p.status === 'fulfilled'
+
+const isRejected = <T,>(
+	p: PromiseSettledResult<T>
+): p is PromiseRejectedResult => p.status === 'rejected'
+
 
 @Controller('groups')
 export class GroupsController {
-  constructor(private readonly groupsService: GroupsService) {}
+	constructor(private readonly nextcloudService: NextcloudService) {}
 
-  @Get()
-  findAll() {
-    return this.groupsService.findAll();
-  }
+	@Get(':userid')
+	async findGroups(@Param('userid') userid: string, @Req() req: Request): Promise<GroupFolder[]> {
+		const uid =  await this.nextcloudService.uid(req)
+		return await this.nextcloudService.groupFoldersForUserId(uid)
+	}
+	
 
-  @Get(':groupid')
-	async findOne(@Param('groupid') groupid: string, @Req() req: Request) {
-		const { cookie, requesttoken } = req.headers
-		
-		return this.groupsService.findOne({ cookie, requesttoken }, groupid)
+	@Get(':groupid/users')
+	async findOne(@Param('groupid') groupid: string, @Req() req: Request): Promise<User[]> {
+		return await this.nextcloudService.authenticate(req).then(async () => {
+			const userids = await this.nextcloudService.usersForGroup(groupid)
+			const requests = userids.map(uid => this.nextcloudService.user(uid))
+			
+			const results = await Promise.allSettled(requests)
+			const users = results.filter(isFulfilled).map(p => p.value).filter(u => u.enabled)
+			// const rejectedReasons = results.filter(isRejected).map(p => p.reason)
+
+			return users
+		})
 	}
 }

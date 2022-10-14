@@ -1,12 +1,8 @@
 import { HttpService } from '@nestjs/axios'
-import {
-	HttpException,
-	ServiceUnavailableException,
-	Injectable,
-	Logger,
-} from '@nestjs/common'
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { Interval } from '@nestjs/schedule'
 import { firstValueFrom } from 'rxjs'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { interpret } from 'xstate'
 import { CacheService } from '../cache/cache.service'
 import {
@@ -14,15 +10,12 @@ import {
 	invokeRemoteContainer,
 } from './remote-app.container-machine'
 import {
-	APIContainerResponse,
-	APIContainersResponse,
 	ContainerAction,
 	ContainerContext,
 	ContainerState,
 	ContainerType,
 	WebdavOptions,
 } from './remote-app.types'
-import { FilesService } from '../files/files.service'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -36,7 +29,7 @@ export class RemoteAppService {
 
 	constructor(
 		private readonly cacheService: CacheService,
-		private readonly filesService: FilesService
+		private readonly nextcloudService: NextcloudService
 	) {
 		// this.cacheService.flushall()
 		this.restoreCachedContainers()
@@ -140,7 +133,6 @@ export class RemoteAppService {
 						break
 				}
 			} catch (error) {
-				// this.logger.log(error, 'pollRemoteState error')
 				service.state.context = {
 					...currentContext,
 					// ...error,
@@ -179,13 +171,36 @@ export class RemoteAppService {
 	/**
 	 * @Description: Force Remove container from DB
 	 * @param: id {String} id of the container
-	 * @return Promise<APIContainersResponse>
+	 * @return Promise<ContainerContext[]>
 	 */
 
-	async forceRemove(id: string): Promise<APIContainersResponse> {
+	async forceRemove(id: string): Promise<ContainerContext[]> {
 		this.removeService(id)
-		return {
-			data: this.containerServices.map(service => {
+		return this.containerServices.map(service => {
+			const { id, name, user, url, error, type, app, parentId } = service.state
+				.context as Partial<ContainerContext & WebdavOptions>
+			return {
+				id,
+				name,
+				user,
+				url,
+				error,
+				type,
+				app,
+				parentId,
+				state: service.state.value as ContainerState,
+			}
+		})
+	}
+
+	/**
+	 * @Description: Get all containers from state
+	 * @return Promise<ContainerContext>
+	 */
+
+	async getAllContainers(): Promise<ContainerContext[]> {
+		return (
+			this.containerServices.map(service => {
 				const { id, name, user, url, error, type, app, parentId } = service
 					.state.context as Partial<ContainerContext & WebdavOptions>
 				return {
@@ -199,20 +214,21 @@ export class RemoteAppService {
 					parentId,
 					state: service.state.value as ContainerState,
 				}
-			}),
-			error: null,
-		}
+			}) ?? []
+		)
 	}
 
 	/**
 	 * @Description: Get all containers from state
-	 * @return Promise<APIContainersResponse>
+	 * @param: uid {String} id of the user
+	 * @return APIContainersResponse
 	 */
 
-	async getAllContainers(): Promise<APIContainersResponse> {
-		return {
-			data:
-				this.containerServices.map(service => {
+	getContainers(uid: string): ContainerContext[] {
+		return (
+			this.containerServices
+				.filter(service => service.state.context.user === uid)
+				.map(service => {
 					const { id, name, user, url, error, type, app, parentId } = service
 						.state.context as Partial<ContainerContext & WebdavOptions>
 					return {
@@ -226,39 +242,8 @@ export class RemoteAppService {
 						parentId,
 						state: service.state.value as ContainerState,
 					}
-				}) ?? [],
-			error: null,
-		}
-	}
-
-	/**
-	 * @Description: Get all containers from state
-	 * @param: uid {String} id of the user
-	 * @return Promise<APIContainersResponse>
-	 */
-
-	async getContainers(uid: string): Promise<APIContainersResponse> {
-		return {
-			data:
-				this.containerServices
-					.filter(service => service.state.context.user === uid)
-					.map(service => {
-						const { id, name, user, url, error, type, app, parentId } = service
-							.state.context as Partial<ContainerContext & WebdavOptions>
-						return {
-							id,
-							name,
-							user,
-							url,
-							error,
-							type,
-							app,
-							parentId,
-							state: service.state.value as ContainerState,
-						}
-					}) ?? [],
-			error: null,
-		}
+				}) ?? []
+		)
 	}
 
 	/**
@@ -268,10 +253,10 @@ export class RemoteAppService {
 	 * @return Promise<APIContainersResponse>
 	 */
 
-	async startSessionWithUserId(
+	startSessionWithUserId(
 		id: string,
 		uid: string
-	): Promise<APIContainerResponse> {
+	): ContainerContext {
 		// check for existing
 		let service: any = this.containerServices.find(s => s.machine.id === id)
 		if (service) {
@@ -305,10 +290,7 @@ export class RemoteAppService {
 			state: service.state.value,
 		}
 
-		return {
-			data: nextContext,
-			error: undefined,
-		}
+		return nextContext
 	}
 
 	/**
@@ -323,10 +305,8 @@ export class RemoteAppService {
 		serverId: string,
 		appId: string,
 		appName: string,
-		userId: string,
-		cookie: string,
-		requesttoken
-	): Promise<APIContainerResponse> {
+		userId: string
+	): Promise<ContainerContext> {
 		// check existing server
 		const serverService = this.containerServices.find(
 			s => s.machine.id === serverId
@@ -347,8 +327,7 @@ export class RemoteAppService {
 		}
 
 		// get groupfolders mount point
-		const groupFolders = await this.filesService.userGroupFolders(
-			{ cookie, requesttoken },
+		const groupFolders = await this.nextcloudService.groupFoldersForUserId(
 			userId
 		)
 
@@ -364,8 +343,11 @@ export class RemoteAppService {
 			parentId: serverId,
 			nc: process.env.PRIVATE_FS_URL,
 			ab: process.env.PRIVATE_FS_AUTH_BACKEND_URL,
-			groupFolders: groupFolders.map(({id, label, path}) => ({id, label, path})),
-			cookie,
+			groupFolders: groupFolders.map(({ id, label, path }) => ({
+				id,
+				label,
+				path,
+			})),
 		}
 		const machine = createContainerMachine(context)
 		appService = interpret(machine).start()
@@ -378,10 +360,7 @@ export class RemoteAppService {
 			state: appService.state.value,
 		}
 
-		return {
-			data: nextContext,
-			error: null,
-		}
+		return nextContext
 	}
 
 	/**
@@ -394,18 +373,12 @@ export class RemoteAppService {
 	async stopAppInSession(
 		serverId: string,
 		appId: string
-	): Promise<APIContainerResponse> {
+	): Promise<ContainerContext> {
 		// check existing server
 		const service = this.containerServices.find(s => s.machine.id === serverId)
 
 		if (!service) {
-			return {
-				data: undefined,
-				error: {
-					code: '',
-					message: 'Container is not available',
-				},
-			}
+			throw new Error('Container is not available')
 		}
 
 		let appService = this.containerServices.find(s => s.machine.id === appId)
@@ -419,58 +392,23 @@ export class RemoteAppService {
 			},
 		})
 
-		return {
-			data: appService.state.context,
-			error: null,
-		}
+		return appService.state.context
 	}
-
-	// /**
-	//  * @Description: Start a new app container for a user with Webdav folder mounted
-	//  * @param uid {String} The id of the user
-	//  * @param appName {String} The name of the app to be started
-	//  * @return Promise<APIContainersResponse>
-	//  */
-	// async startNewSessionAndAppWithWebdav(
-	// 	uid: string,
-	// 	appName: string,
-	// 	cookie: string
-	// ): Promise<APIContainerResponse> {
-	// 	const id = `session-${Date.now().toString().slice(-3)}`
-
-	// 	const session = await this.startSessionWithUserId(id, uid)
-	// 	const appId = `app-${Date.now().toString().slice(-3)}`
-	// 	await this.startApp(session.data.id, appId, appName, cookie)
-
-	// 	return { data: session.data, error: session.error }
-	// }
 
 	/**
 	 * @Description: Destroy server containers and apps sequentially
 	 * @param serverId {String} The id of the server
-	 * @return Promise<APIContainersResponse>
+	 * @return ContainerContext[]
 	 */
 
-	removeAppsAndSession(serverId: string): APIContainerResponse {
+	removeAppsAndSession(serverId: string, userId: string): ContainerContext[] {
 		const service = this.containerServices.find(s => s.machine.id === serverId)
 		const appServices = this.containerServices.filter(
 			s => s.state.context.parentId === service.machine.id
 		)
 		if (!service) {
-			return {
-				data: undefined,
-				error: {
-					code: '',
-					message: 'Container is not available',
-				},
-			}
+			throw new Error('Container is not available')
 		}
-
-		// this.logger.log(service, 'destroyAppsAndSession')
-		// this.logger.log(
-		// 	`${JSON.stringify(appServices, null, 2)}`,
-		// 	'destroyAppsAndSession'
-		// )
 
 		const currentContext = service.state.context
 		// stale: remove already exited apps and session
@@ -514,15 +452,7 @@ export class RemoteAppService {
 			})
 		}
 
-		const nextContext: ContainerContext = {
-			...currentContext,
-			state: service.state.value,
-		}
-
-		return {
-			data: nextContext,
-			error: undefined,
-		}
+		return this.getContainers(userId)
 	}
 
 	pauseAppsAndSession(serverId: string) {
@@ -552,23 +482,14 @@ export class RemoteAppService {
 			state: service.state.value,
 		}
 
-		return {
-			data: nextContext,
-			error: undefined,
-		}
+		return nextContext
 	}
 
 	resumeAppsAndSession(serverId: string) {
 		const service = this.containerServices.find(s => s.machine.id === serverId)
 
 		if (!service) {
-			return {
-				data: undefined,
-				error: {
-					code: '',
-					message: 'Container is not available',
-				},
-			}
+			throw new Error('Container is not available')
 		}
 
 		const currentContext = service.state.context
@@ -683,10 +604,5 @@ export class RemoteAppService {
 
 			return service
 		})
-
-		// this.logger.log(
-		// 	`${JSON.stringify(this.containerServices, null, 2)}`,
-		// 	'restoreCachedContainers'
-		// )
 	}
 }

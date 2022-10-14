@@ -281,7 +281,7 @@ export const createContainerMachine = (
 			actions: {
 				updateContext: assign((context: ContainerContext, event: any) => {
 					const { nextContext } = event
-					logger.log(`${JSON.stringify(nextContext, null, 2)}`, 'updateContext')
+					logger.debug(`${JSON.stringify(nextContext, null, 2)}`, 'updateContext')
 
 					return { ...context, ...nextContext }
 				}),
