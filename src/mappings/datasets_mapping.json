@@ -3,74 +3,241 @@
 		"properties": {
 			"Acknowledgements": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"AgeRange": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			},
 			"Authors": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			},
 			"BIDSVersion": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"CreationDate": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			},
 			"DatasetDOI": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"EventsFileCount": {
+				"type": "long"
+			},
+			"FileCount": {
+				"type": "long"
+			},
+			"Formats": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			},
 			"Funding": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			},
 			"HowToAcknowledge": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			},
 			"License": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"Modalities": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			},
 			"Name": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			},
-			"ReferencesAndLinks": {
-				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
-			},
-			"id": {
-				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
-			},
-			"participants": {
+			"Participants": {
 				"properties": {
-					"Subject_ready": {
+					"group": {
 						"type": "text",
 						"fields": {
-							"keyword": { "type": "keyword", "ignore_above": 256 }
+							"keyword": {
+								"type": "keyword",
+								"ignore_above": 256
+							}
 						}
 					},
-					"age": { "type": "integer" },
+					"age": {
+						"type": "long"
+					},
 					"participant_id": {
 						"type": "text",
 						"fields": {
-							"keyword": { "type": "keyword", "ignore_above": 256 }
+							"keyword": {
+								"type": "keyword",
+								"ignore_above": 256
+							}
 						}
 					},
 					"sex": {
 						"type": "text",
 						"fields": {
-							"keyword": { "type": "keyword", "ignore_above": 256 }
+							"keyword": {
+								"type": "keyword",
+								"ignore_above": 256
+							}
 						}
 					}
 				}
 			},
-			"path": {
+			"ParticipantsCount": {
+				"type": "long"
+			},
+			"ParticipantsGroups": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"Path": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"RecordingDuration": {
+				"type": "long"
+			},
+			"ReferencesAndLinks": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"RunsCount": {
+				"type": "long"
+			},
+			"SEEGChannelCount": {
+				"type": "long"
+			},
+			"SamplingFrequency": {
+				"type": "long"
+			},
+			"SessionsCount": {
+				"type": "long"
+			},
+			"Size": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"Tasks": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"User": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
+			},
+			"id": {
+				"type": "text",
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			},
 			"resourceUrl": {
 				"type": "text",
-				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+				"fields": {
+					"keyword": {
+						"type": "keyword",
+						"ignore_above": 256
+					}
+				}
 			}
 		}
 	}
