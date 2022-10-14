@@ -42,13 +42,15 @@ export class ToolsController {
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/datasets/search')
-	async searchBIDSDatasets(
+	async c(
 		@Query('owner') owner: string,
-		@Query('query') query: string
+		@Query('query') query: string,
+		@Query('nb_of_results') nb_of_results: number
 	) {
 		const search_results = await this.toolsService.searchBidsDatasets(
 			owner,
-			query
+			query,
+			nb_of_results
 		)
 
 		const found_datasets = search_results.hits.hits.map(dataset => ({

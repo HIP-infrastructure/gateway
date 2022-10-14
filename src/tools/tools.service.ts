@@ -269,7 +269,11 @@ export class ToolsService {
 	curl -XPOST 'localhost:9200/datasets_www-data/_search' -H 'Content-Type: application/json' -d '{"query": { "query_string": { "query": "Tom" } }}'
 	TO BE TESTED !
 	*/
-	public async searchBidsDatasets(owner: string, text_query: string) {
+	public async searchBidsDatasets(
+		owner: string,
+		text_query: string,
+		nb_of_results: number
+	) {
 		try {
 			// get elasticsearch server url
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
@@ -278,6 +282,7 @@ export class ToolsService {
 			const query_params: RequestParams.Search = {
 				index: `datasets_${owner}`,
 				body: {
+					size: nb_of_results,
 					query: {
 						query_string: {
 							query: text_query,
