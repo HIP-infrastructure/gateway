@@ -253,10 +253,7 @@ export class RemoteAppService {
 	 * @return Promise<APIContainersResponse>
 	 */
 
-	startSessionWithUserId(
-		id: string,
-		uid: string
-	): ContainerContext {
+	startSessionWithUserId(id: string, uid: string): ContainerContext[] {
 		// check for existing
 		let service: any = this.containerServices.find(s => s.machine.id === id)
 		if (service) {
@@ -285,12 +282,7 @@ export class RemoteAppService {
 		service.send({ type: ContainerAction.START })
 		this.containerServices.push(service)
 
-		const nextContext: ContainerContext = {
-			...service.state.context,
-			state: service.state.value,
-		}
-
-		return nextContext
+		return this.getContainers(uid)
 	}
 
 	/**
@@ -306,7 +298,7 @@ export class RemoteAppService {
 		appId: string,
 		appName: string,
 		userId: string
-	): Promise<ContainerContext> {
+	): Promise<ContainerContext[]> {
 		// check existing server
 		const serverService = this.containerServices.find(
 			s => s.machine.id === serverId
@@ -355,12 +347,7 @@ export class RemoteAppService {
 		appService.send({ type: ContainerAction.START })
 		this.containerServices.push(appService) // TODO, immutable state by reducer
 
-		const nextContext: ContainerContext = {
-			...appService.state.context,
-			state: appService.state.value,
-		}
-
-		return nextContext
+		return this.getContainers(userId)
 	}
 
 	/**
@@ -371,9 +358,10 @@ export class RemoteAppService {
 	 */
 
 	async stopAppInSession(
+		userId: string,
 		serverId: string,
 		appId: string
-	): Promise<ContainerContext> {
+	): Promise<ContainerContext[]> {
 		// check existing server
 		const service = this.containerServices.find(s => s.machine.id === serverId)
 
@@ -392,7 +380,7 @@ export class RemoteAppService {
 			},
 		})
 
-		return appService.state.context
+		return this.getContainers(userId)
 	}
 
 	/**
@@ -455,7 +443,7 @@ export class RemoteAppService {
 		return this.getContainers(userId)
 	}
 
-	pauseAppsAndSession(serverId: string) {
+	pauseAppsAndSession(userId: string, serverId: string) {
 		const service = this.containerServices.find(s => s.machine.id === serverId)
 
 		if (!service) {
@@ -482,10 +470,10 @@ export class RemoteAppService {
 			state: service.state.value,
 		}
 
-		return nextContext
+		return this.getContainers(userId)
 	}
 
-	resumeAppsAndSession(serverId: string) {
+	resumeAppsAndSession(userId: string, serverId: string) {
 		const service = this.containerServices.find(s => s.machine.id === serverId)
 
 		if (!service) {
@@ -501,15 +489,7 @@ export class RemoteAppService {
 				s.send({ type: ContainerAction.RESUME })
 			})
 
-		const nextContext: ContainerContext = {
-			...currentContext,
-			state: service.state.value,
-		}
-
-		return {
-			data: nextContext,
-			error: undefined,
-		}
+		return this.getContainers(userId)
 	}
 
 	/**
