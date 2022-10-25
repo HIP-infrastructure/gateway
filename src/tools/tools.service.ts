@@ -19,13 +19,10 @@ import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
-import { FilesService } from 'src/files/files.service'
-import { BidsDataset } from './entities/bids-database.entity'
 
-const userid = require('userid')
+const userIdLib = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
-import { join } from 'path'
 
 type DataError = {
 	data?: Record<string, string>
@@ -98,7 +95,7 @@ export class ToolsService {
 		private readonly nextcloudService: NextcloudService
 	) {
 		this.dataUser = process.env.DATA_USER
-		const uid = parseInt(userid.uid(this.dataUser), 10)
+		const uid = parseInt(userIdLib.uid(this.dataUser), 10)
 
 		if (uid) this.dataUserId = uid
 	}
@@ -616,8 +613,8 @@ export class ToolsService {
 		cookie: any
 	): Promise<DataError> {
 		try {
-			const userid = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
-			const filePath = await this.filePath(path, userid)
+			const userId = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
+			const filePath = await this.filePath(path, userId)
 			
 			return new Promise((resolve, reject) => {
 				fs.readFile(filePath, 'utf8', function (err, data) {
@@ -651,10 +648,7 @@ export class ToolsService {
 		const tmpDir = `/tmp/${uniquId}`
 
 		try {
-			bidsGetDatasetDto.path = await this.filePath(path, owner, {
-				cookie,
-				requesttoken,
-			})
+			bidsGetDatasetDto.path = await this.filePath(path, owner)
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
 				`${tmpDir}/dataset_get.json`,
@@ -673,7 +667,7 @@ export class ToolsService {
 			})
 
 			// Set paths and command to be run
-			const dsPath = await this.filePath(path, owner, { cookie, requesttoken })
+			const dsPath = await this.filePath(path, owner )
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dsPath}:/output`]
 			const cmd2 = [
@@ -724,8 +718,8 @@ export class ToolsService {
 	 */
 	private async getFileContent(path: string, cookie: any): Promise<string> {
 		try {
-			const userid = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
-			const filePath = await this.filePath(path, userid)
+			const userId = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
+			const filePath = await this.filePath(path, userId)
 			
 			return new Promise((resolve, reject) => {
 				fs.readFile(filePath, 'utf8', function (err, data) {
@@ -742,10 +736,10 @@ export class ToolsService {
 	}
 
 	/* A private method that is used to get the file path, either user based or for a group */
-	private async filePath(path: string, userid: string) {
+	private async filePath(path: string, userId: string) {
 		try {
 			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
-				userid
+				userId
 			)
 
 			const rootPath = path.split('/')[0]
@@ -755,7 +749,7 @@ export class ToolsService {
 				? `${
 						process.env.PRIVATE_FILESYSTEM
 				  }/__groupfolders/${id}/${path.replace(`${rootPath}/`, '')}`
-				: `${process.env.PRIVATE_FILESYSTEM}/${userid}/files/${path}`
+				: `${process.env.PRIVATE_FILESYSTEM}/${userId}/files/${path}`
 
 			return nextPath
 		} catch (error) {

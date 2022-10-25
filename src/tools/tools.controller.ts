@@ -6,6 +6,7 @@ import {
 	Patch,
 	Post,
 	Query,
+	Logger,
 	Request as Req,
 	Response as Res,
 	UsePipes,
@@ -26,46 +27,48 @@ export class ToolsController {
 		private readonly nextcloudService: NextcloudService
 	) {}
 
-	@Get('/bids/datasets')
-	async getBids(@Req() req: Request, @Res() res: Response) {
-		await this.nextcloudService.authenticate(req).then(async () => {
-			const { cookie } = req.headers
-			const ds = await this.toolsService.getBIDSDatasets({ cookie })
+	private logger = new Logger('ToolsController')
 
-			return res.status(HttpStatus.OK).json(ds)
+	@Get('/bids/datasets/index')
+	indexBIDSDatasets(
+		@Query('owner') owner: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		this.nextcloudService.authenticate(req).then(async () => {
+			const { cookie, requesttoken } = req.headers
+			this.toolsService.indexBIDSDatasets(owner, {
+				cookie,
+				requesttoken,
+			})
 		})
-	}
 
-	@Post('/bids/datasets')
-	async indexBIDSDatasets(@Query('owner') owner: string, @Req() req: Request) {
-		const { cookie, requesttoken } = req.headers
-
-		return this.toolsService.indexBIDSDatasets(owner, { cookie, requesttoken })
+		return res.status(HttpStatus.OK).send()
 	}
 
 	@UsePipes(ValidationPipe)
-	@Post('/bids/datasets/search')
-	async c(
+	@Get('/bids/datasets/search')
+	async searchBidsDatasets(
 		@Query('owner') owner: string,
 		@Query('query') query: string,
-		@Query('nb_of_results') nb_of_results: number
+		@Query('nbOfResults') nbOfResults: number
 	) {
-		const search_results = await this.toolsService.searchBidsDatasets(
+		const searchResults = await this.toolsService.searchBidsDatasets(
 			owner,
 			query,
-			nb_of_results
+			nbOfResults
 		)
 
-		const found_datasets = search_results.hits.hits.map(dataset => ({
+		const foundDatasets = searchResults.hits.hits.map(dataset => ({
 			// query metadata fields returned by elastic
 			id: dataset._id,
 			...dataset._source,
 		}))
 
-		if (found_datasets.length > 0) {
-			return found_datasets
+		if (foundDatasets.length > 0) {
+			return foundDatasets
 		} else {
-			return null
+			return []
 		}
 	}
 
