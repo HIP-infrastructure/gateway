@@ -217,7 +217,7 @@ export class ToolsService {
 					await elastic_client.indices.create({
 						index: `datasets_${owner}`,
 						body: {
-							mappings: mappings,
+							mappings,
 						},
 					})
 					this.logger.debug('New user index created')
@@ -311,7 +311,7 @@ export class ToolsService {
 		try {
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
-				`${tmpDir}/db_create.json`,
+				`${tmpDir}/dataset.create.json`,
 				JSON.stringify(createBidsDatasetDto)
 			)
 
@@ -322,8 +322,8 @@ export class ToolsService {
 				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
-				'--command=db.create',
-				'--input_data=/input/db_create.json',
+				'--command=dataset.create',
+				'--input_data=/input/dataset.create.json',
 			]
 
 			const command = [...cmd1, ...cmd2]
@@ -412,35 +412,48 @@ export class ToolsService {
 		const { owner, path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
-
 		try {
+			// FIXME: replace by all settled
+			const filePathes = createSubject.files.map(file =>
+				this.filePath(file.path, owner)
+			)
+			const pathes = await Promise.all(filePathes)
+
+			const nextCreateSubject = {
+				...createSubject,
+				files: createSubject.files.map((file, i) => ({
+					...file,
+					path: pathes[i],
+				})),
+			}
+
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
-				`${tmpDir}/sub_import.json`,
-				JSON.stringify(createSubject)
+				`${tmpDir}/sub.create.json`,
+				JSON.stringify(nextCreateSubject)
 			)
 
-			const dbPath = await this.filePath(path, owner)
+			const volumes = nextCreateSubject.files.reduce(
+				(p, file) => [...p, '-v', `${file.path}:${file.path}`],
+				[]
+			)
 
-			const cmd1 = [
+			const command = [
 				'run',
 				'-v',
+				'/home/guspuhle/workdir/hip/frontend/bids-tools/scripts:/scripts',
+				'-v',
 				`${tmpDir}:/import-data`,
+				...volumes,
 				'-v',
-				`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
-				'-v',
-				`${dbPath}:/output`,
-			]
-
-			const cmd2 = [
+				`${path}:${path}`,
 				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
-				'--command=sub.import',
-				'--input_data=/import-data/sub_import.json',
+				'--command=sub.create',
+				'--input_data=/import-data/sub.create.json',
 			]
 
-			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
 			const { code, message } = await this.spawnable('docker', command)
@@ -457,9 +470,9 @@ export class ToolsService {
 				// To debug "Failed to fetch response error" obtained
 				// while importing "ieeg"...
 				const util = require('util')
-				this.logger.debug(util.inspect(createSubject, { depth: null }))
+				this.logger.debug(util.inspect(nextCreateSubject, { depth: null }))
 
-				return createSubject
+				return nextCreateSubject
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
@@ -583,7 +596,7 @@ export class ToolsService {
 
 	private async participantsWithPath(path: string, cookie: any) {
 		try {
-			const tsv = await this.getFileContent(path, cookie)			
+			const tsv = await this.getFileContent(path, cookie)
 			const [tsvheaders, ...rows] = tsv
 				.trim()
 				.split('\n')
@@ -615,17 +628,17 @@ export class ToolsService {
 		try {
 			const userId = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
 			const filePath = await this.filePath(path, userId)
-			
+
 			return new Promise((resolve, reject) => {
 				fs.readFile(filePath, 'utf8', function (err, data) {
-				if (err) {
-					reject(err);
-				}
+					if (err) {
+						reject(err)
+					}
 					if (typeof data !== 'string') return { data: null }
 					const cleaned = data.replace(/\\n/g, '').replace(/\\/g, '')
-					resolve({ data: JSON.parse(cleaned) });
-				});
-			});
+					resolve({ data: JSON.parse(cleaned) })
+				})
+			})
 		} catch (e) {
 			this.logger.error(e)
 			return { error: e.message }
@@ -667,7 +680,7 @@ export class ToolsService {
 			})
 
 			// Set paths and command to be run
-			const dsPath = await this.filePath(path, owner )
+			const dsPath = await this.filePath(path, owner)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dsPath}:/output`]
 			const cmd2 = [
@@ -720,15 +733,15 @@ export class ToolsService {
 		try {
 			const userId = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
 			const filePath = await this.filePath(path, userId)
-			
+
 			return new Promise((resolve, reject) => {
 				fs.readFile(filePath, 'utf8', function (err, data) {
-				if (err) {
-					reject(err);
-				}
-					resolve(data);
-				});
-			});	  
+					if (err) {
+						reject(err)
+					}
+					resolve(data)
+				})
+			})
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status)
