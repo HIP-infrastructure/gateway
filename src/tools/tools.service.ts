@@ -369,9 +369,9 @@ export class ToolsService {
 				}
 			})
 
-			const dbPath = await this.filePath(path, owner)
+			// const dbPath = await this.filePath(path, owner)
 
-			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${path}:/output`]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
