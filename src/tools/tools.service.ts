@@ -190,13 +190,42 @@ export class ToolsService {
 		}
 	}
 
+	public async getBIDSDatasetsIndexedContentOnce(
+		owner: string,
+		{ cookie, requesttoken }
+	) {
+		try {
+			const s = await this.search(cookie, PARTICIPANTS_FILE)
+			const searchResults = s?.entries
+			const bidsGetDatasetsDto = searchResults.map(r => {
+				// TODO: Handle / get dataset owner
+				const bidsGetDatasetDto = new BidsGetDatasetDto()
+				bidsGetDatasetDto.owner = owner
+				bidsGetDatasetDto.path = `${r.attributes.path
+					.replace(PARTICIPANTS_FILE, '')
+					.substring(1)}`
+				return bidsGetDatasetDto
+			})
+
+			const bidsDatasets = await this.getDatasetsIndexedContent(
+				bidsGetDatasetsDto
+			)
+			this.logger.debug({ bidsDatasets })
+
+			return bidsDatasets
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
+		}
+	}
+
 	public async indexBIDSDatasets(owner: string, { cookie, requesttoken }: any) {
 		try {
 			// get elasticsearch server url
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
 
 			// get a list of dataset indexed content
-			const bidsDatasets = await this.getBIDSDatasetsIndexedContent(owner, {
+			const bidsDatasets = await this.getBIDSDatasetsIndexedContentOnce(owner, {
 				cookie,
 				requesttoken,
 			})
@@ -710,6 +739,97 @@ export class ToolsService {
 			if (code === 0) {
 				// Extract resulting JSON content if the run succeeds
 				const sub = fs.readFileSync(`${tmpDir}/dataset_info.json`, 'utf-8')
+				return JSON.parse(sub)
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
+	}
+
+	/**
+	 * It takes a path and a set of headers, and returns the JSON-formatted content summary of the
+	 * BIDS dataset at that path, later used for dataset indexing.
+	 * @param {BidsGetDatasetDto} bidsGetDatasetDto - object storing the owner and path to the dataset you want to get
+	 * @returns The file content
+	 */
+	private async getDatasetsIndexedContent(
+		bidsGetDatasetsDto: BidsGetDatasetDto[]
+	): Promise<BIDSDataset[]> {
+		const uniquId = Math.round(Date.now() + Math.random())
+		const tmpDir = `/tmp/${uniquId}`
+
+		try {
+			// FIXME: replace by all settled
+			const filePathes = bidsGetDatasetsDto.map(dataset => {
+				return this.filePath(dataset.path, dataset.owner)
+			})
+			const pathes = await Promise.all(filePathes)
+
+			const nextGetDatasets = {
+				...bidsGetDatasetsDto,
+				datasets: bidsGetDatasetsDto.map((dataset, i) => ({
+					...dataset,
+					path: pathes[i],
+				})),
+			}
+
+			fs.mkdirSync(tmpDir, true)
+			fs.writeFileSync(
+				`${tmpDir}/datasets_get.json`,
+				JSON.stringify(nextGetDatasets)
+			)
+
+			const volumes = nextGetDatasets.datasets.reduce(
+				(p, dataset) => [...p, '-v', `${dataset.path}:${dataset.path}`],
+				[]
+			)
+
+			// Create an empty output JSON file with correct ownership
+			const output_file = `${tmpDir}/datasets_info.json`
+			let empty_content = {}
+			fs.writeFileSync(output_file, JSON.stringify(empty_content))
+
+			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+				if (err) {
+					throw err
+				}
+			})
+
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, ...volumes]
+			const cmd2 = [
+				'bids-tools',
+				this.dataUser,
+				this.dataUserId,
+				'--command=datasets.get',
+				'--input_data=/input/datasets_get.json',
+				'--output_file=/input/datasets_info.json',
+			]
+
+			const command =
+				process.env.NODE_ENV === 'development'
+					? [...cmd1, ...editScriptCmd, ...cmd2]
+					: [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the bids-tool docker image with the defined command
+			const { code, message } = await this.spawnable('docker', command)
+
+			// Handle output and error(s)
+			const errorMatching =
+				/IndexError: Could not get the content of the BIDS datasets for indexing./.test(
+					message
+				)
+			if (errorMatching) throw new BadRequestException(message)
+
+			if (code === 0) {
+				// Extract resulting JSON content if the run succeeds
+				const sub = fs.readFileSync(`${tmpDir}/datasets_info.json`, 'utf-8')
 				return JSON.parse(sub)
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
