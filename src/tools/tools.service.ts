@@ -19,6 +19,7 @@ import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
+import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
 const { spawn } = require('child_process')
@@ -289,6 +290,85 @@ export class ToolsService {
 		}
 	}
 
+	public async indexBIDSDataset(
+		owner: string,
+		path: string,
+		{ cookie, requesttoken }: any
+	) {
+		try {
+			// get elasticsearch server url
+			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
+
+			// get a list of dataset indexed content
+			const bidsGetDatasetDto = new BidsGetDatasetDto()
+			bidsGetDatasetDto.owner = owner
+			bidsGetDatasetDto.path = path
+			const bidsDataset = await this.getDatasetIndexedContent(
+				bidsGetDatasetDto,
+				{
+					cookie,
+					requesttoken,
+				}
+			)
+
+			// create a new client to our elasticsearch node
+			const es_opt = {
+				node: `${ELASTICSEARCH_URL}`,
+			}
+			const elastic_client = new Client(es_opt)
+
+			// create index for datasets if not existing
+			const exists = await elastic_client.indices.exists({
+				index: `datasets_${owner}`,
+			})
+
+			if (exists.body === false) {
+				try {
+					await elastic_client.indices.create({
+						index: `datasets_${owner}`,
+						body: {
+							mappings,
+						},
+					})
+					this.logger.debug('New user index created')
+				} catch (error) {
+					this.logger.warn('Failed to create user index...')
+					this.logger.warn(JSON.stringify(error))
+				}
+			}
+
+			// format list of datasets to make elastic_client happy
+			const body = [
+				{
+					index: {
+						_index: `datasets_${owner}`,
+						_id: bidsDataset.Name.replace(/\s/g, '').toLowerCase(),
+					},
+				},
+				bidsDataset,
+			]
+
+			// index the dataset
+			const { body: bulkResponse } = await elastic_client.bulk({
+				refresh: true,
+				body,
+			})
+			if (bulkResponse.errors) {
+				this.logger.error('Errors for (re)indexing dataset')
+				this.logger.error(JSON.stringify(bulkResponse))
+			}
+			// count indexed data
+			const { body: count } = await elastic_client.count({
+				index: `datasets_${owner}`,
+			})
+			this.logger.debug(count)
+
+			return bidsDataset
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
+		}
+	}
 	/*
 	Method that reproduces:
 	curl -XPOST 'localhost:9200/datasets_www-data/_search' -H 'Content-Type: application/json' -d '{"query": { "query_string": { "query": "Tom" } }}'

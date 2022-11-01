@@ -29,6 +29,23 @@ export class ToolsController {
 
 	private logger = new Logger('ToolsController')
 
+	@Get('/bids/dataset/index')
+	indexBIDSDataset(
+		@Query('owner') owner: string,
+		@Query('path') path: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		this.nextcloudService.authenticate(req).then(async () => {
+			const { cookie, requesttoken } = req.headers
+			this.toolsService.indexBIDSDataset(owner, path, {
+				cookie,
+				requesttoken,
+			})
+		})
+
+		return res.status(HttpStatus.OK).send()
+	}
 	@Get('/bids/datasets/index')
 	indexBIDSDatasets(
 		@Query('owner') owner: string,
