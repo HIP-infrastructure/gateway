@@ -291,6 +291,55 @@ export class ToolsService {
 		}
 	}
 
+	public async createBIDSDatasetsIndex() {
+		try {
+			// get elasticsearch server url and index used for BIDS datasets
+			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
+			const ELASTICSEARCH_BIDS_DATASETS_INDEX =
+				process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
+
+			// create a new client to our elasticsearch node
+			const es_opt = {
+				node: `${ELASTICSEARCH_URL}`,
+			}
+			const elastic_client = new Client(es_opt)
+
+			// create index for datasets if not existing
+			const exists = await elastic_client.indices.exists({
+				index: ELASTICSEARCH_BIDS_DATASETS_INDEX,
+			})
+
+			if (exists.body === false) {
+				try {
+					const create = await elastic_client.indices.create({
+						index: ELASTICSEARCH_BIDS_DATASETS_INDEX,
+						body: {
+							mappings,
+						},
+					})
+					this.logger.debug(
+						`New index ${ELASTICSEARCH_BIDS_DATASETS_INDEX} created`
+					)
+					this.logger.debug(`${JSON.stringify(create)}`)
+					return create
+				} catch (error) {
+					this.logger.warn(
+						`Failed to create index ${ELASTICSEARCH_BIDS_DATASETS_INDEX}...`
+					)
+					this.logger.warn(JSON.stringify(error))
+				}
+			} else {
+				this.logger.warn(
+					`SKIP: Index ${ELASTICSEARCH_BIDS_DATASETS_INDEX} already exists...`
+				)
+				return exists
+			}
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
+		}
+	}
+
 	public async indexBIDSDataset(
 		owner: string,
 		path: string,

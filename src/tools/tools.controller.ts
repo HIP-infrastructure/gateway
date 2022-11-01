@@ -29,6 +29,18 @@ export class ToolsController {
 
 	private logger = new Logger('ToolsController')
 
+	@Get('/bids/datasets/create_index')
+	createBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
+		// this.nextcloudService.authenticate(req).then(async () => {
+		// 	this.toolsService.createBIDSDatasetsIndex()
+		// })
+
+		const { cookie, requesttoken } = req.headers
+		this.toolsService.createBIDSDatasetsIndex()
+
+		return res.status(HttpStatus.OK).send()
+	}
+
 	@Get('/bids/dataset/index')
 	indexBIDSDataset(
 		@Query('owner') owner: string,
