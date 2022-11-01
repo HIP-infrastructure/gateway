@@ -600,8 +600,8 @@ export class ToolsService {
 
 			const command = [
 				'run',
-				'-v',
-				'/home/guspuhle/workdir/hip/frontend/bids-tools/scripts:/scripts',
+				// '-v',
+				// '/home/guspuhle/workdir/hip/frontend/bids-tools/scripts:/scripts',
 				'-v',
 				`${tmpDir}:/import-data`,
 				...volumes,
