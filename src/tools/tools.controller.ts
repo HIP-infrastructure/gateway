@@ -48,12 +48,18 @@ export class ToolsController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.nextcloudService.authenticate(req).then(async () => {
-			const { cookie, requesttoken } = req.headers
-			this.toolsService.indexBIDSDataset(owner, path, {
-				cookie,
-				requesttoken,
-			})
+		// this.nextcloudService.authenticate(req).then(async () => {
+		// 	const { cookie, requesttoken } = req.headers
+		// 	this.toolsService.indexBIDSDataset(owner, path, {
+		// 		cookie,
+		// 		requesttoken,
+		// 	})
+		// })
+
+		const { cookie, requesttoken } = req.headers
+		this.toolsService.indexBIDSDataset(owner, path, {
+			cookie,
+			requesttoken,
 		})
 
 		return res.status(HttpStatus.OK).send()

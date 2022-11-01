@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common'
 import { Client, RequestParams, ApiResponse } from '@elastic/elasticsearch'
 
-import { NextcloudService } from 'src/nextcloud/nextcloud.service'
+import { GroupFolder, NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
@@ -68,6 +68,7 @@ export interface Participant {
 	[key: string]: string | number
 }
 export interface BIDSDataset {
+	id?: string
 	Name?: string
 	BIDSVersion?: string
 	License?: string
@@ -77,6 +78,11 @@ export interface BIDSDataset {
 	Funding?: string[]
 	ReferencesAndLinks?: string[]
 	DatasetDOI?: string
+	Path?: string
+	Owner?: string
+	Groups?: GroupFolder[]
+	CreationDate?: Date
+	LastModificationDate?: Date
 }
 
 const editScriptCmd = ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`]
@@ -174,7 +180,7 @@ export class ToolsService {
 				bidsGetDatasetDto.path = `${r.attributes.path
 					.replace(PARTICIPANTS_FILE, '')
 					.substring(1)}`
-				return this.getDatasetIndexedContent(bidsGetDatasetDto, {
+				return this.createDatasetIndexedContent(bidsGetDatasetDto, {
 					cookie,
 					requesttoken,
 				})
@@ -346,14 +352,18 @@ export class ToolsService {
 		{ cookie, requesttoken }: any
 	) {
 		try {
-			// get elasticsearch server url
+			// get elasticsearch server url and index used for BIDS datasets
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
+			const ELASTICSEARCH_BIDS_DATASETS_INDEX =
+				process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
 
 			// get a list of dataset indexed content
 			const bidsGetDatasetDto = new BidsGetDatasetDto()
 			bidsGetDatasetDto.owner = owner
 			bidsGetDatasetDto.path = path
-			const bidsDataset = await this.getDatasetIndexedContent(
+			this.logger.debug({ bidsGetDatasetDto })
+
+			const bidsDataset = await this.createDatasetIndexedContent(
 				bidsGetDatasetDto,
 				{
 					cookie,
@@ -361,55 +371,76 @@ export class ToolsService {
 				}
 			)
 
+			// find the dataset index to be deleted
+			const datasetPathQuery = `Path:"${path}"`
+			this.logger.debug(
+				`Text query to search deleted dataset: ${datasetPathQuery}`
+			)
+			const searchResults = await this.searchBidsDatasets(
+				owner,
+				datasetPathQuery,
+				1
+			)
+			this.logger.log({ searchResults })
+			if (searchResults.hits.hits.length > 0) {
+				const currentDataset = searchResults.hits.hits[0]
+				this.logger.debug(currentDataset)
+
+				this.logger.debug(
+					'Set owner / groups / creation date from currently indexed dataset'
+				)
+				bidsDataset.Owner = currentDataset._source.Owner
+				bidsDataset.Groups = currentDataset._source.Groups
+				bidsDataset.CreationDate = currentDataset._source.CreationDate
+				bidsDataset.id = currentDataset._source.id
+			} else {
+				this.logger.debug('Set owner / groups / creation date of dataset')
+				bidsDataset.Owner = owner
+				bidsDataset.Groups = await this.nextcloudService.groupFoldersForUserId(
+					owner
+				)
+				bidsDataset.CreationDate = new Date()
+				bidsDataset.id = bidsDataset.Name.replace(/\s/g, '').toLowerCase()
+			}
+			bidsDataset.Path = path
+			// TODO: Update modif date only if modification(s) occured
+			bidsDataset.LastModificationDate = new Date()
+
 			// create a new client to our elasticsearch node
 			const es_opt = {
 				node: `${ELASTICSEARCH_URL}`,
 			}
 			const elastic_client = new Client(es_opt)
 
-			// create index for datasets if not existing
-			const exists = await elastic_client.indices.exists({
-				index: `datasets_${owner}`,
-			})
+			this.logger.debug({ bidsDataset })
 
-			if (exists.body === false) {
-				try {
-					await elastic_client.indices.create({
-						index: `datasets_${owner}`,
-						body: {
-							mappings,
-						},
-					})
-					this.logger.debug('New user index created')
-				} catch (error) {
-					this.logger.warn('Failed to create user index...')
-					this.logger.warn(JSON.stringify(error))
-				}
-			}
-
-			// format list of datasets to make elastic_client happy
+			// create body to be passed to elasticsearch client bulk function
 			const body = [
 				{
 					index: {
-						_index: `datasets_${owner}`,
-						_id: bidsDataset.Name.replace(/\s/g, '').toLowerCase(),
+						_index: ELASTICSEARCH_BIDS_DATASETS_INDEX,
+						_id: bidsDataset.id,
 					},
 				},
 				bidsDataset,
 			]
 
-			// index the dataset
+			this.logger.debug({ body })
+
+			// call the bulk function to index the dataset
 			const { body: bulkResponse } = await elastic_client.bulk({
 				refresh: true,
 				body,
 			})
 			if (bulkResponse.errors) {
-				this.logger.error('Errors for (re)indexing dataset')
+				this.logger.error(
+					`Error while (re)indexing dataset ${bidsDataset.Name}`
+				)
 				this.logger.error(JSON.stringify(bulkResponse))
 			}
 			// count indexed data
 			const { body: count } = await elastic_client.count({
-				index: `datasets_${owner}`,
+				index: ELASTICSEARCH_BIDS_DATASETS_INDEX,
 			})
 			this.logger.debug(count)
 
@@ -482,10 +513,12 @@ export class ToolsService {
 		try {
 			// get elasticsearch server url
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
+			const ELASTICSEARCH_BIDS_DATASETS_INDEX =
+				process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
 
 			// define search query in JSON format expected by elasticsearch
 			const query_params: RequestParams.Search = {
-				index: `datasets_${owner}`,
+				index: `${ELASTICSEARCH_BIDS_DATASETS_INDEX}`,
 				body: {
 					size: nb_of_results,
 					query: {
@@ -861,7 +894,7 @@ export class ToolsService {
 	 * @param {any} headers - This is the headers that you need to pass to the webdav server.
 	 * @returns The file content
 	 */
-	private async getDatasetIndexedContent(
+	private async createDatasetIndexedContent(
 		bidsGetDatasetDto: BidsGetDatasetDto,
 		{ cookie, requesttoken }: any
 	): Promise<BIDSDataset> {
@@ -870,7 +903,6 @@ export class ToolsService {
 		const tmpDir = `/tmp/${uniquId}`
 
 		try {
-			bidsGetDatasetDto.path = await this.filePath(path, owner)
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
 				`${tmpDir}/dataset_get.json`,
@@ -889,9 +921,9 @@ export class ToolsService {
 			})
 
 			// Set paths and command to be run
-			const dsPath = await this.filePath(path, owner)
+			// const dsPath = await this.filePath(path, owner)
 
-			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dsPath}:/output`]
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${path}:/output`]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
