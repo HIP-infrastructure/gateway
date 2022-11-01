@@ -200,11 +200,12 @@ export class ToolsService {
 			const searchResults = s?.entries
 			const bidsGetDatasetsDto = searchResults.map(r => {
 				// TODO: Handle / get dataset owner
-				const bidsGetDatasetDto = new BidsGetDatasetDto()
-				bidsGetDatasetDto.owner = owner
-				bidsGetDatasetDto.path = `${r.attributes.path
+				const path = `${r.attributes.path
 					.replace(PARTICIPANTS_FILE, '')
 					.substring(1)}`
+				const bidsGetDatasetDto = new BidsGetDatasetDto()
+				bidsGetDatasetDto.owner = owner
+				bidsGetDatasetDto.path = path
 				return bidsGetDatasetDto
 			})
 
