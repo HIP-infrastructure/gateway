@@ -369,6 +369,56 @@ export class ToolsService {
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
 		}
 	}
+
+	public async deleteBIDSDataset(owner: string, path: string) {
+		try {
+			// get elasticsearch server url
+			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
+
+			// create a new client to our elasticsearch node
+			const es_opt = {
+				node: `${ELASTICSEARCH_URL}`,
+			}
+			const elastic_client = new Client(es_opt)
+
+			// find the dataset index to be deleted
+			const datasetPathQuery = `Path:"${path}"`
+			this.logger.debug(
+				`Text query to search deleted dataset: ${datasetPathQuery}`
+			)
+			const searchResults = await this.searchBidsDatasets(
+				owner,
+				datasetPathQuery,
+				1
+			)
+			if (searchResults.hits.hits.length > 0) {
+				const dataset = searchResults.hits.hits[0]
+				this.logger.debug(dataset)
+				// delete the document with id related to the dataset
+				const datasetID = {
+					index: dataset._index,
+					id: dataset._id,
+				}
+				this.logger.debug(`DatasetID: ${JSON.stringify(datasetID)}`)
+				const { body: deleteResponse } = await elastic_client.delete(datasetID)
+				if (deleteResponse.errors) {
+					this.logger.error(`Errors for deleting dataset ${dataset._id}!`)
+					this.logger.error(JSON.stringify(deleteResponse))
+				} else {
+					this.logger.debug(`Dataset ${dataset._id} successfully deleted!`)
+					this.logger.debug(JSON.stringify(deleteResponse))
+				}
+
+				return datasetID
+			} else {
+				throw new Error('No dataset found in elasticsearch to be deleted')
+			}
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
+		}
+	}
+
 	/*
 	Method that reproduces:
 	curl -XPOST 'localhost:9200/datasets_www-data/_search' -H 'Content-Type: application/json' -d '{"query": { "query_string": { "query": "Tom" } }}'

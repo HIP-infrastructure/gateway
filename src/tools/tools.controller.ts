@@ -46,6 +46,23 @@ export class ToolsController {
 
 		return res.status(HttpStatus.OK).send()
 	}
+
+	@Get('/bids/dataset/delete')
+	deleteBIDSDataset(
+		@Query('owner') owner: string,
+		@Query('path') path: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		// this.nextcloudService.authenticate(req).then(async () => {
+		//	this.toolsService.deleteBIDSDataset(owner, path)
+		//})
+
+		this.toolsService.deleteBIDSDataset(owner, path)
+
+		return res.status(HttpStatus.OK).send()
+	}
+
 	@Get('/bids/datasets/index')
 	indexBIDSDatasets(
 		@Query('owner') owner: string,
