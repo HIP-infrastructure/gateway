@@ -669,7 +669,7 @@ export class ToolsService {
 
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
-				`${tmpDir}/sub.create.json`,
+				`${tmpDir}/sub.import.json`,
 				JSON.stringify(nextCreateSubject)
 			)
 
@@ -686,12 +686,12 @@ export class ToolsService {
 				`${tmpDir}:/import-data`,
 				...volumes,
 				'-v',
-				`${path}:${path}`,
+				`${path}:/output`,
 				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
-				'--command=sub.create',
-				'--input_data=/import-data/sub.create.json',
+				'--command=sub.import',
+				'--input_data=/import-data/sub.import.json',
 			]
 
 			this.logger.debug(command.join(' '))
