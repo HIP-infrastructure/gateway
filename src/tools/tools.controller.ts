@@ -100,11 +100,13 @@ export class ToolsController {
 	async searchBidsDatasets(
 		@Query('owner') owner: string,
 		@Query('query') query: string,
+		@Query('page') page: number,
 		@Query('nbOfResults') nbOfResults: number
 	) {
 		const searchResults = await this.toolsService.searchBidsDatasets(
 			owner,
 			query,
+			page,
 			nbOfResults
 		)
 

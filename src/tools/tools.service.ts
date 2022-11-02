@@ -370,6 +370,7 @@ export class ToolsService {
 			const searchResults = await this.searchBidsDatasets(
 				owner,
 				datasetPathQuery,
+				1,
 				1
 			)
 			this.logger.log({ searchResults })
@@ -459,6 +460,7 @@ export class ToolsService {
 			const searchResults = await this.searchBidsDatasets(
 				owner,
 				datasetPathQuery,
+				1,
 				1
 			)
 			if (searchResults.hits.hits.length > 0) {
@@ -497,6 +499,7 @@ export class ToolsService {
 	public async searchBidsDatasets(
 		owner: string,
 		text_query: string,
+		page: number,
 		nb_of_results: number
 	) {
 		try {
@@ -509,6 +512,7 @@ export class ToolsService {
 			const query_params: RequestParams.Search = {
 				index: `${ELASTICSEARCH_BIDS_DATASETS_INDEX}`,
 				body: {
+					from: (page - 1) * nb_of_results,
 					size: nb_of_results,
 					query: {
 						query_string: {
