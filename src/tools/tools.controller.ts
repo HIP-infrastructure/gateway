@@ -57,10 +57,7 @@ export class ToolsController {
 		// })
 
 		const { cookie, requesttoken } = req.headers
-		this.toolsService.indexBIDSDataset(owner, path, {
-			cookie,
-			requesttoken,
-		})
+		this.toolsService.indexBIDSDataset(owner, path)
 
 		return res.status(HttpStatus.OK).send()
 	}
@@ -126,7 +123,7 @@ export class ToolsController {
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/dataset')
-	async createDatabase(
+	async createDataset(
 		@Body() createBidsDatasetDto: CreateBidsDatasetDto,
 		@Req() req: Request
 	) {

@@ -180,10 +180,7 @@ export class ToolsService {
 				bidsGetDatasetDto.path = `${r.attributes.path
 					.replace(PARTICIPANTS_FILE, '')
 					.substring(1)}`
-				return this.createDatasetIndexedContent(bidsGetDatasetDto, {
-					cookie,
-					requesttoken,
-				})
+				return this.createDatasetIndexedContent(bidsGetDatasetDto)
 			})
 
 			const bidsDatasets = (await Promise.allSettled(bidsDatasetsPromises))
@@ -229,8 +226,10 @@ export class ToolsService {
 
 	public async indexBIDSDatasets(owner: string, { cookie, requesttoken }: any) {
 		try {
-			// get elasticsearch server url
+			// get elasticsearch server url and index used for BIDS datasets
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
+			const ELASTICSEARCH_BIDS_DATASETS_INDEX =
+				process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
 
 			// get a list of dataset indexed content
 			const bidsDatasets = await this.getBIDSDatasetsIndexedContentOnce(owner, {
@@ -246,13 +245,13 @@ export class ToolsService {
 
 			// create index for datasets if not existing
 			const exists = await elastic_client.indices.exists({
-				index: `datasets_${owner}`,
+				index: ELASTICSEARCH_BIDS_DATASETS_INDEX,
 			})
 
 			if (exists.body === false) {
 				try {
 					await elastic_client.indices.create({
-						index: `datasets_${owner}`,
+						index: ELASTICSEARCH_BIDS_DATASETS_INDEX,
 						body: {
 							mappings,
 						},
@@ -268,7 +267,7 @@ export class ToolsService {
 			const body = bidsDatasets.flatMap((dataset: BIDSDataset) => [
 				{
 					index: {
-						_index: `datasets_${owner}`,
+						_index: ELASTICSEARCH_BIDS_DATASETS_INDEX,
 						_id: dataset.Name.replace(/\s/g, '').toLowerCase(),
 					},
 				},
@@ -286,7 +285,7 @@ export class ToolsService {
 			}
 			// count indexed data
 			const { body: count } = await elastic_client.count({
-				index: `datasets_${owner}`,
+				index: ELASTICSEARCH_BIDS_DATASETS_INDEX,
 			})
 			this.logger.debug(count)
 
@@ -346,11 +345,7 @@ export class ToolsService {
 		}
 	}
 
-	public async indexBIDSDataset(
-		owner: string,
-		path: string,
-		{ cookie, requesttoken }: any
-	) {
+	public async indexBIDSDataset(owner: string, path: string) {
 		try {
 			// get elasticsearch server url and index used for BIDS datasets
 			const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
@@ -364,11 +359,7 @@ export class ToolsService {
 			this.logger.debug({ bidsGetDatasetDto })
 
 			const bidsDataset = await this.createDatasetIndexedContent(
-				bidsGetDatasetDto,
-				{
-					cookie,
-					requesttoken,
-				}
+				bidsGetDatasetDto
 			)
 
 			// find the dataset index to be deleted
@@ -384,23 +375,22 @@ export class ToolsService {
 			this.logger.log({ searchResults })
 			if (searchResults.hits.hits.length > 0) {
 				const currentDataset = searchResults.hits.hits[0]
-				this.logger.debug(currentDataset)
-
-				this.logger.debug(
-					'Set owner / groups / creation date from currently indexed dataset'
-				)
+				this.logger.debug('Update a currently indexed dataset')
+				this.logger.debug({ currentDataset })
 				bidsDataset.Owner = currentDataset._source.Owner
 				bidsDataset.Groups = currentDataset._source.Groups
 				bidsDataset.CreationDate = currentDataset._source.CreationDate
 				bidsDataset.id = currentDataset._source.id
+				bidsDataset.version = currentDataset._source.version++
 			} else {
-				this.logger.debug('Set owner / groups / creation date of dataset')
+				this.logger.debug('Create a new dataset')
 				bidsDataset.Owner = owner
 				bidsDataset.Groups = await this.nextcloudService.groupFoldersForUserId(
 					owner
 				)
 				bidsDataset.CreationDate = new Date()
 				bidsDataset.id = bidsDataset.Name.replace(/\s/g, '').toLowerCase()
+				bidsDataset.version = 1
 			}
 			bidsDataset.Path = path
 			// TODO: Update modif date only if modification(s) occured
@@ -432,10 +422,9 @@ export class ToolsService {
 				refresh: true,
 				body,
 			})
+
 			if (bulkResponse.errors) {
-				this.logger.error(
-					`Error while (re)indexing dataset ${bidsDataset.Name}`
-				)
+				this.logger.error('Errors for (re)indexing datasets')
 				this.logger.error(JSON.stringify(bulkResponse))
 			}
 			// count indexed data
@@ -575,6 +564,10 @@ export class ToolsService {
 
 			if (code === 0) {
 				await this.nextcloudService.scanPath(owner, path)
+				await this.indexBIDSDataset(
+					owner,
+					`${dbPath}${createBidsDatasetDto.dataset}`
+				)
 				return createBidsDatasetDto
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -709,6 +702,9 @@ export class ToolsService {
 
 			if (code === 0) {
 				await this.nextcloudService.scanPath(owner, path)
+				this.logger.debug({ path })
+				const datasetIndexedContent = await this.indexBIDSDataset(owner, path)
+				this.logger.debug({ datasetIndexedContent })
 				// To debug "Failed to fetch response error" obtained
 				// while importing "ieeg"...
 				const util = require('util')
@@ -895,8 +891,7 @@ export class ToolsService {
 	 * @returns The file content
 	 */
 	private async createDatasetIndexedContent(
-		bidsGetDatasetDto: BidsGetDatasetDto,
-		{ cookie, requesttoken }: any
+		bidsGetDatasetDto: BidsGetDatasetDto
 	): Promise<BIDSDataset> {
 		const { owner, path } = bidsGetDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
