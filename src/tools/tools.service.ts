@@ -69,6 +69,7 @@ export interface Participant {
 }
 export interface BIDSDataset {
 	id?: string
+	version?: number
 	Name?: string
 	BIDSVersion?: string
 	License?: string
