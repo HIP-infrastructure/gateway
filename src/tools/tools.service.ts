@@ -492,11 +492,6 @@ export class ToolsService {
 		}
 	}
 
-	/*
-	Method that reproduces:
-	curl -XPOST 'localhost:9200/datasets_www-data/_search' -H 'Content-Type: application/json' -d '{"query": { "query_string": { "query": "Tom" } }}'
-	TO BE TESTED !
-	*/
 	public async searchBidsDatasets(
 		owner: string,
 		text_query: string,
