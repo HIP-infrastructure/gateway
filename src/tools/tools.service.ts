@@ -554,9 +554,7 @@ export class ToolsService {
 			)
 			const searchResults = await this.searchBidsDatasets(
 				owner,
-				datasetPathQuery,
-				1,
-				1
+				datasetPathQuery
 			)
 			this.logger.log({ searchResults })
 			if (searchResults.hits.hits.length > 0) {
@@ -645,9 +643,7 @@ export class ToolsService {
 			)
 			const searchResults = await this.searchBidsDatasets(
 				owner,
-				datasetPathQuery,
-				1,
-				1
+				datasetPathQuery
 			)
 			if (searchResults.hits.hits.length > 0) {
 				const dataset = searchResults.hits.hits[0]
@@ -692,9 +688,9 @@ export class ToolsService {
 
 	public async searchBidsDatasets(
 		owner: string,
-		text_query: string,
-		page: number,
-		nb_of_results: number
+		text_query: string = '*',
+		page: number = 1,
+		nb_of_results: number = 200
 	) {
 		try {
 			// get elasticsearch server url
@@ -702,19 +698,25 @@ export class ToolsService {
 			const ELASTICSEARCH_BIDS_DATASETS_INDEX =
 				process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
 
+			// determine index to start based on pagination
+			const index_from = (page - 1) * nb_of_results
+
 			// define search query in JSON format expected by elasticsearch
 			const query_params: RequestParams.Search = {
 				index: `${ELASTICSEARCH_BIDS_DATASETS_INDEX}`,
 				body: {
-					from: (page - 1) * nb_of_results,
+					from: index_from,
 					size: nb_of_results,
 					query: {
 						query_string: {
 							query: text_query,
+							allow_leading_wildcard: true,
+							analyze_wildcard: true,
 						},
 					},
 				},
 			}
+			this.logger.debug({ query_params })
 
 			// create a new client to our elasticsearch node
 			const es_opt = {
