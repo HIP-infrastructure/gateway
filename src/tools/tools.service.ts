@@ -394,7 +394,7 @@ export class ToolsService {
 			})
 			this.logger.debug({ foundDatasets })
 			// get a list of dataset ids (<=> folder name) already indexed
-			const searchIndexedResults = await this.searchBidsDatasets(owner)
+			const searchIndexedResults = await this.searchBidsDatasets()
 
 			// 2. Handle indexing of datasets not already indexed
 			let addedBidsDatasets: BIDSDataset[] = []
@@ -552,10 +552,7 @@ export class ToolsService {
 			this.logger.debug(
 				`Text query to search deleted dataset: ${datasetPathQuery}`
 			)
-			const searchResults = await this.searchBidsDatasets(
-				owner,
-				datasetPathQuery
-			)
+			const searchResults = await this.searchBidsDatasets(datasetPathQuery)
 			this.logger.log({ searchResults })
 			if (searchResults.hits.hits.length > 0) {
 				const currentDataset = searchResults.hits.hits[0]
@@ -641,10 +638,7 @@ export class ToolsService {
 			this.logger.debug(
 				`Text query to search deleted dataset: ${datasetPathQuery}`
 			)
-			const searchResults = await this.searchBidsDatasets(
-				owner,
-				datasetPathQuery
-			)
+			const searchResults = await this.searchBidsDatasets(datasetPathQuery)
 			if (searchResults.hits.hits.length > 0) {
 				const dataset = searchResults.hits.hits[0]
 				this.logger.debug(dataset)
@@ -687,7 +681,6 @@ export class ToolsService {
 	}
 
 	public async searchBidsDatasets(
-		owner: string,
 		text_query: string = '*',
 		page: number = 1,
 		nb_of_results: number = 200

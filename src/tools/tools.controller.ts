@@ -126,7 +126,6 @@ export class ToolsController {
 		@Query('nbOfResults') nbOfResults: number
 	) {
 		const searchResults = await this.toolsService.searchBidsDatasets(
-			owner,
 			query,
 			page,
 			nbOfResults
