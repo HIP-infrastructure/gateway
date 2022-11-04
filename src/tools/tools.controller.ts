@@ -96,6 +96,28 @@ export class ToolsController {
 	}
 
 	@UsePipes(ValidationPipe)
+	@Get('/bids/datasets/refresh_index')
+	async refreshDatasetsIndex(
+		@Query('owner') owner: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		// this.nextcloudService.authenticate(req).then(async () => {
+		// 	const { cookie, requesttoken } = req.headers
+		// 	this.toolsService.refreshBIDSDatasetsIndex(owner, {
+		// 		cookie,
+		// 		requesttoken,
+		// 	})
+		// })
+
+		const { cookie, requesttoken } = req.headers
+		this.toolsService.refreshBIDSDatasetsIndex(owner, {
+			cookie,
+			requesttoken,
+		})
+	}
+
+	@UsePipes(ValidationPipe)
 	@Get('/bids/datasets/search')
 	async searchBidsDatasets(
 		@Query('owner') owner: string,
