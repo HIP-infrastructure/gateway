@@ -156,6 +156,15 @@ export class ToolsController {
 	}
 
 	@UsePipes(ValidationPipe)
+	@Get('/bids/dataset/generate_id')
+	async generateDatasetId(@Req() req: Request) {
+		// return await this.nextcloudService.authenticate(req).then(() => {
+		// 	return this.toolsService.createBidsDataset(createBidsDatasetDto)
+		// })
+		return this.toolsService.generateDatasetId()
+	}
+
+	@UsePipes(ValidationPipe)
 	@Get('/bids/subject')
 	async getSubject(
 		@Query('path') path: string,
