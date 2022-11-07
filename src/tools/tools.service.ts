@@ -546,7 +546,7 @@ export class ToolsService {
 		}
 	}
 
-	public async indexBIDSDataset(owner: string, path: string) {
+	public async indexBIDSDataset(owner: string, path: string, id: string) {
 		try {
 			// get a list of dataset indexed content
 			const bidsGetDatasetDto = new BidsGetDatasetDto()
@@ -588,7 +588,7 @@ export class ToolsService {
 				bidsDataset.CreationDate = new Date()
 				bidsDataset.LastModificationDate = bidsDataset.CreationDate
 				// Autogenerate dataset id
-				bidsDataset.id = await this.generateDatasetId(owner)
+				bidsDataset.id = id ? id : await this.generateDatasetId(owner)
 				bidsDataset.version = 1
 			}
 			bidsDataset.Path = path
@@ -843,6 +843,7 @@ export class ToolsService {
 				await this.indexBIDSDataset(
 					owner,
 					`${dsParentPath}${createBidsDatasetDto.dataset_dirname}`,
+					datasetID
 				)
 
 				return createBidsDatasetDto

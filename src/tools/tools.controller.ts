@@ -57,6 +57,7 @@ export class ToolsController {
 	indexBIDSDataset(
 		@Query('owner') owner: string,
 		@Query('path') path: string,
+		@Query('id') id: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
@@ -69,7 +70,7 @@ export class ToolsController {
 		// })
 
 		const { cookie, requesttoken } = req.headers
-		this.toolsService.indexBIDSDataset(owner, path)
+		this.toolsService.indexBIDSDataset(owner, path, id)
 
 		return res.status(HttpStatus.OK).send()
 	}
