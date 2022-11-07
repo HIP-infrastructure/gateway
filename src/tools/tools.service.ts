@@ -637,7 +637,6 @@ export class ToolsService {
 			this.logger.debug(
 				`Text query to search deleted dataset: ${datasetPathQuery}`
 			)
-				const dataset = searchResults.hits.hits[0]
 			const searchResults = await this.searchBidsDatasets(
 				owner,
 				datasetPathQuery
@@ -779,9 +778,7 @@ export class ToolsService {
 			// get a list of dataset ids (<=> folder name) already indexed
 			const searchIndexedResults = await this.searchBidsDatasets()
 			// extract ids of indexed datasets
-			const datasetIDs = searchIndexedResults.hits.hits.map(
-				dataset => dataset._id
-			)
+			const datasetIDs = searchIndexedResults.map(dataset => dataset._id)
 			this.logger.debug({ datasetIDs })
 			// generate a first if using the number of indexed datasets
 			var datasetIdNum: number = nbOfDatasets
