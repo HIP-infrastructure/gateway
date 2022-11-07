@@ -19,7 +19,7 @@ import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
-import { Dataset } from './entities/dataset.entity'
+// import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
 const { spawn } = require('child_process')
@@ -592,7 +592,6 @@ export class ToolsService {
 				bidsDataset.version = 1
 			}
 			bidsDataset.Path = path
-			this.logger.debug({ bidsDataset })
 
 			// create body to be passed to elasticsearch client bulk function
 			const body = [
@@ -604,8 +603,6 @@ export class ToolsService {
 				},
 				bidsDataset,
 			]
-
-			this.logger.debug({ body })
 
 			// call the bulk function to index the dataset
 			const { body: bulkResponse } = await this.elastic_client.bulk({
@@ -643,13 +640,11 @@ export class ToolsService {
 			)
 			if (searchResults.length > 0) {
 				const dataset = searchResults[0]
-				this.logger.debug(dataset)
 				// delete the document with id related to the dataset
 				const datasetID = {
 					index: dataset._index,
 					id: dataset._id,
 				}
-				this.logger.debug(`DatasetID: ${JSON.stringify(datasetID)}`)
 				const { body: deleteResponse } = await this.elastic_client.delete(
 					datasetID
 				)
@@ -709,7 +704,6 @@ export class ToolsService {
 					},
 				},
 			}
-			this.logger.debug({ query_params })
 
 			// perform and return the search query
 			const foundDatasets = await this.elastic_client
@@ -746,7 +740,6 @@ export class ToolsService {
 				query: { match_all: {} },
 			},
 		}
-		this.logger.debug({ count_params })
 
 		// perform and return the search query
 		return this.elastic_client
@@ -774,12 +767,10 @@ export class ToolsService {
 		try {
 			// get number of datasets indexed in elasticsearch
 			var nbOfDatasets = await this.getDatasetsCount()
-			this.logger.debug({ nbOfDatasets })
 			// get a list of dataset ids (<=> folder name) already indexed
 			const searchIndexedResults = await this.searchBidsDatasets('all')
 			// extract ids of indexed datasets
 			const datasetIDs = searchIndexedResults.map(dataset => dataset._id)
-			this.logger.debug({ datasetIDs })
 			// generate a first if using the # of indexed datasets + 1
 			var datasetIdNum: number = nbOfDatasets + 1
 			var datasetId: string = this.createDatasetIdString(
@@ -823,11 +814,9 @@ export class ToolsService {
 				`${tmpDir}/dataset.create.json`,
 				JSON.stringify(createBidsDatasetDto)
 			)
-			this.logger.debug({ createBidsDatasetDto })
 
 			// Resolve absolute path of dataset's parent directory
 			const dsParentPath = await this.filePath(parent_path, owner)
-			this.logger.debug({ dsParentPath })
 
 			const cmd1 = [
 				'run',
@@ -938,6 +927,7 @@ export class ToolsService {
 		const { owner, dataset_path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
+
 		try {
 			// retrieve the index used for the dataset
 			const datasetPathQuery = `Path:"${dataset_path}"`
@@ -1004,18 +994,11 @@ export class ToolsService {
 
 			if (code === 0) {
 				await this.nextcloudService.scanPath(owner, dataset_path)
-				this.logger.debug({ dataset_path })
 				const datasetIndexedContent = await this.indexBIDSDataset(
 					owner,
 					dataset_path,
 					datasetID
 				)
-				this.logger.debug({ datasetIndexedContent })
-				// To debug "Failed to fetch response error" obtained
-				// while importing "ieeg"...
-				const util = require('util')
-				this.logger.debug(util.inspect(nextCreateSubject, { depth: null }))
-
 				return nextCreateSubject
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
