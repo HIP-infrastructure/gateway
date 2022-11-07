@@ -809,7 +809,7 @@ export class ToolsService {
 	}
 
 	public async createBidsDataset(createBidsDatasetDto: CreateBidsDatasetDto) {
-		const { owner, path } = createBidsDatasetDto
+		const { owner, parent_path } = createBidsDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
@@ -837,11 +837,14 @@ export class ToolsService {
 			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
-				await this.nextcloudService.scanPath(owner, path)
+				// Make the new dataset discovered by Nextcloud
+				await this.nextcloudService.scanPath(owner, parent_path)
+				// Index the dataset
 				await this.indexBIDSDataset(
 					owner,
-					`${dbPath}${createBidsDatasetDto.dataset}`
+					`${dsParentPath}${createBidsDatasetDto.dataset_dirname}`,
 				)
+
 				return createBidsDatasetDto
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -918,10 +921,21 @@ export class ToolsService {
 	}
 
 	public async importSubject(createSubject: CreateSubjectDto) {
-		const { owner, path } = createSubject
+		const { owner, dataset_path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 		try {
+			// retrieve the index used for the dataset
+			const datasetPathQuery = `Path:"${dataset_path}"`
+			this.logger.debug(
+				`Text query to retrieve dataset ID: ${datasetPathQuery}`
+			)
+			const searchResults = await this.searchBidsDatasets(
+				owner,
+				datasetPathQuery
+			)
+			const datasetID = searchResults[0].id
+
 			// FIXME: replace by all settled
 			const filePathes = createSubject.files.map(file =>
 				this.filePath(file.path, owner)
@@ -955,7 +969,7 @@ export class ToolsService {
 				`${tmpDir}:/import-data`,
 				...volumes,
 				'-v',
-				`${path}:/output`,
+				`${dataset_path}:/output`,
 				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
@@ -975,9 +989,13 @@ export class ToolsService {
 			if (errorMatching) throw new BadRequestException(message)
 
 			if (code === 0) {
-				await this.nextcloudService.scanPath(owner, path)
-				this.logger.debug({ path })
-				const datasetIndexedContent = await this.indexBIDSDataset(owner, path)
+				await this.nextcloudService.scanPath(owner, dataset_path)
+				this.logger.debug({ dataset_path })
+				const datasetIndexedContent = await this.indexBIDSDataset(
+					owner,
+					dataset_path,
+					datasetID
+				)
 				this.logger.debug({ datasetIndexedContent })
 				// To debug "Failed to fetch response error" obtained
 				// while importing "ieeg"...
