@@ -512,17 +512,33 @@ export class ToolsService {
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
 		}
 	}
+
+	public async deleteBIDSDatasetsIndex() {
+		try {
+			// delete index for datasets only if it exists
+			const exists = await this.elastic_client.indices.exists({
+				index: this.es_index_datasets,
+			})
+
+			if (exists.body === true) {
+				try {
+					const del = await this.elastic_client.indices.delete({
+						index: this.es_index_datasets,
+					})
+					this.logger.debug(`Index ${this.es_index_datasets} deleted`)
+					this.logger.debug(JSON.stringify(del.body, null, 2))
+					return del.body
 				} catch (error) {
 					this.logger.warn(
-						`Failed to create index ${ELASTICSEARCH_BIDS_DATASETS_INDEX}...`
+						`Failed to create index ${this.es_index_datasets}...`
 					)
 					this.logger.warn(JSON.stringify(error))
 				}
 			} else {
 				this.logger.warn(
-					`SKIP: Index ${ELASTICSEARCH_BIDS_DATASETS_INDEX} already exists...`
+					`SKIP: Index was not deleted because ${this.es_index_datasets} does not exist...`
 				)
-				return exists
+				return exists.body
 			}
 		} catch (e) {
 			this.logger.error(e)
