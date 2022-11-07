@@ -398,7 +398,7 @@ export class ToolsService {
 				this.logger.debug(
 					'Existing datasets found! Handle index addition if necessary...'
 				)
-				const foundIndexedDatasets = searchIndexedResults.hits.hits.map(
+				const foundIndexedDatasets = searchIndexedResults.map(
 					dataset => dataset._id
 				)
 				this.logger.debug({ foundIndexedDatasets })
@@ -442,7 +442,7 @@ export class ToolsService {
 			// 2. Delete any indexed dataset that does not exist anymore
 			let deletedBidsDatasets: string[] = []
 			// extract dataset absolute path
-			const foundIndexedDatasetPaths = searchIndexedResults.hits.hits.map(
+			const foundIndexedDatasetPaths = searchIndexedResults.map(
 				dataset => dataset._source.Path
 			)
 			if (foundIndexedDatasetPaths.length > 0) {
@@ -626,6 +626,8 @@ export class ToolsService {
 				owner,
 				datasetPathQuery
 			)
+			if (searchResults.length > 0) {
+				const dataset = searchResults[0]
 				this.logger.debug(dataset)
 				// delete the document with id related to the dataset
 				const datasetID = {
@@ -668,6 +670,7 @@ export class ToolsService {
 	}
 
 	public async searchBidsDatasets(
+		owner: string = 'all',
 		text_query: string = '*',
 		page: number = 1,
 		nb_of_results: number = 200
@@ -695,6 +698,24 @@ export class ToolsService {
 
 			// perform and return the search query
 			const foundDatasets = await this.elastic_client
+				.search(query_params)
+				.then((result: ApiResponse) => {
+					return result.body.hits.hits
+				})
+			// filter only private datasets own by the user
+			if (owner !== 'all') {
+				this.logger.debug('Filter private datasets owned by the owner')
+				let foundPrivateDatasets = []
+				foundDatasets.forEach(dataset => {
+					if (dataset._id.includes(`${owner}_`)) {
+						foundPrivateDatasets.push(dataset)
+					}
+				})
+				return foundPrivateDatasets
+			} else {
+				this.logger.debug('Return all indexed datasets')
+				return foundDatasets
+			}
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)

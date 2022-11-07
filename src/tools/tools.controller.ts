@@ -126,12 +126,13 @@ export class ToolsController {
 		@Query('nbOfResults') nbOfResults: number
 	) {
 		const searchResults = await this.toolsService.searchBidsDatasets(
+			owner,
 			query,
 			page,
 			nbOfResults
 		)
 
-		const foundDatasets = searchResults.hits.hits.map(dataset => ({
+		const foundDatasets = searchResults.map(dataset => ({
 			// query metadata fields returned by elastic
 			id: dataset._id,
 			...dataset._source,
