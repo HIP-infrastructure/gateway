@@ -814,15 +814,28 @@ export class ToolsService {
 		const tmpDir = `/tmp/${uniquId}`
 
 		try {
+			// Generate dataset's id and containing directory name
+			const datasetID = await this.generateDatasetId(owner)
+			createBidsDatasetDto.dataset_dirname = datasetID.split('_')[1]
+			// Create the json to be passed with the request
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
 				`${tmpDir}/dataset.create.json`,
 				JSON.stringify(createBidsDatasetDto)
 			)
+			this.logger.debug({ createBidsDatasetDto })
 
-			const dbPath = await this.filePath(path, owner)
+			// Resolve absolute path of dataset's parent directory
+			const dsParentPath = await this.filePath(parent_path, owner)
+			this.logger.debug({ dsParentPath })
 
-			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${dsParentPath}:/output`,
+			]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
