@@ -41,10 +41,23 @@ export class ToolsController {
 		return res.status(HttpStatus.OK).send()
 	}
 
+	@Get('/bids/datasets/delete_index')
+	deleteBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
+		// this.nextcloudService.authenticate(req).then(async () => {
+		// 	this.toolsService.createBIDSDatasetsIndex()
+		// })
+
+		const { cookie, requesttoken } = req.headers
+		this.toolsService.deleteBIDSDatasetsIndex()
+
+		return res.status(HttpStatus.OK).send()
+	}
+
 	@Get('/bids/dataset/index')
 	indexBIDSDataset(
 		@Query('owner') owner: string,
 		@Query('path') path: string,
+		@Query('id') id: string,
 		@Req() req: Request,
 		@Res() res: Response
 	) {
@@ -57,7 +70,7 @@ export class ToolsController {
 		// })
 
 		const { cookie, requesttoken } = req.headers
-		this.toolsService.indexBIDSDataset(owner, path)
+		this.toolsService.indexBIDSDataset(owner, path, id)
 
 		return res.status(HttpStatus.OK).send()
 	}
@@ -126,12 +139,13 @@ export class ToolsController {
 		@Query('nbOfResults') nbOfResults: number
 	) {
 		const searchResults = await this.toolsService.searchBidsDatasets(
+			owner,
 			query,
 			page,
 			nbOfResults
 		)
 
-		const foundDatasets = searchResults.hits.hits.map(dataset => ({
+		const foundDatasets = searchResults.map(dataset => ({
 			// query metadata fields returned by elastic
 			id: dataset._id,
 			...dataset._source,
@@ -157,11 +171,11 @@ export class ToolsController {
 
 	@UsePipes(ValidationPipe)
 	@Get('/bids/dataset/generate_id')
-	async generateDatasetId(@Req() req: Request) {
+	async generateDatasetId(@Query('owner') owner: string, @Req() req: Request) {
 		// return await this.nextcloudService.authenticate(req).then(() => {
 		// 	return this.toolsService.createBidsDataset(createBidsDatasetDto)
 		// })
-		return this.toolsService.generateDatasetId()
+		return this.toolsService.generateDatasetId(owner)
 	}
 
 	@UsePipes(ValidationPipe)
