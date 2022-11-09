@@ -31,6 +31,7 @@ export class ToolsController {
 
 	@Get('/bids/datasets/create_index')
 	createBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
+		// FIXME: Enable this part if necessary
 		// this.nextcloudService.authenticate(req).then(async () => {
 		// 	this.toolsService.createBIDSDatasetsIndex()
 		// })
@@ -43,8 +44,9 @@ export class ToolsController {
 
 	@Get('/bids/datasets/delete_index')
 	deleteBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
+		// FIXME: Re-enable this part if necessary
 		// this.nextcloudService.authenticate(req).then(async () => {
-		// 	this.toolsService.createBIDSDatasetsIndex()
+		// 	this.toolsService.deleteBIDSDatasetsIndex()
 		// })
 
 		const { cookie, requesttoken } = req.headers
@@ -61,12 +63,10 @@ export class ToolsController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
+		// FIXME: Enable this part if necessary
 		// this.nextcloudService.authenticate(req).then(async () => {
 		// 	const { cookie, requesttoken } = req.headers
-		// 	this.toolsService.indexBIDSDataset(owner, path, {
-		// 		cookie,
-		// 		requesttoken,
-		// 	})
+		// 	this.toolsService.indexBIDSDataset(owner, path, id)
 		// })
 
 		const { cookie, requesttoken } = req.headers
@@ -82,6 +82,7 @@ export class ToolsController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
+		// FIXME: Enable this part if necessary
 		// this.nextcloudService.authenticate(req).then(async () => {
 		//	this.toolsService.deleteBIDSDataset(owner, path)
 		//})
@@ -98,6 +99,7 @@ export class ToolsController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
+		// FIXME: Enable this part if necessary
 		// this.nextcloudService.authenticate(req).then(async () => {
 		// 	const { cookie, requesttoken } = req.headers
 		// 	this.toolsService.refreshBIDSDatasetsIndex(owner, {
@@ -155,6 +157,7 @@ export class ToolsController {
 	@UsePipes(ValidationPipe)
 	@Get('/bids/dataset/generate_id')
 	async generateDatasetId(@Query('owner') owner: string, @Req() req: Request) {
+		// FIXME: Enable this part if necessary
 		// return await this.nextcloudService.authenticate(req).then(() => {
 		// 	return this.toolsService.createBidsDataset(createBidsDatasetDto)
 		// })
