@@ -44,7 +44,7 @@ export class ToolsController {
 
 	@Get('/bids/datasets/delete_index')
 	deleteBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
-		// FIXME: Re-enable this part if necessary
+		// FIXME: Enable this part if necessary
 		// this.nextcloudService.authenticate(req).then(async () => {
 		// 	this.toolsService.deleteBIDSDatasetsIndex()
 		// })

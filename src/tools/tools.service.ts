@@ -370,36 +370,32 @@ export class ToolsService {
 		owner,
 		searchDatasetsResults
 	) {
+		// get list of found dataset paths
 		const foundDatasetPaths = searchDatasetsResults.map(r => {
 			const path = `${r.attributes.path
 				.replace('/' + PARTICIPANTS_FILE, '')
 				.substring(1)}`
 			return path
 		})
-		this.logger.debug({ foundDatasetPaths })
 
 		// extract dataset_description.json content for each dataset found
 		let foundDatasets = []
 		for (var index in foundDatasetPaths) {
-			this.logger.debug(foundDatasetPaths[index])
 			const dataset_desc_abspath = await this.filePath(
 				foundDatasetPaths[index] + '/' + DATASET_DESCRIPTION,
 				owner
 			)
-			this.logger.debug({ dataset_desc_abspath })
 			const dataset = await this.readJsonFile(dataset_desc_abspath)
-			this.logger.debug({ dataset })
 			foundDatasets.push(dataset)
 		}
-		// this.logger.debug({ foundDatasets })
 
 		// find IDs of datasets existing in the index
 		let foundDatasetIDs: string[] = []
 		for (const index in foundDatasetPaths) {
 			const datasetPathQuery = `Path:"*/${foundDatasetPaths[index]}"`
-			this.logger.debug(
+			/* this.logger.debug(
 				`Text query to search dataset in index: ${datasetPathQuery}`
-			)
+			) */
 			const searchResults = await this.searchBidsDatasets(
 				owner,
 				datasetPathQuery
@@ -408,7 +404,6 @@ export class ToolsService {
 				? foundDatasetIDs.push(searchResults[0]._id)
 				: foundDatasetIDs.push(null)
 		}
-		this.logger.debug({ foundDatasetIDs })
 
 		// find IDs of datasets existing in the index with changed path
 		let foundRenamedDatasetIDs: string[] = []
@@ -436,10 +431,10 @@ export class ToolsService {
 				i === end - 1
 					? (datasetPathQuery += `${key}:"${value}"`)
 					: (datasetPathQuery += `${key}:"${value}" AND `)
-			} */
+			} 
 			this.logger.debug(
 				`Text query to search dataset in index: ${datasetPathQuery}`
-			)
+			) */
 			const searchResults = await this.searchBidsDatasets(
 				owner,
 				datasetPathQuery
@@ -454,8 +449,6 @@ export class ToolsService {
 				foundRenamedDatasetIDs.push(null)
 			}
 		}
-		this.logger.debug({ foundRenamedDatasetIDs })
-
 		return { foundDatasetPaths, foundDatasetIDs, foundRenamedDatasetIDs }
 	}
 
@@ -469,11 +462,9 @@ export class ToolsService {
 			// get list of BIDS datasets (folder name) present in the file system (accessible by user)
 			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchDatasetsResults = s?.entries
-			this.logger.debug({ searchDatasetsResults })
 
 			// get the list of datasets already indexed in the root of the user private space
 			var searchIndexedResults = await this.searchBidsDatasets(owner)
-			this.logger.debug({ searchIndexedResults })
 
 			// extract lists of (1) all found dataset paths, (2) dataset IDs with corresponding path,
 			// (3) dataset IDs with corresponding name but with changed path
@@ -805,7 +796,6 @@ export class ToolsService {
 				})
 			// filter only private datasets own by the user
 			if (owner !== 'all') {
-				this.logger.debug('Filter private datasets owned by the owner')
 				let foundPrivateDatasets = []
 				foundDatasets.forEach(dataset => {
 					if (dataset._id.includes(`${owner}_`)) {
@@ -814,7 +804,6 @@ export class ToolsService {
 				})
 				return foundPrivateDatasets
 			} else {
-				this.logger.debug('Return all indexed datasets')
 				return foundDatasets
 			}
 		} catch (e) {
