@@ -709,32 +709,8 @@ export class ToolsService {
 			}
 			bidsDataset.Path = path
 
-			// create body to be passed to elasticsearch client bulk function
-			const body = [
-				{
-					index: {
-						_index: this.es_index_datasets,
-						_id: bidsDataset.id,
-					},
-				},
-				bidsDataset,
-			]
-
-			// call the bulk function to index the dataset
-			const { body: bulkResponse } = await this.elastic_client.bulk({
-				refresh: true,
-				body,
-			})
-
-			if (bulkResponse.errors) {
-				this.logger.error('Errors for (re)indexing datasets')
-				this.logger.error(JSON.stringify(bulkResponse))
-			}
-			// count indexed data
-			const { body: count } = await this.elastic_client.count({
-				index: this.es_index_datasets,
-			})
-			this.logger.debug(count)
+			// create and send elasticsearch bulk to index the dataset
+			await this.sendElasticSearchDatasetsBulk([bidsDataset])
 
 			return bidsDataset
 		} catch (e) {
