@@ -281,12 +281,6 @@ export class ToolsService {
 			bidsDatasets[index].id = datasetIds[index]
 			bidsDatasets[index].version = 1
 		}
-		if (bidsDatasets[0])
-			this.logger.debug(JSON.stringify(bidsDatasets[0], null, 2))
-		if (bidsDatasets[1])
-			this.logger.debug(JSON.stringify(bidsDatasets[1], null, 2))
-		if (bidsDatasets[2])
-			this.logger.debug(JSON.stringify(bidsDatasets[2], null, 2))
 		// create and send elasticsearch bulk to index the datasets
 		await this.sendElasticSearchDatasetsBulk(bidsDatasets)
 		return bidsDatasets
@@ -704,7 +698,7 @@ export class ToolsService {
 				)
 				bidsDataset.CreationDate = new Date()
 				bidsDataset.LastModificationDate = bidsDataset.CreationDate
-				// Autogenerate dataset id
+				// autogenerate dataset id if needed
 				if (id) {
 					bidsDataset.id = id
 				} else {
