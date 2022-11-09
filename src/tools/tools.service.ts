@@ -1388,4 +1388,24 @@ export class ToolsService {
 			)
 		}
 	}
+
+	/* A private method that is used to read a JSON file and parse its content */
+	private async readJsonFile(path: string) {
+		return JSON.parse(fs.readFileSync(path))
+		/*
+		fs.readFile(path, 'utf8', (err, jsonString) => {
+			if (err) {
+				console.log('Error reading file from disk:', err)
+				return
+			}
+			try {
+				// this.logger.debug('Parsing JSON string:', jsonString)
+				return JSON.parse(jsonString)
+			} catch (err) {
+				this.logger.error('Error parsing JSON string:', err)
+				throw new Error(err)
+			}
+		})
+		*/
+	}
 }
