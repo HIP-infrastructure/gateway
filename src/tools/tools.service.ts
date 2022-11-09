@@ -175,63 +175,6 @@ export class ToolsService {
 		}
 	}
 
-	public async getBIDSDatasetsIndexedContent(
-		owner: string,
-		{ cookie, requesttoken }
-	) {
-		try {
-			const s = await this.search(cookie, PARTICIPANTS_FILE)
-			const searchResults = s?.entries
-
-			const bidsDatasetsPromises = searchResults.map(r => {
-				const bidsGetDatasetDto = new BidsGetDatasetDto()
-				bidsGetDatasetDto.owner = owner
-				bidsGetDatasetDto.path = `${r.attributes.path
-					.replace(PARTICIPANTS_FILE, '')
-					.substring(1)}`
-				return this.createDatasetIndexedContent(bidsGetDatasetDto)
-			})
-
-			const bidsDatasets = (await Promise.allSettled(bidsDatasetsPromises))
-				.filter(isFulfilled)
-				.map(p => p.value)
-
-			return bidsDatasets
-		} catch (e) {
-			this.logger.error(e)
-			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
-		}
-	}
-
-	public async getBIDSDatasetsIndexedContentOnce(
-		owner: string,
-		{ cookie, requesttoken }
-	) {
-		try {
-			const s = await this.search(cookie, PARTICIPANTS_FILE)
-			const searchResults = s?.entries
-			const bidsGetDatasetsDto = searchResults.map(r => {
-				const path = `${r.attributes.path
-					.replace(PARTICIPANTS_FILE, '')
-					.substring(1)}`
-				const bidsGetDatasetDto = new BidsGetDatasetDto()
-				bidsGetDatasetDto.owner = owner
-				bidsGetDatasetDto.path = path
-				return bidsGetDatasetDto
-			})
-
-			const bidsDatasets = await this.getDatasetsIndexedContent(
-				bidsGetDatasetsDto
-			)
-			this.logger.debug({ bidsDatasets })
-
-			return bidsDatasets
-		} catch (e) {
-			this.logger.error(e)
-			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
-		}
-	}
-
 	public async genBIDSDatasetsIndexedContent(owner: string, paths: string[]) {
 		try {
 			const bidsGetDatasetsDto = paths.map(path => {
@@ -243,67 +186,6 @@ export class ToolsService {
 			const bidsDatasets = await this.getDatasetsIndexedContent(
 				bidsGetDatasetsDto
 			)
-			return bidsDatasets
-		} catch (e) {
-			this.logger.error(e)
-			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
-		}
-	}
-
-	public async indexBIDSDatasets(owner: string, { cookie, requesttoken }: any) {
-		try {
-			// get a list of dataset indexed content
-			const bidsDatasets = await this.getBIDSDatasetsIndexedContentOnce(owner, {
-				cookie,
-				requesttoken,
-			})
-
-			// create index for datasets if not existing
-			const exists = await this.elastic_client.indices.exists({
-				index: this.es_index_datasets,
-			})
-
-			if (exists.body === false) {
-				try {
-					await this.elastic_client.indices.create({
-						index: this.es_index_datasets,
-						body: {
-							mappings,
-						},
-					})
-					this.logger.debug('New user index created')
-				} catch (error) {
-					this.logger.warn('Failed to create user index...')
-					this.logger.warn(JSON.stringify(error))
-				}
-			}
-
-			// format list of datasets to make elastic_client happy
-			const body = bidsDatasets.flatMap((dataset: BIDSDataset) => [
-				{
-					index: {
-						_index: this.es_index_datasets,
-						_id: dataset.Name.replace(/\s/g, '').toLowerCase(),
-					},
-				},
-				dataset,
-			])
-
-			// index the list of datasets
-			const { body: bulkResponse } = await this.elastic_client.bulk({
-				refresh: true,
-				body,
-			})
-			if (bulkResponse.errors) {
-				this.logger.error('Errors for (re)indexing datasets')
-				this.logger.error(JSON.stringify(bulkResponse))
-			}
-			// count indexed data
-			const { body: count } = await this.elastic_client.count({
-				index: this.es_index_datasets,
-			})
-			this.logger.debug(count)
-
 			return bidsDatasets
 		} catch (e) {
 			this.logger.error(e)

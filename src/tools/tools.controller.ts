@@ -91,23 +91,6 @@ export class ToolsController {
 		return res.status(HttpStatus.OK).send()
 	}
 
-	@Get('/bids/datasets/index')
-	indexBIDSDatasets(
-		@Query('owner') owner: string,
-		@Req() req: Request,
-		@Res() res: Response
-	) {
-		this.nextcloudService.authenticate(req).then(async () => {
-			const { cookie, requesttoken } = req.headers
-			this.toolsService.indexBIDSDatasets(owner, {
-				cookie,
-				requesttoken,
-			})
-		})
-
-		return res.status(HttpStatus.OK).send()
-	}
-
 	@UsePipes(ValidationPipe)
 	@Get('/bids/datasets/refresh_index')
 	async refreshDatasetsIndex(
