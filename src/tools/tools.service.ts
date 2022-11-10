@@ -299,6 +299,7 @@ export class ToolsService {
 			)
 				return val
 		})
+		this.logger.debug({ foundDatasetsNotIndexed })
 		// filter null
 		const filteredFoundDatasetsNotIndexed = foundDatasetsNotIndexed.flatMap(f =>
 			f ? [f] : []
@@ -328,7 +329,7 @@ export class ToolsService {
 		const foundRenamedDatasets = foundDatasetPaths.map((val, index) => {
 			if (foundRenamedDatasetIDs[index]) return val
 		})
-		this.logger.warn({ foundRenamedDatasets })
+		this.logger.debug({ foundRenamedDatasets })
 		// filter null in foundRenamedDatasets
 		const filteredFoundRenamedDatasets = foundRenamedDatasets.flatMap(f =>
 			f ? [f] : []
@@ -456,6 +457,7 @@ export class ToolsService {
 		owner: string,
 		{ cookie, requesttoken }: any
 	) {
+		// TODO: Index shared datasets appearing in both private and group folders
 		try {
 			await this.nextcloudService.scanUserFiles(owner)
 			// 1. Get list of existing datasets and the list of indexed dataset ids
