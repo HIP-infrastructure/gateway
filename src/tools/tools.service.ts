@@ -19,11 +19,15 @@ import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
+import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
+import { writeFileSync } from 'fs'
 // import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
+const papa = require('papaparse')
+const path = require('path')
 
 type DataError = {
 	data?: Record<string, string>
@@ -1163,6 +1167,68 @@ export class ToolsService {
 		return this.participantsWithPath(nextPath, cookie)
 	}
 
+	private async participantsWithPath(path: string, cookie: any) {
+		try {
+			const tsv = await this.getFileContent(path, cookie)
+			const [tsvheaders, ...rows] = tsv
+				.trim()
+				.split('\n')
+				.map(r => r.split('\t'))
+
+			const participants: Participant[] = rows.reduce(
+				(arr, row) => [
+					...arr,
+					row.reduce(
+						(obj, item, i) =>
+							Object.assign(obj, { [tsvheaders[i].trim()]: item }),
+						{}
+					),
+				],
+				[]
+			)
+
+			return participants
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status)
+		}
+	}
+
+	/**
+	 * A public method that is used to create / update participants.[tsv|json] files
+	 * of a BIDS dataset.
+	 * */
+	public async writeBIDSDatasetParticipantsTSV(
+		datasetPath: string,
+		createBidsDatasetParticipantsTsvDto: CreateBidsDatasetParticipantsTsvDto
+	) {
+		try {
+			this.logger.debug({ datasetPath })
+			this.logger.debug({ createBidsDatasetParticipantsTsvDto })
+			// Transform JSON object to TSV formatted string
+			const participantsTSVString = papa.unparse(
+				createBidsDatasetParticipantsTsvDto.Participants,
+				{
+					quotes: false, //or array of booleans
+					quoteChar: '"',
+					escapeChar: '"',
+					delimiter: '\t',
+					header: true,
+					newline: '\r\n',
+					skipEmptyLines: false, //other option is 'greedy', meaning skip delimiters, quotes, and whitespace.
+					columns: null, //or array of strings
+				}
+			)
+			this.logger.debug({ participantsTSVString })
+			// Write TSV string to file
+			const tsvFilepath = path.join(datasetPath, PARTICIPANTS_FILE)
+			writeFileSync(tsvFilepath, participantsTSVString)
+			this.logger.debug(`${tsvFilepath} has been successfully written!`)
+		} catch (error) {
+			throw new Error(error)
+		}
+	}
+
 	public async search(cookie: any, term: string): Promise<ISearch> {
 		try {
 			const response = this.httpService.get(
@@ -1203,33 +1269,6 @@ export class ToolsService {
 				resolve({ code, message })
 			})
 		})
-	}
-
-	private async participantsWithPath(path: string, cookie: any) {
-		try {
-			const tsv = await this.getFileContent(path, cookie)
-			const [tsvheaders, ...rows] = tsv
-				.trim()
-				.split('\n')
-				.map(r => r.split('\t'))
-
-			const participants: Participant[] = rows.reduce(
-				(arr, row) => [
-					...arr,
-					row.reduce(
-						(obj, item, i) =>
-							Object.assign(obj, { [tsvheaders[i].trim()]: item }),
-						{}
-					),
-				],
-				[]
-			)
-
-			return participants
-		} catch (e) {
-			this.logger.error(e)
-			throw new HttpException(e.message, e.status)
-		}
 	}
 
 	private async getDatasetContent(

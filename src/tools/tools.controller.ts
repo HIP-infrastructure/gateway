@@ -15,6 +15,7 @@ import {
 import { Request, Response } from 'express'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
+import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
@@ -216,5 +217,25 @@ export class ToolsController {
 			const { cookie } = req.headers
 			return this.toolsService.participants(path, { cookie })
 		})
+	}
+
+	@UsePipes(ValidationPipe)
+	@Post('/bids/dataset/write_participants_tsv')
+	async write(
+		@Query('datasetPath') datasetPath: string,
+		@Body()
+		createBidsDatasetParticipantsTsvDto: CreateBidsDatasetParticipantsTsvDto,
+		@Req() req: Request
+	) {
+		/* return await this.nextcloudService.authenticate(req).then(() => {
+			return this.toolsService.writeBIDSDatasetParticipantsTSV(
+				datasetPath,
+				createBidsDatasetParticipantsTsvDto
+			)
+		}) */
+		return this.toolsService.writeBIDSDatasetParticipantsTSV(
+			datasetPath,
+			createBidsDatasetParticipantsTsvDto
+		)
 	}
 }
