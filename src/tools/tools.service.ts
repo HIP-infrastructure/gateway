@@ -215,7 +215,10 @@ export class ToolsService {
 		})
 		if (bulkResponse.errors) {
 			this.logger.error('Errors for (re)indexing datasets')
-			this.logger.error(JSON.stringify(bulkResponse))
+			for (let it of bulkResponse.items) {
+				if (it.index.status === 400)
+					this.logger.error(JSON.stringify(it.index, null, 4))
+			}
 		}
 		// count indexed data
 		const { body: count } = await this.elastic_client.count({
