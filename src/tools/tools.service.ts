@@ -257,7 +257,36 @@ export class ToolsService {
 			var { datasetId, datasetIdNum } = await this.generateDatasetId(
 				owner,
 				datasetIdNum
+			))
+		}
+		// create and send elasticsearch bulk to index the datasets
+		await this.sendElasticSearchDatasetsBulk(bidsDatasets)
+		return bidsDatasets
+	}
+
+	public async addNewGroupBIDSDatasetIndexedContents(
+		owner: string,
+		datasetRelPaths: string[],
+		datasetIds: string[]
+	) {
+		// generate content to index of each dataset not indexed
+		const bidsDatasets = await this.genBIDSDatasetsIndexedContent(
+			owner,
+			datasetRelPaths
+		)
+		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
+		for (let index in bidsDatasets) {
+			bidsDatasets[index].Path = await this.filePath(
+				datasetRelPaths[index],
+				owner
 			)
+			bidsDatasets[index].Owner = owner
+			bidsDatasets[index].Groups = ownerGroups
+			bidsDatasets[index].CreationDate = new Date()
+			bidsDatasets[index].LastModificationDate =
+				bidsDatasets[index].CreationDate
+			bidsDatasets[index].id = datasetIds[index]
+			bidsDatasets[index].version = 1
 		}
 		// create and send elasticsearch bulk to index the datasets
 		await this.sendElasticSearchDatasetsBulk(bidsDatasets)
@@ -282,9 +311,9 @@ export class ToolsService {
 				datasetRelPaths[index],
 				owner
 			)
-			bidsDatasets[index].Owner = owner
 			bidsDatasets[index].Groups = owner_groups
-			bidsDatasets[index].CreationDate = new Date()
+			// bidsDatasets[index].Owner = owner
+			bidsDatasets[index].LastModificationDate = new Date()
 			bidsDatasets[index].id = datasetIds[index]
 			bidsDatasets[index].version = 1
 		}
@@ -293,10 +322,59 @@ export class ToolsService {
 		return bidsDatasets
 	}
 
+	public splitPrivateGroupDatasetsNotIndexed(
+		filteredFoundDatasetsNotIndexed: string[],
+		filteredFoundDatasetNamesNotIndexed: string[],
+		groupFolders: GroupFolder[]
+	) {
+		let foundPrivateDatasetsNotIndexed: string[] = []
+		let foundGroupDatasetsNotIndexed: string[] = []
+		let foundPrivateDatasetNamesNotIndexed: string[] = []
+		let foundGroupDatasetNamesNotIndexed: string[] = []
+		for (let index in filteredFoundDatasetsNotIndexed) {
+			// Update the lists of datasets found in private and group space
+			let isContainedInGroupFolder = false
+			for (let groupFolder of groupFolders) {
+				if (
+					filteredFoundDatasetsNotIndexed[index].includes(groupFolder.label)
+				) {
+					this.logger.log(
+						`groupDatasetFound: ${filteredFoundDatasetsNotIndexed[index]}`
+					)
+					isContainedInGroupFolder = true
+					break
+				}
+			}
+			if (isContainedInGroupFolder) {
+				foundGroupDatasetsNotIndexed.push(
+					filteredFoundDatasetsNotIndexed[index]
+				)
+				foundGroupDatasetNamesNotIndexed.push(
+					filteredFoundDatasetNamesNotIndexed[index]
+				)
+			} else {
+				foundPrivateDatasetsNotIndexed.push(
+					filteredFoundDatasetsNotIndexed[index]
+				)
+				foundPrivateDatasetNamesNotIndexed.push(
+					filteredFoundDatasetNamesNotIndexed[index]
+				)
+			}
+		}
+		return {
+			foundPrivateDatasetsNotIndexed,
+			foundPrivateDatasetNamesNotIndexed,
+			foundGroupDatasetsNotIndexed,
+			foundGroupDatasetNamesNotIndexed,
+		}
+	}
+
 	public extractAndSplitPrivateGroupDatasetsNotIndexed(
+		foundDatasets: any[],
 		foundDatasetPaths: string[],
 		foundDatasetIDs: string[],
-		foundRenamedDatasetIDs: string[]
+		foundRenamedDatasetIDs: string[],
+		groupFolders: GroupFolder[]
 	) {
 		// find all datasets that are not indexed yet
 		const foundDatasetsNotIndexed = foundDatasetPaths.map((val, index) => {
@@ -307,30 +385,86 @@ export class ToolsService {
 				return val
 		})
 		this.logger.debug({ foundDatasetsNotIndexed })
+		// get content of dataset_description.json for all datasets that are not indexed yet
+		const foundDatasetNamesNotIndexed = foundDatasets.map((val, index) => {
+			if (
+				foundDatasetIDs[index] === null &&
+				foundRenamedDatasetIDs[index] === null
+			) {
+				this.logger.debug(JSON.stringify(foundDatasets[index], null, 4))
+				return foundDatasets[index].Name
+			}
+		})
+		// this.logger.debug({ foundDatasetNamesNotIndexed })
 		// filter null
 		const filteredFoundDatasetsNotIndexed = foundDatasetsNotIndexed.flatMap(f =>
 			f ? [f] : []
 		)
-		// differentiate private datasets own by the user and datasets in user group folders
-		let foundPrivateDatasetsNotIndexed = Object.assign(
-			[],
-			filteredFoundDatasetsNotIndexed
+		const filteredFoundDatasetNamesNotIndexed =
+			foundDatasetNamesNotIndexed.flatMap(f => (f ? [f] : []))
+
+		// split private datasets own by the user and datasets in user group folders
+		const {
+			foundPrivateDatasetsNotIndexed,
+			foundPrivateDatasetNamesNotIndexed,
+			foundGroupDatasetsNotIndexed,
+			foundGroupDatasetNamesNotIndexed,
+		} = this.splitPrivateGroupDatasetsNotIndexed(
+			filteredFoundDatasetsNotIndexed,
+			filteredFoundDatasetNamesNotIndexed,
+			groupFolders
 		)
-		let foundGroupDatasetsNotIndexed: string[] = []
-		foundPrivateDatasetsNotIndexed.forEach((item, index) => {
-			/* FIXME: Better handle group folder (it currently prevents us
-			   to index datasets that are in an inner user folder) */
-			if (item.includes('/')) {
-				foundPrivateDatasetsNotIndexed.splice(index, 1)
-				foundGroupDatasetsNotIndexed.push(item)
+
+		return {
+			foundPrivateDatasetsNotIndexed,
+			foundPrivateDatasetNamesNotIndexed,
+			foundGroupDatasetsNotIndexed,
+			foundGroupDatasetNamesNotIndexed,
+		}
+	}
+
+	public extractAndSplitPrivateGroupDatasetsDuplicated(
+		foundDuplicatedDatasetPaths: string[],
+		groupFolders: GroupFolder[]
+	) {
+		// filter null from the list of duplicate path
+		const filteredFoundDatasetsDuplicated = foundDuplicatedDatasetPaths.flatMap(
+			f => (f ? [f] : [])
+		)
+		// differentiate private datasets own by the user and datasets in user group folders
+		let foundPrivateDatasetsDuplicated: string[] = []
+		let foundGroupDatasetsDuplicated: string[] = []
+		for (let index in filteredFoundDatasetsDuplicated) {
+			// Update the lists of datasets found in private and group space
+			let isContainedInGroupFolder = false
+			for (let groupFolder of groupFolders) {
+				if (
+					filteredFoundDatasetsDuplicated[index].includes(groupFolder.label)
+				) {
+					this.logger.log(
+						`groupDatasetFound: ${filteredFoundDatasetsDuplicated[index]}`
+					)
+					isContainedInGroupFolder = true
+					break
+				}
 			}
-		})
-		return { foundPrivateDatasetsNotIndexed, foundGroupDatasetsNotIndexed }
+			if (isContainedInGroupFolder) {
+				foundGroupDatasetsDuplicated.push(
+					filteredFoundDatasetsDuplicated[index]
+				)
+			} else {
+				foundPrivateDatasetsDuplicated.push(
+					filteredFoundDatasetsDuplicated[index]
+				)
+			}
+		}
+		return { foundPrivateDatasetsDuplicated, foundGroupDatasetsDuplicated }
 	}
 
 	public extractAndSplitPrivateGroupRenamedDatasets(
 		foundDatasetPaths: string[],
-		foundRenamedDatasetIDs: string[]
+		foundRenamedDatasetIDs: string[],
+		groupFolders: GroupFolder[]
 	) {
 		// find all dataset paths which has changed
 		const foundRenamedDatasets = foundDatasetPaths.map((val, index) => {
@@ -357,13 +491,18 @@ export class ToolsService {
 		)
 		let foundGroupRenamedDatasetIDs: string[] = []
 		foundPrivateRenamedDatasets.forEach((item, index) => {
-			/* FIXME: Better handle group folder (it currently prevents us
-			   to index datasets that are in an inner user folder) */
-			if (item.includes('/')) {
-				foundPrivateRenamedDatasets.splice(index, 1)
-				foundGroupRenamedDatasets.push(item)
-				foundPrivateRenamedDatasetIDs.splice(index, 1)
-				foundGroupRenamedDatasetIDs.push(item)
+			// Update the lists of datasets found in private and group spaces
+			for (let groupFolder of groupFolders) {
+				if (foundPrivateRenamedDatasets[index].includes(groupFolder.label)) {
+					this.logger.log(
+						`groupDatasetFound: ${foundPrivateRenamedDatasets[index]}`
+					)
+					foundPrivateRenamedDatasets.splice(index, 1)
+					foundGroupRenamedDatasets.push(item)
+					foundPrivateRenamedDatasetIDs.splice(index, 1)
+					foundGroupRenamedDatasetIDs.push(item)
+					break
+				}
 			}
 		})
 		return {
@@ -375,8 +514,8 @@ export class ToolsService {
 	}
 
 	public async parseSearchDatasetsResultsForRefresh(
-		owner,
-		searchDatasetsResults
+		owner: string,
+		searchDatasetsResults: any[]
 	) {
 		// get list of found dataset paths
 		const foundDatasetPaths = searchDatasetsResults.map(r => {
@@ -411,13 +550,19 @@ export class ToolsService {
 			searchResults.length > 0
 				? foundDatasetIDs.push(searchResults[0]._id)
 				: foundDatasetIDs.push(null)
+			searchResults.length > 0
+				? foundDatasetPathsWithIDs.push(searchResults[0]._source.Path)
+				: foundDatasetPathsWithIDs.push(null)
 		}
 
-		// find IDs of datasets existing in the index with changed path
+		// find IDs of datasets with name existing in the index in the case of
+		// (1) a dataset with changed path and (2) a dataset copy
 		let foundRenamedDatasetIDs: string[] = []
+		// let foundDuplicatedDatasetPaths: string[] = []
 		for (const index in foundDatasets) {
 			let datasetPathQuery = `"${foundDatasets[index].Name}"`
-			/* const dataset_desc = {
+			/*
+			const dataset_desc = {
 				Name: foundDatasets[index].Name,
 				BIDSVersion: foundDatasets[index].BIDSVersion,
 				License: foundDatasets[index].License,
@@ -442,7 +587,8 @@ export class ToolsService {
 			} 
 			this.logger.debug(
 				`Text query to search dataset in index: ${datasetPathQuery}`
-			) */
+			)
+			*/
 			const searchResults = await this.searchBidsDatasets(
 				owner,
 				datasetPathQuery
@@ -450,14 +596,215 @@ export class ToolsService {
 			if (searchResults.length > 0) {
 				if (!foundDatasetIDs.includes(searchResults[0]._id)) {
 					foundRenamedDatasetIDs.push(searchResults[0]._id)
+					// foundDuplicatedDatasetPaths.push(null)
 				} else {
 					foundRenamedDatasetIDs.push(null)
+					/* 
+					if (!foundDatasetPathsWithIDs.includes(searchResults[0]._Path)) {
+						foundDuplicatedDatasetPaths.push(searchResults[0]._Path)
+					} else {
+						foundDuplicatedDatasetPaths.push(null)
+					} 
+					*/
 				}
 			} else {
 				foundRenamedDatasetIDs.push(null)
+				// foundDuplicatedDatasetPaths.push(null)
 			}
 		}
-		return { foundDatasetPaths, foundDatasetIDs, foundRenamedDatasetIDs }
+		return {
+			foundDatasets,
+			foundDatasetPaths,
+			foundDatasetIDs,
+			foundRenamedDatasetIDs,
+			// foundDuplicatedDatasetPaths,
+		}
+	}
+
+	private async filterGroupDatasetsNotIndexed(
+		owner: string,
+		foundGroupDatasetsNotIndexed: string[],
+		foundGroupDatasetNamesNotIndexed: string[]
+	) {
+		// get id of indexed dataset existing in the user private space
+		// with same name
+		const datasetNameQueries: string[] = foundGroupDatasetNamesNotIndexed.map(
+			value => `Name:"${value}"`
+		)
+		/* this.logger.debug(
+			`Query array of names to search dataset in index: ${datasetNameQueries}`
+		) */
+		let groupDatasetIDsToBeAdded: string[] = []
+		let groupDatasetPathsToBeAdded: string[] = []
+		let index = 0
+		for (let indexQuery in datasetNameQueries) {
+			this.logger.debug(datasetNameQueries[indexQuery])
+			const searchResults = await this.searchBidsDatasets(
+				owner,
+				datasetNameQueries[indexQuery]
+			)
+			// In case there is a result with a dataset owned by the user (e.g. <userID>_*)
+			if (searchResults.length > 0 && searchResults[0]._id.includes(owner)) {
+				this.logger.log(searchResults[0]._id)
+				this.logger.log(searchResults[0]._source.Path)
+				const datasetNum = searchResults[0]._id.split('_')[1]
+				const folderName = foundGroupDatasetsNotIndexed[index].split('/')[0]
+				const groupDatasetId = folderName + '_' + datasetNum
+				groupDatasetIDsToBeAdded.push(groupDatasetId)
+				groupDatasetPathsToBeAdded.push(foundGroupDatasetsNotIndexed[index])
+			}
+			index++
+		}
+		this.logger.log({ groupDatasetIDsToBeAdded })
+		this.logger.log({ groupDatasetPathsToBeAdded })
+		return { groupDatasetIDsToBeAdded, groupDatasetPathsToBeAdded }
+	}
+
+	private async handleBidsDatasetsNotIndexed(
+		owner: string,
+		foundDatasets: any[],
+		foundDatasetPaths: string[],
+		foundDatasetIDs: string[],
+		foundRenamedDatasetIDs: string[],
+		groupFolders: GroupFolder[]
+	) {
+		let addedBidsDatasets: BIDSDataset[] = []
+		let addedGroupBidsDatasets: BIDSDataset[] = []
+		if (foundDatasetPaths.length > 0) {
+			this.logger.debug('Handle indexing of datasets not already indexed...')
+			// extract datasets that are not indexed and return separately the lists
+			// of datasets contained in the user private space and the user group
+			const {
+				foundPrivateDatasetsNotIndexed,
+				// foundPrivateDatasetNamesNotIndexed,
+				foundGroupDatasetsNotIndexed,
+				foundGroupDatasetNamesNotIndexed,
+			} = this.extractAndSplitPrivateGroupDatasetsNotIndexed(
+				foundDatasets,
+				foundDatasetPaths,
+				foundDatasetIDs,
+				foundRenamedDatasetIDs,
+				groupFolders
+			)
+			// generate and index content of every private dataset not indexed
+			if (foundPrivateDatasetsNotIndexed.length > 0) {
+				this.logger.warn('Add the following private datasets to the index:')
+				this.logger.debug({ foundPrivateDatasetsNotIndexed })
+				addedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
+					owner,
+					foundPrivateDatasetsNotIndexed
+				)
+			}
+			// generate and index content of every group dataset not indexed
+			// for which a private dataset with the same same has already been indexed
+			if (foundGroupDatasetsNotIndexed.length > 0) {
+				this.logger.warn('Add the following group datasets to the index:')
+				this.logger.debug({ foundGroupDatasetsNotIndexed })
+				const { groupDatasetIDsToBeAdded, groupDatasetPathsToBeAdded } =
+					await this.filterGroupDatasetsNotIndexed(
+						owner,
+						foundGroupDatasetsNotIndexed,
+						foundGroupDatasetNamesNotIndexed
+					)
+				if (groupDatasetIDsToBeAdded.length > 0)
+					addedGroupBidsDatasets =
+						await this.addNewGroupBIDSDatasetIndexedContents(
+							owner,
+							groupDatasetPathsToBeAdded,
+							groupDatasetIDsToBeAdded
+						)
+			}
+		} else {
+			this.logger.debug('No existing dataset found!')
+		}
+		return { addedBidsDatasets, addedGroupBidsDatasets }
+	}
+
+	private async handleBidsDatasetsRenamed(
+		owner: string,
+		foundDatasetPaths: string[],
+		foundRenamedDatasetIDs: string[],
+		groupFolders: GroupFolder[]
+	) {
+		let renamedBidsDatasets: BIDSDataset[] = []
+		let renamedGroupBidsDatasets: BIDSDataset[] = []
+		if (foundDatasetPaths.length > 0) {
+			this.logger.debug(
+				'Handle reindexing of datasets for which the path changed...'
+			)
+			// extract indexed datasets for which path has changed and return separately the lists
+			// of dataset paths and IDs contained in the user private space and the user group
+			const {
+				foundPrivateRenamedDatasets,
+				foundPrivateRenamedDatasetIDs,
+				foundGroupRenamedDatasets,
+				foundGroupRenamedDatasetIDs,
+			} = this.extractAndSplitPrivateGroupRenamedDatasets(
+				foundDatasetPaths,
+				foundRenamedDatasetIDs,
+				groupFolders
+			)
+			// update indexed content of every private dataset for which path has changed
+			if (foundPrivateRenamedDatasets.length > 0) {
+				this.logger.warn('Update the following indexed private dataset path:')
+				this.logger.warn({
+					foundPrivateRenamedDatasets,
+					foundPrivateRenamedDatasetIDs,
+				})
+				renamedBidsDatasets = await this.updateBIDSDatasetIndexedContents(
+					owner,
+					foundPrivateRenamedDatasets,
+					foundPrivateRenamedDatasetIDs
+				)
+			}
+			// update indexed content of every dataset that has been moved to a group folder
+			if (foundGroupRenamedDatasets.length > 0) {
+				this.logger.warn('Update the following indexed group dataset path:')
+				this.logger.warn({
+					foundGroupRenamedDatasets,
+					foundGroupRenamedDatasetIDs,
+				})
+				/* renamedGroupBidsDatasets = await this.updateBIDSDatasetIndexedContents(
+					owner,
+					foundGroupRenamedDatasets,
+					foundGroupRenamedDatasetIDs
+				) */
+			}
+		} else {
+			this.logger.debug('No existing dataset found!')
+		}
+		return { renamedBidsDatasets, renamedGroupBidsDatasets }
+	}
+
+	private async handleBidsDatasetsDeleted(owner: string) {
+		let deletedBidsDatasets: { index: any; id: any }[] = []
+		// rerun search for dataset with updated path
+		const searchIndexedResults = await this.searchBidsDatasets(owner)
+		// extract absolute path of each dataset
+		const foundIndexedDatasetPaths = searchIndexedResults.map(
+			dataset => dataset._source.Path
+		)
+		if (foundIndexedDatasetPaths.length > 0) {
+			// find all datasets that are indexed but for which the path does not exist anymore
+			const deletedBidsDatasetPaths = foundIndexedDatasetPaths.map(absPath => {
+				if (!fs.existsSync(absPath)) return absPath
+			})
+			// filter null
+			const filteredDeletedBidsDatasetPaths = deletedBidsDatasetPaths.flatMap(
+				f => (f ? [f] : [])
+			)
+			if (filteredDeletedBidsDatasetPaths.length > 0) {
+				this.logger.debug(
+					'Deleting index for the following unexisting paths:',
+					{ filteredDeletedBidsDatasetPaths }
+				)
+				deletedBidsDatasets = await this.deleteBIDSDatasets(
+					owner,
+					filteredDeletedBidsDatasetPaths
+				)
+			}
+		}
+		return deletedBidsDatasets
 	}
 
 	public async refreshBIDSDatasetsIndex(
@@ -466,6 +813,7 @@ export class ToolsService {
 	) {
 		// TODO: Index shared datasets appearing in both private and group folders
 		try {
+			// make all the files are discovered by nextcloud
 			await this.nextcloudService.scanUserFiles(owner)
 			// 1. Get list of existing datasets and the list of indexed dataset ids
 			// get list of BIDS datasets (folder name) present in the file system (accessible by user)
@@ -477,111 +825,76 @@ export class ToolsService {
 
 			// extract lists of (1) all found dataset paths, (2) dataset IDs with corresponding path,
 			// (3) dataset IDs with corresponding name but with changed path
-			const { foundDatasetPaths, foundDatasetIDs, foundRenamedDatasetIDs } =
-				await this.parseSearchDatasetsResultsForRefresh(
-					owner,
-					searchDatasetsResults
-				)
+			const {
+				foundDatasets,
+				foundDatasetPaths,
+				foundDatasetIDs,
+				foundRenamedDatasetIDs,
+				//				foundDuplicatedDatasetPaths,
+			} = await this.parseSearchDatasetsResultsForRefresh(
+				owner,
+				searchDatasetsResults
+			)
+
+			// Get list of group folders to later differentiate datasets contained in a group folder
+			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
+				owner
+			)
 
 			// 2. Handle indexing of datasets not already indexed
-			let addedBidsDatasets: BIDSDataset[] = []
+			const { addedBidsDatasets, addedGroupBidsDatasets } =
+				await this.handleBidsDatasetsNotIndexed(
+					owner,
+					foundDatasets,
+					foundDatasetPaths,
+					foundDatasetIDs,
+					foundRenamedDatasetIDs,
+					groupFolders
+				)
+
+			/*
+			// 3. Handle indexing of dataset duplicates not indexed
+			 			let duplicatedBidsDatasets: BIDSDataset[] = []
 			if (foundDatasetPaths.length > 0) {
-				this.logger.debug('Handle indexing of datasets not already indexed...')
+				this.logger.debug('Handle indexing of new duplicated datasets...')
 				// extract datasets that are not indexed and return separately the lists
 				// of datasets contained in the user private space and the user group
-				const { foundPrivateDatasetsNotIndexed, foundGroupDatasetsNotIndexed } =
-					this.extractAndSplitPrivateGroupDatasetsNotIndexed(
-						foundDatasetPaths,
-						foundDatasetIDs,
-						foundRenamedDatasetIDs
+				const { foundPrivateDatasetsDuplicated, foundGroupDatasetsDuplicated } =
+					this.extractAndSplitPrivateGroupDatasetsDuplicated(
+						foundDuplicatedDatasetPaths
 					)
-				this.logger.debug('Detected datasets in user group:', {
-					foundGroupDatasetsNotIndexed,
+				this.logger.debug('Detected new duplicated datasets in user group:', {
+					foundGroupDatasetsDuplicated,
 				})
-				// generate and index content of every dataset not indexed
-				if (foundPrivateDatasetsNotIndexed.length > 0) {
-					this.logger.warn('Add the following dataset to the index:')
-					this.logger.debug({ foundPrivateDatasetsNotIndexed })
-					addedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
+				// generate and index content of every new dataset copy
+				if (foundPrivateDatasetsDuplicated.length > 0) {
+					this.logger.warn(
+						'Add the following new duplicated dataset to the index:'
+					)
+					this.logger.debug({ foundPrivateDatasetsDuplicated })
+					duplicatedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
 						owner,
-						foundPrivateDatasetsNotIndexed
+						foundPrivateDatasetsDuplicated
 					)
 				}
 			} else {
 				this.logger.debug('No existing dataset found!')
 				return []
-			}
-
+			} 
+			*/
 			// 3. Handle reindexing of datasets for which the path changed
-			let renamedBidsDatasets: BIDSDataset[] = []
-			if (foundDatasetPaths.length > 0) {
-				this.logger.debug(
-					'Handle reindexing of datasets for which the path changed...'
-				)
-				// extract indexed datasets for which path has changed and return separately the lists
-				// of dataset paths and IDs contained in the user private space and the user group
-				const {
-					foundPrivateRenamedDatasets,
-					foundPrivateRenamedDatasetIDs,
-					foundGroupRenamedDatasets,
-					foundGroupRenamedDatasetIDs,
-				} = this.extractAndSplitPrivateGroupRenamedDatasets(
+			const { renamedBidsDatasets, renamedGroupBidsDatasets } =
+				await this.handleBidsDatasetsRenamed(
+					owner,
 					foundDatasetPaths,
-					foundRenamedDatasetIDs
+					foundRenamedDatasetIDs,
+					groupFolders
 				)
-				this.logger.debug('Detected renamed datasets in user group:', {
-					foundGroupRenamedDatasets,
-					foundGroupRenamedDatasetIDs,
-				})
-				// generate and index content of every dataset not indexed
-				if (foundPrivateRenamedDatasets.length > 0) {
-					this.logger.warn('Update the following indexed dataset path:')
-					this.logger.warn({
-						foundPrivateRenamedDatasets,
-						foundPrivateRenamedDatasetIDs,
-					})
-					renamedBidsDatasets = await this.updateBIDSDatasetIndexedContents(
-						owner,
-						foundPrivateRenamedDatasets,
-						foundPrivateRenamedDatasetIDs
-					)
-				}
-			} else {
-				this.logger.debug('No existing dataset found!')
-				return []
-			}
 
 			// 4. Delete any indexed dataset that does not exist anymore
-			let deletedBidsDatasets: { index: any; id: any }[] = []
-			// rerun search for dataset with updated path
-			searchIndexedResults = await this.searchBidsDatasets(owner)
-			// extract absolute path of each dataset
-			const foundIndexedDatasetPaths = searchIndexedResults.map(
-				dataset => dataset._source.Path
-			)
-			if (foundIndexedDatasetPaths.length > 0) {
-				// find all datasets that are indexed but for which the path does not exist anymore
-				const deletedBidsDatasetPaths = foundIndexedDatasetPaths.map(
-					absPath => {
-						if (!fs.existsSync(absPath)) return absPath
-					}
-				)
-				// filter null
-				const filteredDeletedBidsDatasetPaths = deletedBidsDatasetPaths.flatMap(
-					f => (f ? [f] : [])
-				)
-				if (filteredDeletedBidsDatasetPaths.length > 0) {
-					this.logger.debug(
-						'Deleting index for the following unexisting paths:',
-						{ filteredDeletedBidsDatasetPaths }
-					)
-					deletedBidsDatasets = await this.deleteBIDSDatasets(
-						owner,
-						filteredDeletedBidsDatasetPaths
-					)
-				}
-			}
-			return { addedBidsDatasets, renamedBidsDatasets, deletedBidsDatasets }
+			const deletedBIDSDatasets = await this.handleBidsDatasetsDeleted(owner)
+
+			return { addedBidsDatasets, renamedBidsDatasets, deletedBIDSDatasets }
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
@@ -771,6 +1084,28 @@ export class ToolsService {
 		return deletedBidsDatasets
 	}
 
+	private async filterBidsDatasetsAccessibleByUser(
+		owner: string,
+		foundDatasets: any[]
+	) {
+		// get user group folder names
+		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
+		// filter only private datasets own by the user
+		let foundAccessibleDatasets = []
+		foundDatasets.forEach(dataset => {
+			if (dataset._id.includes(`${owner}_`)) {
+				foundAccessibleDatasets.push(dataset)
+			} else {
+				for (let ownerGroup of ownerGroups) {
+					if (dataset._id.includes(`${ownerGroup.label}_`)) {
+						foundAccessibleDatasets.push(dataset)
+					}
+				}
+			}
+		})
+		return foundAccessibleDatasets
+	}
+
 	public async searchBidsDatasets(
 		owner: string = 'all',
 		text_query: string = '*',
@@ -803,15 +1138,13 @@ export class ToolsService {
 				.then((result: ApiResponse) => {
 					return result.body.hits.hits
 				})
-			// filter only private datasets own by the user
+
 			if (owner !== 'all') {
-				let foundPrivateDatasets = []
-				foundDatasets.forEach(dataset => {
-					if (dataset._id.includes(`${owner}_`)) {
-						foundPrivateDatasets.push(dataset)
-					}
-				})
-				return foundPrivateDatasets
+				// filter only datasets accessible by the user
+				return await this.filterBidsDatasetsAccessibleByUser(
+					owner,
+					foundDatasets
+				)
 			} else {
 				return foundDatasets
 			}
@@ -856,11 +1189,17 @@ export class ToolsService {
 	public async generateDatasetId(owner: string, datasetIdNum: number = null) {
 		try {
 			// get number of datasets indexed in elasticsearch
-			var nbOfDatasets = await this.getDatasetsCount()
-			// get a list of dataset ids (<=> folder name) already indexed
-			const searchIndexedResults = await this.searchBidsDatasets('all')
-			// extract ids of indexed datasets
-			const datasetIDs = searchIndexedResults.map(dataset => dataset._id)
+			const nbOfDatasets = await this.getDatasetsCount()
+
+			let searchIndexedResults = []
+			let datasetIDs = []
+			if (nbOfDatasets > 0) {
+				// get a list of dataset ids (<=> folder name) already indexed
+				searchIndexedResults = await this.searchBidsDatasets('all')
+				// extract ids of indexed datasets
+				datasetIDs = searchIndexedResults.map(dataset => dataset._id)
+			}
+
 			// generate a first if using either the provided initial value or
 			// the # of indexed datasets + 1
 			datasetIdNum = datasetIdNum ? datasetIdNum : nbOfDatasets + 1
@@ -874,7 +1213,7 @@ export class ToolsService {
 			// does not exist
 			while (true) {
 				this.logger.debug({ datasetId })
-				if (!datasetIDs.includes(datasetId)) {
+				if (datasetIDs.length === 0 || !datasetIDs.includes(datasetId)) {
 					this.logger.debug('Id does not exist yet and is returned!')
 					break
 				} else {
@@ -1085,11 +1424,7 @@ export class ToolsService {
 
 			if (code === 0) {
 				await this.nextcloudService.scanPath(owner, dataset_path)
-				const datasetIndexedContent = await this.indexBIDSDataset(
-					owner,
-					dataset_path,
-					datasetID
-				)
+				await this.indexBIDSDataset(owner, dataset_path, datasetID)
 				return nextCreateSubject
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
