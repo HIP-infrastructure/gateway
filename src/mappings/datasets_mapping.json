@@ -3,242 +3,199 @@
 		"properties": {
 			"Acknowledgements": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
-			"AgeRange": {
-				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+			"AgeMin": {
+				"type": "long",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"AgeMax": {
+				"type": "long",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Authors": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"BIDSVersion": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"CreationDate": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"DataTypes": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"DatasetDOI": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
-			"EventsFileCount": {
-				"type": "long"
+			"DatasetType": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
-			"FileCount": {
-				"type": "long"
-			},
+			"ECGChannelCount": { "type": "long" },
+			"ECOGChannelCount": { "type": "long" },
+			"EEGChannelCount": { "type": "long" },
+			"EventsFileCount": { "type": "long" },
+			"FileCount": { "type": "long" },
 			"Formats": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Funding": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"GeneratedBy": {
+				"properties": {
+					"Name": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+					},
+					"Version": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					}
 				}
+			},
+			"Groups": {
+				"properties": {
+					"id": { "type": "long" },
+					"label": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+					},
+					"path": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+					}
+				}
+			},
+			"HEDVersion": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"HowToAcknowledge": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
+			"LastModificationDate": { "type": "date" },
 			"License": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
+			"MiscChannelCount": { "type": "long" },
 			"Modalities": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Name": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"Owner": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Participants": {
+				"type": "nested",
+				"include_in_root": true,
 				"properties": {
+					"Subject_ready": { "type": "boolean" },
+					"age": { "type": "long" },
+					"age_at_first_scan_years": { "type": "long" },
+					"dominant_hand": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+					},
+					"gender": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+					},
 					"group": {
 						"type": "text",
-						"fields": {
-							"keyword": {
-								"type": "keyword",
-								"ignore_above": 256
-							}
-						}
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					},
-					"age": {
-						"type": "long"
+					"hand": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					},
+					"handedness": { "type": "long" },
+					"number_of_scans_before": { "type": "long" },
 					"participant_id": {
 						"type": "text",
-						"fields": {
-							"keyword": {
-								"type": "keyword",
-								"ignore_above": 256
-							}
-						}
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					},
 					"sex": {
 						"type": "text",
-						"fields": {
-							"keyword": {
-								"type": "keyword",
-								"ignore_above": 256
-							}
-						}
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+					},
+					"species": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+					},
+					"strain": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+					},
+					"strain_rrid": {
+						"type": "text",
+						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					}
 				}
 			},
-			"ParticipantsCount": {
-				"type": "long"
-			},
+			"ParticipantsCount": { "type": "long" },
 			"ParticipantsGroups": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Path": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
-			"RecordingDuration": {
-				"type": "long"
+			"PipelineName": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
+			"RecordingDuration": { "type": "long" },
 			"ReferencesAndLinks": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
-			"RunsCount": {
-				"type": "long"
-			},
-			"SEEGChannelCount": {
-				"type": "long"
-			},
-			"SamplingFrequency": {
-				"type": "long"
-			},
-			"SessionsCount": {
-				"type": "long"
-			},
+			"RunsCount": { "type": "long" },
+			"SEEGChannelCount": { "type": "long" },
+			"SamplingFrequency": { "type": "long" },
+			"SessionsCount": { "type": "long" },
 			"Size": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"SourceDatasetsURLs": {
+				"type": "text",
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Tasks": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
+			"TriggerChannelCount": { "type": "long" },
 			"User": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"id": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"resourceUrl": {
 				"type": "text",
-				"fields": {
-					"keyword": {
-						"type": "keyword",
-						"ignore_above": 256
-					}
-				}
-			}
+				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			},
+			"version": { "type": "long" }
 		}
 	}
 }
