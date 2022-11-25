@@ -4,6 +4,7 @@ import {
 	Get,
 	HttpStatus,
 	Patch,
+	ParseArrayPipe,
 	Post,
 	Query,
 	Logger,
@@ -121,12 +122,27 @@ export class ToolsController {
 	async searchBidsDatasets(
 		@Query('owner') owner: string,
 		@Query('query') query: string,
+		@Query('ageRange', new ParseArrayPipe({ items: Number, separator: ',' }))
+		ageRange: number[],
+		@Query(
+			'participantsCountRange',
+			new ParseArrayPipe({ items: Number, separator: ',' })
+		)
+		participantsCountRange: number[],
+		@Query(
+			'datatypes',
+			new ParseArrayPipe({ items: String, separator: ',' })
+		)
+		datatypes: string[],
 		@Query('page') page: number,
 		@Query('nbOfResults') nbOfResults: number
 	) {
 		const searchResults = await this.toolsService.searchBidsDatasets(
 			owner,
 			query,
+			ageRange,
+			participantsCountRange,
+			datatypes,
 			page,
 			nbOfResults
 		)

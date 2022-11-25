@@ -1111,34 +1111,77 @@ export class ToolsService {
 
 	public async searchBidsDatasets(
 		owner: string = 'all',
-		text_query: string = '*',
+		textQuery: string = '*',
+		ageRange: number[] = [0, 100],
+		participantsCountRange: number[] = [0, 200],
+		datatypes: string[] = ['*'],
 		page: number = 1,
-		nb_of_results: number = 200
+		nbOfResults: number = 200
 	) {
 		try {
 			// determine index to start based on pagination
-			const index_from = (page - 1) * nb_of_results
-
+			const indexFrom = (page - 1) * nbOfResults
+			// define the elastic search query
+			let queryObj: {} = {
+				bool: {
+					must: [
+						{
+							query_string: {
+								query: textQuery,
+								allow_leading_wildcard: true,
+								analyze_wildcard: true,
+							},
+						},
+						{
+							range: {
+								AgeMin: { gte: ageRange[0] },
+							},
+						},
+						{
+							range: {
+								AgeMax: { lte: ageRange[1] },
+							},
+						},
+						{
+							range: {
+								ParticipantsCount: { gte: participantsCountRange[0] },
+							},
+						},
+						{
+							range: {
+								ParticipantsCount: {
+									lte:
+										participantsCountRange[1] < 200
+											? participantsCountRange[1]
+											: 10000,
+								},
+							},
+						},
+					],
+				},
+			}
+			// add terms query only if a non empty list of datatypes is provided
+			if (datatypes.length > 0 && !datatypes.includes('*')) {
+				queryObj['bool']['must'].push({
+					terms: {
+						DataTypes: datatypes,
+					},
+				})
+			}
 			// define search query in JSON format expected by elasticsearch
 			const query_params: RequestParams.Search = {
 				index: `${this.es_index_datasets}`,
 				body: {
-					from: index_from,
-					size: nb_of_results,
-					query: {
-						query_string: {
-							query: text_query,
-							allow_leading_wildcard: true,
-							analyze_wildcard: true,
-						},
-					},
+					from: indexFrom,
+					size: nbOfResults,
+					query: queryObj,
 				},
 			}
-
 			// perform and return the search query
 			const foundDatasets = await this.elastic_client
 				.search(query_params)
 				.then((result: ApiResponse) => {
+					// this.logger.debug(JSON.stringify(result.body.hits, null, 4))
 					return result.body.hits.hits
 				})
 
