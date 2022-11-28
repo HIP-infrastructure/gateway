@@ -304,7 +304,9 @@ export class NextcloudService {
 
 			child.stderr.setEncoding('utf8')
 			child.stderr.on('data', data => {
-				message += data.toString()
+				this.logger.error(`stderr: ${data}`)
+				// Log but don't reject, as it's often just a warning
+				// message += data.toString()
 			})
 
 			child.on('error', data => {
