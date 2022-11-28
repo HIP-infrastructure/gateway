@@ -302,18 +302,12 @@ export class ToolsService {
 			owner,
 			datasetRelPaths
 		)
-		/* 
-		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(
-			owner
-		)
-		*/
+
 		for (let index in bidsDatasets) {
 			bidsDatasets[index].Path = await this.filePath(
 				datasetRelPaths[index],
 				owner
 			)
-			// bidsDatasets[index].Owner = owner
-			// bidsDatasets[index].Groups = ownerGroups
 			bidsDatasets[index].LastModificationDate = new Date()
 			bidsDatasets[index].id = datasetIds[index]
 			bidsDatasets[index].version = 1
@@ -979,17 +973,13 @@ export class ToolsService {
 			const bidsGetDatasetDto = new BidsGetDatasetDto()
 			bidsGetDatasetDto.owner = owner
 			bidsGetDatasetDto.path = path
-			this.logger.debug({ bidsGetDatasetDto })
 
 			const bidsDataset = await this.createDatasetIndexedContent(
 				bidsGetDatasetDto
 			)
 
-			// find the dataset index to be deleted
+			// find if the dataset is already indexed
 			const datasetPathQuery = `Path:"${path}"`
-			this.logger.debug(
-				`Text query to search deleted dataset: ${datasetPathQuery}`
-			)
 			const searchResults = await this.searchBidsDatasets(
 				owner,
 				datasetPathQuery
