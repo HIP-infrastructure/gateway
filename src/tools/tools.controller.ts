@@ -20,6 +20,7 @@ import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-p
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
+import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
 import { ToolsService } from './tools.service'
 
 @Controller('tools')
@@ -129,22 +130,23 @@ export class ToolsController {
 			new ParseArrayPipe({ items: Number, separator: ',' })
 		)
 		participantsCountRange: number[],
-		@Query(
-			'datatypes',
-			new ParseArrayPipe({ items: String, separator: ',' })
-		)
+		@Query('datatypes', new ParseArrayPipe({ items: String, separator: ',' }))
 		datatypes: string[],
 		@Query('page') page: number,
 		@Query('nbOfResults') nbOfResults: number
 	) {
-		const searchResults = await this.toolsService.searchBidsDatasets(
+		const searchQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 			owner,
-			query,
+			textQuery: query,
+			filterPaths: true,
 			ageRange,
 			participantsCountRange,
 			datatypes,
 			page,
-			nbOfResults
+			nbOfResults,
+		}
+		const searchResults = await this.toolsService.searchBidsDatasets(
+			searchQueryOpts
 		)
 
 		const foundDatasets = searchResults.map(dataset => ({

@@ -21,6 +21,7 @@ import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
 import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
 import { writeFileSync } from 'fs'
+import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
 // import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
@@ -540,10 +541,17 @@ export class ToolsService {
 			/* this.logger.debug(
 				`Text query to search dataset in index: ${datasetPathQuery}`
 			) */
-			const searchResults = await this.searchBidsDatasets(
+			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
-				datasetPathQuery
-			)
+				textQuery: datasetPathQuery,
+				filterPaths: false,
+				ageRange: undefined,
+				participantsCountRange: undefined,
+				datatypes: undefined,
+				page: undefined,
+				nbOfResults: undefined,
+			}
+			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
 			searchResults.length > 0
 				? foundDatasetIDs.push(searchResults[0]._id)
 				: foundDatasetIDs.push(null)
@@ -586,10 +594,17 @@ export class ToolsService {
 				`Text query to search dataset in index: ${datasetPathQuery}`
 			)
 			*/
-			const searchResults = await this.searchBidsDatasets(
+			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
-				datasetPathQuery
-			)
+				textQuery: datasetPathQuery,
+				filterPaths: false,
+				ageRange: undefined,
+				participantsCountRange: undefined,
+				datatypes: undefined,
+				page: undefined,
+				nbOfResults: undefined,
+			}
+			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
 			if (searchResults.length > 0) {
 				if (!foundDatasetIDs.includes(searchResults[0]._id)) {
 					foundRenamedDatasetIDs.push(searchResults[0]._id)
@@ -636,10 +651,17 @@ export class ToolsService {
 		let index = 0
 		for (let indexQuery in datasetNameQueries) {
 			this.logger.debug(datasetNameQueries[indexQuery])
-			const searchResults = await this.searchBidsDatasets(
+			const datasetNameQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
-				datasetNameQueries[indexQuery]
-			)
+				textQuery: datasetNameQueries[indexQuery],
+				filterPaths: false,
+				ageRange: undefined,
+				participantsCountRange: undefined,
+				datatypes: undefined,
+				page: undefined,
+				nbOfResults: undefined,
+			}
+			const searchResults = await this.searchBidsDatasets(datasetNameQueryOpts)
 			// In case there is a result with a dataset owned by the user (e.g. <userID>_*)
 			if (searchResults.length > 0 && searchResults[0]._id.includes(owner)) {
 				this.logger.log(searchResults[0]._id)
@@ -776,7 +798,17 @@ export class ToolsService {
 	private async handleBidsDatasetsDeleted(owner: string) {
 		let deletedBidsDatasets: { index: any; id: any }[] = []
 		// rerun search for dataset with updated path
-		const searchIndexedResults = await this.searchBidsDatasets(owner)
+		const searchQueryOpts: SearchBidsDatasetsQueryOptsDto = {
+			owner,
+			textQuery: undefined,
+			filterPaths: false,
+			ageRange: undefined,
+			participantsCountRange: undefined,
+			datatypes: undefined,
+			page: undefined,
+			nbOfResults: undefined,
+		}
+		const searchIndexedResults = await this.searchBidsDatasets(searchQueryOpts)
 		// extract absolute path of each dataset
 		const foundIndexedDatasetPaths = searchIndexedResults.map(
 			dataset => dataset._source.Path
@@ -802,6 +834,51 @@ export class ToolsService {
 			}
 		}
 		return deletedBidsDatasets
+	}
+
+	private async handleBidsDatasetDuplicates(
+		owner: string,
+		foundDatasetPaths: string[],
+		foundDuplicatedDatasetPaths: string[],
+		groupFolders: GroupFolder[]
+	) {
+		let duplicatedBidsDatasets: BIDSDataset[] = []
+		if (foundDatasetPaths.length > 0) {
+			this.logger.debug('Handle indexing of new duplicated datasets...')
+			// extract datasets that are not indexed and return separately the lists
+			// of datasets contained in the user private space and the user group
+			const { foundPrivateDatasetsDuplicated, foundGroupDatasetsDuplicated } =
+				this.extractAndSplitPrivateGroupDatasetsDuplicated(
+					foundDuplicatedDatasetPaths,
+					groupFolders
+				)
+			this.logger.debug('Detected new duplicated datasets in user group:', {
+				foundGroupDatasetsDuplicated,
+			})
+			// generate and index content of every new dataset copy
+			if (foundPrivateDatasetsDuplicated.length > 0) {
+				this.logger.warn(
+					'Add the following new duplicated dataset to the index:'
+				)
+				this.logger.debug({ foundPrivateDatasetsDuplicated })
+				duplicatedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
+					owner,
+					foundPrivateDatasetsDuplicated
+				)
+			}
+		} else {
+			this.logger.debug('No existing dataset found!')
+		}
+		return duplicatedBidsDatasets
+	}
+
+	public getRelativePath(absPath: string): string {
+		return absPath
+			?.replace(/mnt\/nextcloud-dp\/nextcloud\/data\/.*?\/files\//, '')
+			.replace(
+				/\/mnt\/nextcloud-dp\/nextcloud\/data\/__groupfolders\/.*?\//,
+				'/groupfolder/'
+			)
 	}
 
 	public async refreshBIDSDatasetsIndex(
@@ -833,12 +910,12 @@ export class ToolsService {
 				searchDatasetsResults
 			)
 
-			// Get list of group folders to later differentiate datasets contained in a group folder
+			// get list of group folders to later differentiate datasets contained in a group folder
 			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
 				owner
 			)
 
-			// 2. Handle indexing of datasets not already indexed
+			// 2. handle indexing of datasets not already indexed
 			const { addedBidsDatasets, addedGroupBidsDatasets } =
 				await this.handleBidsDatasetsNotIndexed(
 					owner,
@@ -849,37 +926,15 @@ export class ToolsService {
 					groupFolders
 				)
 
-			/*
-			// 3. Handle indexing of dataset duplicates not indexed
-			 			let duplicatedBidsDatasets: BIDSDataset[] = []
-			if (foundDatasetPaths.length > 0) {
-				this.logger.debug('Handle indexing of new duplicated datasets...')
-				// extract datasets that are not indexed and return separately the lists
-				// of datasets contained in the user private space and the user group
-				const { foundPrivateDatasetsDuplicated, foundGroupDatasetsDuplicated } =
-					this.extractAndSplitPrivateGroupDatasetsDuplicated(
-						foundDuplicatedDatasetPaths
-					)
-				this.logger.debug('Detected new duplicated datasets in user group:', {
-					foundGroupDatasetsDuplicated,
-				})
-				// generate and index content of every new dataset copy
-				if (foundPrivateDatasetsDuplicated.length > 0) {
-					this.logger.warn(
-						'Add the following new duplicated dataset to the index:'
-					)
-					this.logger.debug({ foundPrivateDatasetsDuplicated })
-					duplicatedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
-						owner,
-						foundPrivateDatasetsDuplicated
-					)
-				}
-			} else {
-				this.logger.debug('No existing dataset found!')
-				return []
-			} 
-			*/
-			// 3. Handle reindexing of datasets for which the path changed
+			// 3. handle indexing of dataset duplicates not indexed
+			// const { duplicatedBidsDatasets } = handleBidsDatasetDuplicates(
+			// 	owner,
+			// 	foundDatasetPaths,
+			// 	foundDuplicatedDatasetPaths,
+			// 	groupFolders
+			// )
+
+			// 4. handle reindexing of datasets for which the path changed
 			const { renamedBidsDatasets, renamedGroupBidsDatasets } =
 				await this.handleBidsDatasetsRenamed(
 					owner,
@@ -888,9 +943,28 @@ export class ToolsService {
 					groupFolders
 				)
 
-			// 4. Delete any indexed dataset that does not exist anymore
+			// 5. delete any indexed dataset that does not exist anymore
 			const deletedBIDSDatasets = await this.handleBidsDatasetsDeleted(owner)
 
+			// 6. remove "Path" in dataset objects returned to the frontend
+			if (addedBidsDatasets && addedBidsDatasets.length > 0) {
+				addedBidsDatasets.forEach((ds: BIDSDataset, index: number) => {
+					if (ds && ds.hasOwnProperty('Path')) {
+						addedBidsDatasets[index].Path = this.getRelativePath(
+							addedBidsDatasets[index].Path
+						)
+					}
+				})
+			}
+			if (renamedBidsDatasets && renamedBidsDatasets.length > 0) {
+				renamedBidsDatasets.forEach((ds: BIDSDataset, index: number) => {
+					if (ds && ds.hasOwnProperty('Path')) {
+						renamedBidsDatasets[index].Path = this.getRelativePath(
+							renamedBidsDatasets[index].Path
+						)
+					}
+				})
+			}
 			return { addedBidsDatasets, renamedBidsDatasets, deletedBIDSDatasets }
 		} catch (e) {
 			this.logger.error(e)
@@ -980,10 +1054,17 @@ export class ToolsService {
 
 			// find if the dataset is already indexed
 			const datasetPathQuery = `Path:"${path}"`
-			const searchResults = await this.searchBidsDatasets(
+			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
-				datasetPathQuery
-			)
+				textQuery: datasetPathQuery,
+				filterPaths: false,
+				ageRange: undefined,
+				participantsCountRange: undefined,
+				datatypes: undefined,
+				page: undefined,
+				nbOfResults: undefined,
+			}
+			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
 			this.logger.log({ searchResults })
 			if (searchResults.length > 0) {
 				const currentDataset = searchResults[0]
@@ -1018,6 +1099,8 @@ export class ToolsService {
 			// create and send elasticsearch bulk to index the dataset
 			await this.sendElasticSearchDatasetsBulk([bidsDataset])
 
+			bidsDataset.Path = this.getRelativePath(bidsDataset.Path)
+
 			return bidsDataset
 		} catch (e) {
 			this.logger.error(e)
@@ -1029,13 +1112,17 @@ export class ToolsService {
 		try {
 			// find the dataset index to be deleted
 			const datasetPathQuery = `Path:"${path}"`
-			this.logger.debug(
-				`Text query to search deleted dataset: ${datasetPathQuery}`
-			)
-			const searchResults = await this.searchBidsDatasets(
+			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
-				datasetPathQuery
-			)
+				textQuery: datasetPathQuery,
+				filterPaths: true,
+				ageRange: undefined,
+				participantsCountRange: undefined,
+				datatypes: undefined,
+				page: undefined,
+				nbOfResults: undefined,
+			}
+			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
 			if (searchResults.length > 0) {
 				const dataset = searchResults[0]
 				// delete the document with id related to the dataset
@@ -1099,15 +1186,16 @@ export class ToolsService {
 		return foundAccessibleDatasets
 	}
 
-	public async searchBidsDatasets(
-		owner: string = 'all',
-		textQuery: string = '*',
-		ageRange: number[] = [0, 100],
-		participantsCountRange: number[] = [0, 200],
-		datatypes: string[] = ['*'],
-		page: number = 1,
-		nbOfResults: number = 200
-	) {
+	public async searchBidsDatasets({
+		owner = 'all',
+		textQuery = '*',
+		filterPaths = false,
+		ageRange = [0, 100],
+		participantsCountRange = [0, 200],
+		datatypes = ['*'],
+		page = 1,
+		nbOfResults = 200,
+	}: SearchBidsDatasetsQueryOptsDto) {
 		try {
 			// determine index to start based on pagination
 			const indexFrom = (page - 1) * nbOfResults
@@ -1137,19 +1225,21 @@ export class ToolsService {
 								ParticipantsCount: { gte: participantsCountRange[0] },
 							},
 						},
-						{
-							range: {
-								ParticipantsCount: {
-									lte:
-										participantsCountRange[1] < 200
-											? participantsCountRange[1]
-											: 10000,
-								},
-							},
-						},
 					],
 				},
 			}
+
+			// add upper bound limit on ParticipantsCount only if it is less than 200
+			if (participantsCountRange[1] < 200) {
+				queryObj['bool']['must'].push({
+					range: {
+						ParticipantsCount: {
+							lte: participantsCountRange[1],
+						},
+					},
+				})
+			}
+
 			// add terms query only if a non empty list of datatypes is provided
 			if (datatypes.length > 0 && !datatypes.includes('*')) {
 				queryObj['bool']['must'].push({
@@ -1158,6 +1248,8 @@ export class ToolsService {
 					},
 				})
 			}
+			this.logger.debug({ queryObj })
+
 			// define search query in JSON format expected by elasticsearch
 			const query_params: RequestParams.Search = {
 				index: `${this.es_index_datasets}`,
@@ -1171,7 +1263,21 @@ export class ToolsService {
 			const foundDatasets = await this.elastic_client
 				.search(query_params)
 				.then((result: ApiResponse) => {
-					// this.logger.debug(JSON.stringify(result.body.hits, null, 4))
+					// remove "Path" in dataset objects returned to the frontend
+					if (
+						filterPaths &&
+						result.body.hits.hits &&
+						result.body.hits.hits.length > 0
+					) {
+						result.body.hits.hits.forEach((ds, index: number) => {
+							if (ds && ds['_source'].hasOwnProperty('Path')) {
+								result.body.hits.hits[index]['_source']['Path'] =
+									this.getRelativePath(
+										result.body.hits.hits[index]['_source']['Path']
+									)
+							}
+						})
+					}
 					return result.body.hits.hits
 				})
 
@@ -1231,7 +1337,17 @@ export class ToolsService {
 			let datasetIDs = []
 			if (nbOfDatasets > 0) {
 				// get a list of dataset ids (<=> folder name) already indexed
-				searchIndexedResults = await this.searchBidsDatasets('all')
+				const searchAllQueryOpts: SearchBidsDatasetsQueryOptsDto = {
+					owner: 'all',
+					textQuery: undefined,
+					filterPaths: false,
+					ageRange: undefined,
+					participantsCountRange: undefined,
+					datatypes: undefined,
+					page: undefined,
+					nbOfResults: undefined,
+				}
+				searchIndexedResults = await this.searchBidsDatasets(searchAllQueryOpts)
 				// extract ids of indexed datasets
 				datasetIDs = searchIndexedResults.map(dataset => dataset._id)
 			}
@@ -1401,13 +1517,17 @@ export class ToolsService {
 		try {
 			// retrieve the index used for the dataset
 			const datasetPathQuery = `Path:"${dataset_path}"`
-			this.logger.debug(
-				`Text query to retrieve dataset ID: ${datasetPathQuery}`
-			)
-			const searchResults = await this.searchBidsDatasets(
+			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
-				datasetPathQuery
-			)
+				textQuery: datasetPathQuery,
+				filterPaths: false,
+				ageRange: undefined,
+				participantsCountRange: undefined,
+				datatypes: undefined,
+				page: undefined,
+				nbOfResults: undefined,
+			}
+			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
 			const datasetID = searchResults[0].id
 
 			// FIXME: replace by all settled
