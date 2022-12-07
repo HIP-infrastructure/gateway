@@ -1445,10 +1445,7 @@ export class ToolsService {
 	}
 
 	async getSubject(bidsGetSubjectDto: BidsGetSubjectDto) {
-		const {
-			// owner,
-			path,
-		} = bidsGetSubjectDto
+		const { owner, path } = bidsGetSubjectDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
@@ -1470,9 +1467,9 @@ export class ToolsService {
 				}
 			})
 
-			// const dbPath = await this.filePath(path, owner)
+			const dbPath = await this.filePath(path, owner)
 
-			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${path}:/output`]
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
