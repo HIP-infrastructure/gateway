@@ -27,7 +27,6 @@ import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-
 const userIdLib = require('userid')
 const { spawn } = require('child_process')
 const fs = require('fs')
-const papa = require('papaparse')
 const path = require('path')
 
 type DataError = {
@@ -1065,11 +1064,9 @@ export class ToolsService {
 				nbOfResults: undefined,
 			}
 			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
-			this.logger.log({ searchResults })
 			if (searchResults.length > 0) {
 				const currentDataset = searchResults[0]
 				this.logger.debug('Update a currently indexed dataset')
-				this.logger.debug({ currentDataset })
 				bidsDataset.Owner = currentDataset._source.Owner
 				bidsDataset.Groups = currentDataset._source.Groups
 				bidsDataset.CreationDate = currentDataset._source.CreationDate
@@ -1694,31 +1691,42 @@ export class ToolsService {
 	 * of a BIDS dataset.
 	 * */
 	public async writeBIDSDatasetParticipantsTSV(
+		owner: string,
 		datasetPath: string,
 		createBidsDatasetParticipantsTsvDto: CreateBidsDatasetParticipantsTsvDto
 	) {
 		try {
-			this.logger.debug({ datasetPath })
-			this.logger.debug({ createBidsDatasetParticipantsTsvDto })
-			// Transform JSON object to TSV formatted string
-			const participantsTSVString = papa.unparse(
-				createBidsDatasetParticipantsTsvDto.Participants,
-				{
-					quotes: false, //or array of booleans
-					quoteChar: '"',
-					escapeChar: '"',
-					delimiter: '\t',
-					header: true,
-					newline: '\r\n',
-					skipEmptyLines: false, //other option is 'greedy', meaning skip delimiters, quotes, and whitespace.
-					columns: null, //or array of strings
-				}
-			)
-			this.logger.debug({ participantsTSVString })
+			// convert JSON object to TSV formatted string by using the
+			// map function without any framework
+			let json = createBidsDatasetParticipantsTsvDto.Participants
+			let fields = Object.keys(json[0])
+			let replacer = function (_key, value) {
+				return value === null ? 'n/a' : value
+			}
+			let tsv = json.map(function (row) {
+				return fields
+					.map(function (fieldName) {
+						return JSON.stringify(row[fieldName], replacer)
+					})
+					.join('\t')
+			})
+			tsv.unshift(fields.join('\t')) // add header column
+			const participantsTSVString = tsv.join('\r\n')
+
 			// Write TSV string to file
-			const tsvFilepath = path.join(datasetPath, PARTICIPANTS_FILE)
+			const absDatasetPath = await this.filePath(datasetPath.slice(1), owner)
+			const tsvFilepath = path.join(absDatasetPath, PARTICIPANTS_FILE)
 			writeFileSync(tsvFilepath, participantsTSVString)
 			this.logger.debug(`${tsvFilepath} has been successfully written!`)
+			this.logger.debug({ participantsTSVString })
+
+			this.logger.debug('(Re-)index dataset...')
+			const bidsDataset = await this.indexBIDSDataset(
+				owner,
+				absDatasetPath,
+				undefined
+			)
+			this.logger.debug({ bidsDataset })
 		} catch (error) {
 			throw new Error(error)
 		}

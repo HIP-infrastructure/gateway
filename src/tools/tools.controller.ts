@@ -240,6 +240,7 @@ export class ToolsController {
 	@UsePipes(ValidationPipe)
 	@Post('/bids/dataset/write_participants_tsv')
 	async write(
+		@Query('owner') owner: string,
 		@Query('datasetPath') datasetPath: string,
 		@Body()
 		createBidsDatasetParticipantsTsvDto: CreateBidsDatasetParticipantsTsvDto,
@@ -252,6 +253,7 @@ export class ToolsController {
 			)
 		}) */
 		return this.toolsService.writeBIDSDatasetParticipantsTSV(
+			owner,
 			datasetPath,
 			createBidsDatasetParticipantsTsvDto
 		)
