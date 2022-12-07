@@ -200,7 +200,7 @@ export class ToolsService {
 
 	public async sendElasticSearchDatasetsBulk(bidsDatasets: BIDSDataset[]) {
 		// create body for elasticsearch bulk to index the datasets
-		const body = bidsDatasets.flatMap((dataset: BIDSDataset) => [
+		const body = Array.isArray(bidsDatasets) && bidsDatasets.flatMap((dataset: BIDSDataset) => [
 			{
 				index: {
 					_index: this.es_index_datasets,
