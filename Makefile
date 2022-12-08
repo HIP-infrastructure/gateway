@@ -26,15 +26,15 @@ release: build r.package
 r.package:
 	tar -czvf release.tar.gz -C dist .
 
-#dev-install: @ Deploys the application to the development environment
-dev-install: dev-stop
+#deploy.dev: @ Deploys the application to the development environment
+deploy.dev: deploy.dev.stop
 	# TODO: prevent the build if no .env
 	cp ../.env .env
 	sudo chown -R www-data: dist
 	npm install
 	sudo -u www-data -E npm run start:dev
 
-dev-stop:
+deploy.dev.stop:
 	for pid in $(ps -fu www-data  | grep gateway | awk '{ print $2 }'); do sudo kill -9 $pid; done 
 
 #help:	@ List available tasks on this project
