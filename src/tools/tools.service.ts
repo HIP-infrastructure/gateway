@@ -532,97 +532,130 @@ export class ToolsService {
 		}
 
 		// find IDs of datasets existing in the index
-		let foundDatasetIDs: string[] = []
-		let foundDatasetPathsWithIDs: string[] = []
+		let datasetPathsQuery: string[] = []
 		for (const index in foundDatasetPaths) {
 			const datasetPath = await this.filePath(foundDatasetPaths[index], owner)
-			const datasetPathQuery = `Path:"${datasetPath}"`
-			/* this.logger.debug(
-				`Text query to search dataset in index: ${datasetPathQuery}`
-			) */
-			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
-				owner,
-				textQuery: datasetPathQuery,
-				filterPaths: false,
-				ageRange: undefined,
-				participantsCountRange: undefined,
-				datatypes: undefined,
-				page: undefined,
-				nbOfResults: undefined,
-			}
-			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
-			searchResults.length > 0
-				? foundDatasetIDs.push(searchResults[0]._id)
-				: foundDatasetIDs.push(null)
-			searchResults.length > 0
-				? foundDatasetPathsWithIDs.push(searchResults[0]._source.Path)
-				: foundDatasetPathsWithIDs.push(null)
+			datasetPathsQuery.push(`Path:"${datasetPath}"`)
 		}
+		const searchResults = await this.multiSearchBidsDatasets(datasetPathsQuery)
+		let foundDatasetIDs: string[] = []
+		let foundDatasetPathsWithIDs: string[] = []
+		for (let index in searchResults) {
+			if (searchResults[index].length > 0) {
+				foundDatasetIDs.push(searchResults[index][0].id)
+				foundDatasetPathsWithIDs.push(searchResults[index][0]._source.Path)
+			} else {
+				foundDatasetIDs.push(null)
+				foundDatasetPathsWithIDs.push(null)
+			}
+		}
+		// for (const index in foundDatasetPaths) {
+		// 	const datasetPath = await this.filePath(foundDatasetPaths[index], owner)
+		// 	const datasetPathQuery = `Path:"${datasetPath}"`
+		// 	/* this.logger.debug(
+		// 		`Text query to search dataset in index: ${datasetPathQuery}`
+		// 	) */
+		// 	const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
+		// 		owner,
+		// 		textQuery: datasetPathQuery,
+		// 		filterPaths: false,
+		// 		ageRange: undefined,
+		// 		participantsCountRange: undefined,
+		// 		datatypes: undefined,
+		// 		page: undefined,
+		// 		nbOfResults: undefined,
+		// 	}
+		// 	const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
+		// 	searchResults.length > 0
+		// 		? foundDatasetIDs.push(searchResults[0]._id)
+		// 		: foundDatasetIDs.push(null)
+		// 	searchResults.length > 0
+		// 		? foundDatasetPathsWithIDs.push(searchResults[0]._source.Path)
+		// 		: foundDatasetPathsWithIDs.push(null)
+		// }
 
 		// find IDs of datasets with name existing in the index in the case of
 		// (1) a dataset with changed path and (2) a dataset copy
+		let foundRenamedDatasetsQuery = foundDatasets.map(
+			(d: BIDSDataset) => `"${d.Name}"`
+		)
+		const searchRenamedResults = await this.multiSearchBidsDatasets(
+			foundRenamedDatasetsQuery
+		)
 		let foundRenamedDatasetIDs: string[] = []
-		// let foundDuplicatedDatasetPaths: string[] = []
-		for (const index in foundDatasets) {
-			let datasetPathQuery = `"${foundDatasets[index].Name}"`
-			/*
-			const dataset_desc = {
-				Name: foundDatasets[index].Name,
-				BIDSVersion: foundDatasets[index].BIDSVersion,
-				License: foundDatasets[index].License,
-				Authors: foundDatasets[index].Authors,
-				Acknowledgements: foundDatasets[index].Acknowledgements,
-				HowToAcknowledge: foundDatasets[index].HowToAcknowledge,
-				Funding: foundDatasets[index].Funding,
-				ReferencesAndLinks: foundDatasets[index].ReferencesAndLinks,
-				DatasetDOI: foundDatasets[index].DatasetDOI,
-			} 
-			let datasetPathQuery: string = ''
-			for (
-				var keys = Object.keys(dataset_desc), i = 0, end = keys.length;
-				i < end;
-				i++
-			) {
-				var key = keys[i]
-				var value = dataset_desc[key] ? dataset_desc[key] : ''
-				i === end - 1
-					? (datasetPathQuery += `${key}:"${value}"`)
-					: (datasetPathQuery += `${key}:"${value}" AND `)
-			} 
-			this.logger.debug(
-				`Text query to search dataset in index: ${datasetPathQuery}`
-			)
-			*/
-			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
-				owner,
-				textQuery: datasetPathQuery,
-				filterPaths: false,
-				ageRange: undefined,
-				participantsCountRange: undefined,
-				datatypes: undefined,
-				page: undefined,
-				nbOfResults: undefined,
-			}
-			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
-			if (searchResults.length > 0) {
-				if (!foundDatasetIDs.includes(searchResults[0]._id)) {
-					foundRenamedDatasetIDs.push(searchResults[0]._id)
-					// foundDuplicatedDatasetPaths.push(null)
+		for (let index in searchRenamedResults) {
+			if (searchRenamedResults[index].length > 0) {
+				if (!foundDatasetIDs.includes(searchRenamedResults[index][0].id)) {
+					foundRenamedDatasetIDs.push(searchRenamedResults[index][0].id)
 				} else {
 					foundRenamedDatasetIDs.push(null)
-					/* 
-					if (!foundDatasetPathsWithIDs.includes(searchResults[0]._Path)) {
-						foundDuplicatedDatasetPaths.push(searchResults[0]._Path)
-					} else {
-						foundDuplicatedDatasetPaths.push(null)
-					} 
-					*/
 				}
 			} else {
 				foundRenamedDatasetIDs.push(null)
-				// foundDuplicatedDatasetPaths.push(null)
 			}
 		}
+
+		// let foundDuplicatedDatasetPaths: string[] = []
+		// for (const index in foundDatasets) {
+		// 	let datasetPathQuery = `"${foundDatasets[index].Name}"`
+		// 	/*
+		// 	const dataset_desc = {
+		// 		Name: foundDatasets[index].Name,
+		// 		BIDSVersion: foundDatasets[index].BIDSVersion,
+		// 		License: foundDatasets[index].License,
+		// 		Authors: foundDatasets[index].Authors,
+		// 		Acknowledgements: foundDatasets[index].Acknowledgements,
+		// 		HowToAcknowledge: foundDatasets[index].HowToAcknowledge,
+		// 		Funding: foundDatasets[index].Funding,
+		// 		ReferencesAndLinks: foundDatasets[index].ReferencesAndLinks,
+		// 		DatasetDOI: foundDatasets[index].DatasetDOI,
+		// 	}
+		// 	let datasetPathQuery: string = ''
+		// 	for (
+		// 		var keys = Object.keys(dataset_desc), i = 0, end = keys.length;
+		// 		i < end;
+		// 		i++
+		// 	) {
+		// 		var key = keys[i]
+		// 		var value = dataset_desc[key] ? dataset_desc[key] : ''
+		// 		i === end - 1
+		// 			? (datasetPathQuery += `${key}:"${value}"`)
+		// 			: (datasetPathQuery += `${key}:"${value}" AND `)
+		// 	}
+		// 	this.logger.debug(
+		// 		`Text query to search dataset in index: ${datasetPathQuery}`
+		// 	)
+		// 	*/
+		// 	const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
+		// 		owner,
+		// 		textQuery: datasetPathQuery,
+		// 		filterPaths: false,
+		// 		ageRange: undefined,
+		// 		participantsCountRange: undefined,
+		// 		datatypes: undefined,
+		// 		page: undefined,
+		// 		nbOfResults: undefined,
+		// 	}
+		// 	const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
+		// 	if (searchResults.length > 0) {
+		// 		if (!foundDatasetIDs.includes(searchResults[0]._id)) {
+		// 			foundRenamedDatasetIDs.push(searchResults[0]._id)
+		// 			// foundDuplicatedDatasetPaths.push(null)
+		// 		} else {
+		// 			foundRenamedDatasetIDs.push(null)
+		// 			/*
+		// 			if (!foundDatasetPathsWithIDs.includes(searchResults[0]._Path)) {
+		// 				foundDuplicatedDatasetPaths.push(searchResults[0]._Path)
+		// 			} else {
+		// 				foundDuplicatedDatasetPaths.push(null)
+		// 			}
+		// 			*/
+		// 		}
+		// 	} else {
+		// 		foundRenamedDatasetIDs.push(null)
+		// 		// foundDuplicatedDatasetPaths.push(null)
+		// 	}
+		// }
 		return {
 			foundDatasets,
 			foundDatasetPaths,
@@ -1293,6 +1326,52 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * This function is used to search the bids datasets using the elasticsearch msearch API
+	 * @param textQuery 		- array of query strings to search in the datasets
+	 * @returns 				- array of datasets matching each search query of the array
+	 */
+	public async multiSearchBidsDatasets(textQuery: string[] = ['*']) {
+		try {
+			// create body of query for elasticsearch msearch to search the datasets
+			const queryObj = textQuery.map((_value, index) => {
+				return {
+					query_string: {
+						query: textQuery[index],
+						allow_leading_wildcard: true,
+						analyze_wildcard: true,
+					},
+				}
+			})
+			const body =
+				Array.isArray(queryObj) &&
+				queryObj.flatMap(query => [
+					{ index: `${this.es_index_datasets}` },
+					{ query: query },
+				])
+			// define msearch query in JSON format expected by elasticsearch
+			const query_params: RequestParams.Msearch = {
+				index: `${this.es_index_datasets}`,
+				body: body,
+			}
+			// perform and return the msearch query
+			return await this.elastic_client
+				.msearch(query_params)
+				.then((result: ApiResponse) => {
+					return result.body.responses.map(response => {
+						return response.hits.hits
+					})
+				})
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
+		}
+	}
+
+	/**
+	 * This function is used to get the number of datasets indexed in elasticsearch
+	 * @returns - number of datasets in the elasticsearch index
+	 */
 	public async getDatasetsCount() {
 		// define count query in JSON format expected by elasticsearch
 		const count_params: RequestParams.Count = {
