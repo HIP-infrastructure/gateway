@@ -179,6 +179,12 @@ export class ToolsService {
 	// 	}
 	// }
 
+	/**
+	 * Generate a list of BIDSDataset objects (JSON content indexed to elasticsearch) given a list of dataset paths
+	 * @param owner user id
+	 * @param paths list of dataset paths to generate JSON content indexed to elasticsearch
+	 * @returns list of BIDSDataset objects (JSON content indexed to elasticsearch)
+	 */
 	public async genBIDSDatasetsIndexedContent(owner: string, paths: string[]) {
 		try {
 			const bidsGetDatasetsDto = paths.map(path => {
@@ -197,17 +203,23 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * Index a list of BIDSDataset JSON objects using elasticsearch bulk API
+	 * @param bidsDatasets list of BIDSDataset JSON object to index
+	 */
 	public async sendElasticSearchDatasetsBulk(bidsDatasets: BIDSDataset[]) {
 		// create body for elasticsearch bulk to index the datasets
-		const body = Array.isArray(bidsDatasets) && bidsDatasets.flatMap((dataset: BIDSDataset) => [
-			{
-				index: {
-					_index: this.es_index_datasets,
-					_id: dataset.id,
+		const body =
+			Array.isArray(bidsDatasets) &&
+			bidsDatasets.flatMap((dataset: BIDSDataset) => [
+				{
+					index: {
+						_index: this.es_index_datasets,
+						_id: dataset.id,
+					},
 				},
-			},
-			dataset,
-		])
+				dataset,
+			])
 		// index the datasets
 		const { body: bulkResponse } = await this.elastic_client.bulk({
 			refresh: true,
@@ -227,6 +239,12 @@ export class ToolsService {
 		this.logger.debug({ count })
 	}
 
+	/**
+	 * Add new BIDS datasets in the user private space to the index
+	 * @param owner user id
+	 * @param datasetRelPaths list of relative paths of the datasets to index
+	 * @returns list of BIDSDataset indexed
+	 */
 	public async addNewBIDSDatasetIndexedContents(
 		owner: string,
 		datasetRelPaths: string[]
@@ -263,6 +281,13 @@ export class ToolsService {
 		return bidsDatasets
 	}
 
+	/**
+	 * Add new BIDS datasets in a group folder to the index
+	 * @param owner user id
+	 * @param datasetRelPaths list of relative paths of the datasets
+	 * @param datasetIds list of dataset ids
+	 * @returns list of BIDS dataset objects indexed
+	 */
 	public async addNewGroupBIDSDatasetIndexedContents(
 		owner: string,
 		datasetRelPaths: string[],
@@ -317,6 +342,13 @@ export class ToolsService {
 		return bidsDatasets
 	}
 
+	/**
+	 * Split the list of paths and names  of datasets not indexed in private space and in a group folder
+	 * @param filteredFoundDatasetsNotIndexed list of datasets not indexed
+	 * @param filteredFoundDatasetNamesNotIndexed liss of dataset names not indexed
+	 * @param groupFolders list of group folders
+	 * @returns lists of dataset paths and names not indexed in private space and in a group folder
+	 */
 	public splitPrivateGroupDatasetsNotIndexed(
 		filteredFoundDatasetsNotIndexed: string[],
 		filteredFoundDatasetNamesNotIndexed: string[],
@@ -364,6 +396,15 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * Extracts all datasets that are not indexed yet and splits them into private and group datasets
+	 * @param foundDatasets list of all datasets
+	 * @param foundDatasetPaths list of all dataset paths
+	 * @param foundDatasetIDs list of all dataset ids
+	 * @param foundRenamedDatasetIDs list of all renamed dataset ids
+	 * @param groupFolders list of all group folders
+	 * @returns lists of all dataset paths and names that are in the private space and in a group folder
+	 */
 	public extractAndSplitPrivateGroupDatasetsNotIndexed(
 		foundDatasets: any[],
 		foundDatasetPaths: string[],
@@ -418,6 +459,12 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * Split private and group datasets that are duplicated
+	 * @param foundDuplicatedDatasetPaths list of duplicated dataset paths
+	 * @param groupFolders list of group folders
+	 * @returns lists of duplicated private datasets own by the user and datasets in user group folders
+	 */
 	public extractAndSplitPrivateGroupDatasetsDuplicated(
 		foundDuplicatedDatasetPaths: string[],
 		groupFolders: GroupFolder[]
@@ -456,6 +503,13 @@ export class ToolsService {
 		return { foundPrivateDatasetsDuplicated, foundGroupDatasetsDuplicated }
 	}
 
+	/**
+	 * Split private and group datasets that have been renamed
+	 * @param foundDatasetPaths list of dataset paths
+	 * @param foundRenamedDatasetIDs list of dataset IDs that have been renamed
+	 * @param groupFolders list of group folders
+	 * @returns list of private and group datasets and ids that have been renamed
+	 */
 	public extractAndSplitPrivateGroupRenamedDatasets(
 		foundDatasetPaths: string[],
 		foundRenamedDatasetIDs: string[],
@@ -508,6 +562,12 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * This function parses the results from the ToolService.search function
+	 * @param owner user id
+	 * @param searchDatasetsResults results from the ToolService.search function
+	 * @returns  lists of dataset objects, paths, ids, and dataset ids which has been renamed
+	 */
 	public async parseSearchDatasetsResultsForRefresh(
 		owner: string,
 		searchDatasetsResults: any[]
@@ -665,6 +725,13 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * This function filters the list of dataset paths found in a group folder to know which one should be added to the index
+	 * @param owner user id
+	 * @param foundGroupDatasetsNotIndexed list of dataset paths found in the group folder and not indexed
+	 * @param foundGroupDatasetNamesNotIndexed list of dataset names found in the group folder and not indexed
+	 * @returns lists of dataset paths and ids owned by the user found in a group folder that should be be added to the index
+	 */
 	private async filterGroupDatasetsNotIndexed(
 		owner: string,
 		foundGroupDatasetsNotIndexed: string[],
@@ -706,6 +773,16 @@ export class ToolsService {
 		return { groupDatasetIDsToBeAdded, groupDatasetPathsToBeAdded }
 	}
 
+	/**
+	 * This function handles the datasets found in the file system but not indexed
+	 * @param owner user id
+	 * @param foundDatasets list of dataset objects found in the file system
+	 * @param foundDatasetPaths list of dataset paths found in the file system
+	 * @param foundDatasetIDs list of dataset ids found in the file system
+	 * @param foundRenamedDatasetIDs list of dataset ids that has been found renamed
+	 * @param groupFolders list of group folders
+	 * @returns lists of BIDSDataset objects of datasets found in the private and group spaces and not indexed
+	 */
 	private async handleBidsDatasetsNotIndexed(
 		owner: string,
 		foundDatasets: any[],
@@ -766,6 +843,14 @@ export class ToolsService {
 		return { addedBidsDatasets, addedGroupBidsDatasets }
 	}
 
+	/**
+	 *
+	 * @param owner user ID
+	 * @param foundDatasetPaths list of dataset paths
+	 * @param foundRenamedDatasetIDs list of dataset IDs that has been renamed
+	 * @param groupFolders list of group folders
+	 * @returns  lists of datasets that have been renamed in the private user space and a shared group folder
+	 */
 	private async handleBidsDatasetsRenamed(
 		owner: string,
 		foundDatasetPaths: string[],
@@ -822,6 +907,11 @@ export class ToolsService {
 		return { renamedBidsDatasets, renamedGroupBidsDatasets }
 	}
 
+	/**
+	 * This function handles the deletion of BIDS datasets
+	 * @param owner user ID
+	 * @returns list of deleted BIDS datasets
+	 */
 	private async handleBidsDatasetsDeleted(owner: string) {
 		let deletedBidsDatasets: { index: any; id: any }[] = []
 		// rerun search for dataset with updated path
@@ -863,6 +953,14 @@ export class ToolsService {
 		return deletedBidsDatasets
 	}
 
+	/**
+	 * This function handles the indexing of new duplicated datasets.
+	 * @param owner user ID
+	 * @param foundDatasetPaths  list of absolute paths of the datasets found
+	 * @param foundDuplicatedDatasetPaths  list of absolute paths of the duplicated datasets found
+	 * @param groupFolders  list of group folders
+	 * @returns  list of indexed dataset duplicates
+	 */
 	private async handleBidsDatasetDuplicates(
 		owner: string,
 		foundDatasetPaths: string[],
@@ -899,6 +997,11 @@ export class ToolsService {
 		return duplicatedBidsDatasets
 	}
 
+	/**
+	 * This function is used to get the relative path of a dataset
+	 * @param absPath absolute path of a dataset
+	 * @returns relative path of a dataset
+	 */
 	public getRelativePath(absPath: string): string {
 		return absPath
 			?.replace(/mnt\/nextcloud-dp\/nextcloud\/data\/.*?\/files\//, '')
@@ -908,6 +1011,12 @@ export class ToolsService {
 			)
 	}
 
+	/**
+	 * This function is used to refresh the indexing of BIDS datasets
+	 * @param owner user id
+	 * @param param1 cookie and requesttoken
+	 * @returns Set of lists of added, renamed and deleted datasets
+	 */
 	public async refreshBIDSDatasetsIndex(
 		owner: string,
 		{ cookie, requesttoken }: any
@@ -999,6 +1108,10 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * This function creates the index employed to store BIDS datasets using elasticsearch indices.create API
+	 * @returns  {Promise<any>} Promise object represents the response of the elasticsearch indices.create API
+	 */
 	public async createBIDSDatasetsIndex() {
 		try {
 			// create index for datasets if not existing
@@ -1035,6 +1148,10 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * This function deletes the index for datasets using the elasticsearch delete index API
+	 * @returns  {Promise<any>} Promise object represents the body response from the elasticsearch indices.delete API
+	 */
 	public async deleteBIDSDatasetsIndex() {
 		try {
 			// delete index for datasets only if it exists
@@ -1068,6 +1185,13 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * This function indexes a BIDS dataset using the elasticsearch index API
+	 * @param owner user owner of the dataset (user id)
+	 * @param path path of the dataset
+	 * @param id id of the dataset
+	 * @returns {Promise<BIDSDataset>} Promise object represents the indexed BIDS dataset
+	 */
 	public async indexBIDSDataset(owner: string, path: string, id: string) {
 		try {
 			// get a list of dataset indexed content
@@ -1133,6 +1257,12 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * This function deletes a dataset from the index using elasticsearch delete API
+	 * @param owner user id
+	 * @param path path to the dataset
+	 * @returns	deleted dataset
+	 */
 	public async deleteBIDSDataset(owner: string, path: string) {
 		try {
 			// find the dataset index to be deleted
@@ -1176,6 +1306,12 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * This function is used to delete multiple BIDS datasets using elasticsearch delete API
+	 * @param owner user id
+	 * @param paths paths of the datasets to be deleted
+	 * @returns deleted datasets
+	 */
 	public async deleteBIDSDatasets(owner: string, paths: string[]) {
 		const deletedBidsDatasetsPromises = paths.map(path => {
 			return this.deleteBIDSDataset(owner, path)
@@ -1189,6 +1325,12 @@ export class ToolsService {
 		return deletedBidsDatasets
 	}
 
+	/**
+	 * This function is used to filter the datasets found by elasticsearch and accessible by the user
+	 * @param owner user id
+	 * @param foundDatasets datasets found by elasticsearch
+	 * @returns datasets accessible by the user
+	 */
 	private async filterBidsDatasetsAccessibleByUser(
 		owner: string,
 		foundDatasets: any[]
@@ -1211,6 +1353,19 @@ export class ToolsService {
 		return foundAccessibleDatasets
 	}
 
+	/**
+	 * This function is used to search for datasets in elasticsearch
+	 * @param param0	SearchBidsDatasetsQueryOptsDto
+	 * @param param0.owner	owner of the dataset
+	 * @param param0.textQuery	text query to search for
+	 * @param param0.filterPaths	whether to filter the paths or not
+	 * @param param0.ageRange	age range of the dataset
+	 * @param param0.participantsCountRange	participants count range of the dataset
+	 * @param param0.datatypes	datatypes of the dataset
+	 * @param param0.page	page number
+	 * @param param0.nbOfResults	number of results per page
+	 * @returns  an array of datasets
+	 */
 	public async searchBidsDatasets({
 		owner = 'all',
 		textQuery = '*',
@@ -1386,6 +1541,13 @@ export class ToolsService {
 			})
 	}
 
+	/**
+	 * Generate dataset id string given the dataset id number
+	 * @param id dataset id number e.g. 000001
+	 * @param begin prefix to use in the dataset id e.g. userID in userID_000001
+	 * @param size number of digits to use in the dataset id e.g. 6 in userID_000001
+	 * @returns dataset id e.g. userID_000001
+	 */
 	private createDatasetIdString(
 		id: number,
 		begin: string,
@@ -1397,6 +1559,12 @@ export class ToolsService {
 		return datasetId
 	}
 
+	/**
+	 * Generate dataset id and dataset id number that is not already used
+	 * @param owner user id
+	 * @param datasetIdNum dataset id number
+	 * @returns final dataset id and dataset id number
+	 */
 	public async generateDatasetId(owner: string, datasetIdNum: number = null) {
 		try {
 			// get number of datasets indexed in elasticsearch
@@ -1451,6 +1619,11 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * Create a new BIDS dataset via the BIDS tools
+	 * @param createBidsDatasetDto CreateBidsDatasetDto
+	 * @returns CreateBidsDatasetDto
+	 */
 	public async createBidsDataset(createBidsDatasetDto: CreateBidsDatasetDto) {
 		const { owner, parent_path } = createBidsDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
@@ -1513,6 +1686,11 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * Get the subject's information such as the number of sessions, runs, etc. via the BIDS tools
+	 * @param bidsGetSubjectDto BidsGetSubjectDto
+	 * @returns Object that contains the subject's information such as the number of sessions, runs, etc.
+	 */
 	async getSubject(bidsGetSubjectDto: BidsGetSubjectDto) {
 		const { owner, path } = bidsGetSubjectDto
 		const uniquId = Math.round(Date.now() + Math.random())
@@ -1575,6 +1753,11 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * Import new files for a given subject in a BIDS dataset via the BIDS tools
+	 * @param createSubject CreateSubjectDto
+	 * @returns Object that contains all information about the file imports
+	 */
 	public async importSubject(createSubject: CreateSubjectDto) {
 		const { owner, dataset_path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
@@ -1664,6 +1847,11 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * Run the BIDS validator on a given BIDS dataset
+	 * @param dbPath path to the BIDS dataset
+	 * @returns True if the BIDS dataset is valid
+	 */
 	private async bidsValidate(dbPath: string) {
 		// docker run -ti --rm -v /path/to/data:/data:ro bids/validator /data
 		const dockerParams = [
@@ -1677,6 +1865,11 @@ export class ToolsService {
 		return this.spawnable('docker', dockerParams)
 	}
 
+	/**
+	 * Edit the clinical data of a given subject in a BIDS dataset (Row of the participants.tsv file)
+	 * @param editSubjectClinicalDto  EditSubjectClinicalDto object
+	 * @returns EditSubjectClinicalDto object
+	 */
 	public async subEditClinical(editSubjectClinicalDto: EditSubjectClinicalDto) {
 		let { owner, path } = editSubjectClinicalDto
 		const uniquId = Math.round(Date.now() + Math.random())
@@ -1725,12 +1918,24 @@ export class ToolsService {
 
 	public deleteSubject() {}
 
+	/**
+	 * TODO: To be completed
+	 * @param path
+	 * @param param1
+	 * @returns
+	 */
 	public async participants(path: string, { cookie }: any) {
 		const nextPath = `${path}${PARTICIPANTS_FILE}`
 
 		return this.participantsWithPath(nextPath, cookie)
 	}
 
+	/**
+	 * Generate a list of Participant JSON objects from a participants.tsv file
+	 * @param path path to the participants.tsv file
+	 * @param cookie cookie
+	 * @returns Participant[]
+	 */
 	private async participantsWithPath(path: string, cookie: any) {
 		try {
 			const tsv = await this.getFileContent(path, cookie)
@@ -1761,6 +1966,10 @@ export class ToolsService {
 	/**
 	 * A public method that is used to create / update participants.[tsv|json] files
 	 * of a BIDS dataset.
+	 * @param owner user id
+	 * @param datasetPath path to the BIDS dataset
+	 * @param createBidsDatasetParticipantsTsvDto CreateBidsDatasetParticipantsTsvDto object
+	 * @returns CreateBidsDatasetParticipantsTsvDto object
 	 * */
 	public async writeBIDSDatasetParticipantsTSV(
 		owner: string,
@@ -1790,7 +1999,7 @@ export class ToolsService {
 			const tsvFilepath = path.join(absDatasetPath, PARTICIPANTS_FILE)
 			writeFileSync(tsvFilepath, participantsTSVString)
 			this.logger.debug(`${tsvFilepath} has been successfully written!`)
-			this.logger.debug({ participantsTSVString })
+			// this.logger.debug({ participantsTSVString })
 
 			this.logger.debug('(Re-)index dataset...')
 			const bidsDataset = await this.indexBIDSDataset(
@@ -1798,12 +2007,18 @@ export class ToolsService {
 				absDatasetPath,
 				undefined
 			)
-			this.logger.debug({ bidsDataset })
+			this.logger.debug(bidsDataset.id)
 		} catch (error) {
 			throw new Error(error)
 		}
 	}
 
+	/**
+	 * Search for a term in the Nextcloud instance.
+	 * @param cookie cookie
+	 * @param term search term
+	 * @returns matched search results
+	 */
 	public async search(cookie: any, term: string): Promise<ISearch> {
 		try {
 			const response = this.httpService.get(
@@ -1818,6 +2033,12 @@ export class ToolsService {
 		}
 	}
 
+	/**
+	 * This method is used to run a command like docker run in a child process.
+	 * @param command command to be executed
+	 * @param args arguments to be passed to the command
+	 * @returns Promise<{ code: number; message?: string }>
+	 */
 	private spawnable = (
 		command,
 		args
@@ -1846,6 +2067,12 @@ export class ToolsService {
 		})
 	}
 
+	/**
+	 * Retrieve the JSON content of a dataset
+	 * @param path path to the dataset
+	 * @param cookie cookie
+	 * @returns Dataset JSON content
+	 */
 	private async getDatasetContent(
 		path: string,
 		cookie: any
@@ -1874,8 +2101,8 @@ export class ToolsService {
 	 * It takes a path and a set of headers, and returns the JSON-formatted content summary of the
 	 * BIDS dataset at that path, later used for dataset indexing.
 	 * @param {BidsGetDatasetDto} bidsGetDatasetDto - object storing the owner and path to the dataset you want to get
-	 * @param {any} headers - This is the headers that you need to pass to the webdav server.
-	 * @returns The file content
+	 * @param {any} headers - this is the headers that you need to pass to the webdav server.
+	 * @returns - the file content
 	 */
 	private async createDatasetIndexedContent(
 		bidsGetDatasetDto: BidsGetDatasetDto
@@ -1953,7 +2180,7 @@ export class ToolsService {
 	 * It takes a path and a set of headers, and returns the JSON-formatted content summary of the
 	 * BIDS dataset at that path, later used for dataset indexing.
 	 * @param {BidsGetDatasetDto} bidsGetDatasetDto - object storing the owner and path to the dataset you want to get
-	 * @returns The file content
+	 * @returns - the file content
 	 */
 	private async getDatasetsIndexedContent(
 		bidsGetDatasetsDto: BidsGetDatasetDto[]
@@ -2043,8 +2270,8 @@ export class ToolsService {
 	/**
 	 * It takes a path and a set of headers, and returns the contents of the file at that path
 	 * @param {string} path - the path to the file you want to get
-	 * @param {any} headers - This is the headers that you need to pass to the webdav server.
-	 * @returns The file content
+	 * @param {any} headers - this is the headers that you need to pass to the webdav server.
+	 * @returns - the file content
 	 */
 	private async getFileContent(path: string, cookie: any): Promise<string> {
 		try {
@@ -2065,7 +2292,11 @@ export class ToolsService {
 		}
 	}
 
-	/* A private method that is used to get the file path, either user based or for a group */
+	/**
+	 * A private method that is used to get the file path, either user based or for a group
+	 * @param {string} path - the path to the file you want to get
+	 * @param {string} userId - the user id
+	 * */
 	private async filePath(path: string, userId: string) {
 		try {
 			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
@@ -2091,7 +2322,10 @@ export class ToolsService {
 		}
 	}
 
-	/* A private method that is used to read a JSON file and parse its content */
+	/**
+	 * A private method that is used to read a JSON file and parse its content
+	 * @param {string} path - the path to the json file you want to read
+	 * */
 	private async readJsonFile(path: string) {
 		return JSON.parse(fs.readFileSync(path))
 	}
