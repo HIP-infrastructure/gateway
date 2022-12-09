@@ -682,7 +682,6 @@ export class ToolsService {
 		let groupDatasetPathsToBeAdded: string[] = []
 		let index = 0
 		for (let indexQuery in datasetNameQueries) {
-			this.logger.debug(datasetNameQueries[indexQuery])
 			const datasetNameQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
 				textQuery: datasetNameQueries[indexQuery],
@@ -696,8 +695,6 @@ export class ToolsService {
 			const searchResults = await this.searchBidsDatasets(datasetNameQueryOpts)
 			// In case there is a result with a dataset owned by the user (e.g. <userID>_*)
 			if (searchResults.length > 0 && searchResults[0]._id.includes(owner)) {
-				this.logger.log(searchResults[0]._id)
-				this.logger.log(searchResults[0]._source.Path)
 				const datasetNum = searchResults[0]._id.split('_')[1]
 				const folderName = foundGroupDatasetsNotIndexed[index].split('/')[0]
 				const groupDatasetId = folderName + '_' + datasetNum
@@ -706,8 +703,6 @@ export class ToolsService {
 			}
 			index++
 		}
-		this.logger.log({ groupDatasetIDsToBeAdded })
-		this.logger.log({ groupDatasetPathsToBeAdded })
 		return { groupDatasetIDsToBeAdded, groupDatasetPathsToBeAdded }
 	}
 
@@ -1278,8 +1273,6 @@ export class ToolsService {
 					},
 				})
 			}
-			this.logger.debug({ queryObj })
-
 			// define search query in JSON format expected by elasticsearch
 			const query_params: RequestParams.Search = {
 				index: `${this.es_index_datasets}`,
