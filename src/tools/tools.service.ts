@@ -742,33 +742,23 @@ export class ToolsService {
 		const datasetNameQueries: string[] = foundGroupDatasetNamesNotIndexed.map(
 			value => `Name:"${value}"`
 		)
-		/* this.logger.debug(
-			`Query array of names to search dataset in index: ${datasetNameQueries}`
-		) */
+		const multiSearchResults = await this.multiSearchBidsDatasets(
+			datasetNameQueries
+		)
 		let groupDatasetIDsToBeAdded: string[] = []
 		let groupDatasetPathsToBeAdded: string[] = []
-		let index = 0
-		for (let indexQuery in datasetNameQueries) {
-			const datasetNameQueryOpts: SearchBidsDatasetsQueryOptsDto = {
-				owner,
-				textQuery: datasetNameQueries[indexQuery],
-				filterPaths: false,
-				ageRange: undefined,
-				participantsCountRange: undefined,
-				datatypes: undefined,
-				page: undefined,
-				nbOfResults: undefined,
-			}
-			const searchResults = await this.searchBidsDatasets(datasetNameQueryOpts)
+		for (let index in multiSearchResults) {
 			// In case there is a result with a dataset owned by the user (e.g. <userID>_*)
-			if (searchResults.length > 0 && searchResults[0]._id.includes(owner)) {
-				const datasetNum = searchResults[0]._id.split('_')[1]
+			if (
+				multiSearchResults[index].length > 0 &&
+				multiSearchResults[index][0]._id.includes(owner)
+			) {
+				const datasetNum = multiSearchResults[index][0]._id.split('_')[1]
 				const folderName = foundGroupDatasetsNotIndexed[index].split('/')[0]
 				const groupDatasetId = folderName + '_' + datasetNum
 				groupDatasetIDsToBeAdded.push(groupDatasetId)
 				groupDatasetPathsToBeAdded.push(foundGroupDatasetsNotIndexed[index])
 			}
-			index++
 		}
 		return { groupDatasetIDsToBeAdded, groupDatasetPathsToBeAdded }
 	}
