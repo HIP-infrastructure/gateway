@@ -90,7 +90,7 @@ export interface BIDSDataset {
 	LastModificationDate?: Date
 }
 
-const editScriptCmd = ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`]
+const editScriptCmd = process.env.BIDS_SCRIPTS ? ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`] : undefined
 
 const isFulfilled = <T>(
 	p: PromiseSettledResult<T>
@@ -1762,7 +1762,7 @@ export class ToolsService {
 
 			child.stderr.setEncoding('utf8')
 			child.stderr.on('data', data => {
-				message += data.toString()
+				//message += data.toString()
 			})
 
 			child.on('error', data => {
@@ -1848,8 +1848,8 @@ export class ToolsService {
 			]
 
 			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
+				(process.env.NODE_ENV === 'development' && editScriptCmd !== undefined)
+					? [...cmd1, ...editScriptCmd, ...cmd2] 
 					: [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
@@ -1938,8 +1938,8 @@ export class ToolsService {
 			]
 
 			const command =
-				process.env.NODE_ENV === 'development'
-					? [...cmd1, ...editScriptCmd, ...cmd2]
+				(process.env.NODE_ENV === 'development' && editScriptCmd !== undefined)
+					? [...cmd1, ...editScriptCmd, ...cmd2] 
 					: [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
