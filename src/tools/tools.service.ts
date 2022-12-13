@@ -1207,16 +1207,17 @@ export class ToolsService {
 								analyze_wildcard: true,
 							},
 						},
-						{
-							range: {
-								AgeMin: { gte: ageRange[0] },
-							},
-						},
-						{
-							range: {
-								AgeMax: { lte: ageRange[1] },
-							},
-						},
+						// FIXME: fix n/a indexation
+						// {
+						// 	range: {
+						// 		AgeMin: { gte: ageRange[0] },
+						// 	},
+						// },
+						// {
+						// 	range: {
+						// 		AgeMax: { lte: ageRange[1] },
+						// 	},
+						// },
 						{
 							range: {
 								ParticipantsCount: { gte: participantsCountRange[0] },
