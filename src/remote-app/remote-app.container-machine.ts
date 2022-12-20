@@ -23,7 +23,7 @@ export const invokeRemoteContainer = (
 	event: AnyEventObject
 ) => {
 	const { type: action } = event
-	const { id, user, type, parentId } = context
+	const { id, user, type, parentId, oidcGroups } = context
 
 	const startApp =
 		action === ContainerAction.START && type === ContainerType.APP
@@ -46,13 +46,14 @@ export const invokeRemoteContainer = (
 					sid: id,
 					hipuser: user,
 					action,
+					groups: JSON.stringify(oidcGroups),
 			  }
 
 	const url = `${process.env.REMOTE_APP_API}/control/${type}?${toParams(
 		params
 	)}`
 
-	if (startApp) logger.debug(url, `invokeRemoteContainer-${id}`)
+	logger.debug(url, `invokeRemoteContainer-${id}`)
 
 	return httpService
 		.get(url, {
