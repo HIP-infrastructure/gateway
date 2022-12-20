@@ -277,11 +277,13 @@ export class NextcloudService {
 		const user = await this.user(userId, true)
 		const { groups } = user
 
-		const iodcGroups = Object.entries(groupMapping).map(([k, v]) => {
+		const iodcGroups = Object.entries(groupMapping).reduce((p, [k, v]) => {
 			if (groups.includes(v)) {
-				return k
+				return [...p, k]
 			}
-		})
+
+			return p
+		}, [])
 		  
 		return iodcGroups
 	}
