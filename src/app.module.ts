@@ -2,9 +2,9 @@ import { RedisModule } from '@liaoliaots/nestjs-redis'
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { ScheduleModule } from '@nestjs/schedule'
-import { TypeOrmModule } from '@nestjs/typeorm'
+// import { TypeOrmModule } from '@nestjs/typeorm'
 import { AppController } from './app.controller'
-import postgresConfig from './config/db.postgres.config'
+// import postgresConfig from './config/db.postgres.config'
 import redisConfig from './config/db.redis.config'
 import { FilesModule } from './files/files.module'
 import { GroupsModule } from './groups/groups.module'
@@ -18,7 +18,7 @@ import { UsersModule } from './users/users.module'
 		ConfigModule.forRoot({
 			isGlobal: true,
 			envFilePath: ['.env'],
-			load: [postgresConfig, redisConfig],
+			load: [redisConfig] //[postgresConfig, redisConfig],
 		}),
 		FilesModule,
 		RemoteAppModule,
