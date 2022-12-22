@@ -1380,17 +1380,38 @@ export class ToolsService {
 								analyze_wildcard: true,
 							},
 						},
-						// FIXME: fix n/a indexation
-						// {
-						// 	range: {
-						// 		AgeMin: { gte: ageRange[0] },
-						// 	},
-						// },
-						// {
-						// 	range: {
-						// 		AgeMax: { lte: ageRange[1] },
-						// 	},
-						// },
+						{
+							bool: {
+								should: [
+									{
+										range: {
+											AgeMin: { gte: ageRange[0] },
+										},
+									},
+									{
+										range: {
+											AgeMax: { lte: ageRange[1] },
+										},
+									},
+									{
+										bool: {
+											must_not: [
+												{
+													exists: {
+														field: 'AgeMin',
+													},
+												},
+												{
+													exists: {
+														field: 'AgeMax',
+													},
+												},
+											],
+										},
+									},
+								],
+							},
+						},
 						{
 							range: {
 								ParticipantsCount: { gte: participantsCountRange[0] },
@@ -1412,7 +1433,11 @@ export class ToolsService {
 			}
 
 			// add terms query only if a non empty list of datatypes is provided
-			if (datatypes.length > 0 && !datatypes.includes('*')) {
+			if (
+				datatypes.length > 0 &&
+				!datatypes.includes('*') &&
+				!datatypes.includes('')
+			) {
 				queryObj['bool']['must'].push({
 					terms: {
 						DataTypes: datatypes,
@@ -1753,10 +1778,11 @@ export class ToolsService {
 		const { owner, dataset_path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
+		const dbPath = await this.filePath(dataset_path, owner)
 
 		try {
 			// retrieve the index used for the dataset
-			const datasetPathQuery = `Path:"${dataset_path}"`
+			const datasetPathQuery = `Path:${dbPath}`
 			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
 				textQuery: datasetPathQuery,
@@ -1797,13 +1823,11 @@ export class ToolsService {
 
 			const command = [
 				'run',
-				// '-v',
-				// '/home/guspuhle/workdir/hip/frontend/bids-tools/scripts:/scripts',
 				'-v',
 				`${tmpDir}:/import-data`,
 				...volumes,
 				'-v',
-				`${dataset_path}:/output`,
+				`${dbPath}:/output`,
 				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
