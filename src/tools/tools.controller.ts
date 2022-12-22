@@ -130,10 +130,14 @@ export class ToolsController {
 			new ParseArrayPipe({ items: Number, separator: ',' })
 		)
 		participantsCountRange: number[],
-		@Query('datatypes', new ParseArrayPipe({ items: String, separator: ',' }))
+		@Query(
+			'datatypes',
+			new DefaultValuePipe(['*']),
+			new ParseArrayPipe({ items: String, separator: ',', optional: true })
+		)
 		datatypes: string[],
 		@Query('page') page: number,
-		@Query('nbOfResults') nbOfResults: number
+		@Query('nbOfResults') nbOfResults: number,
 	) {
 		const searchQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 			owner,
