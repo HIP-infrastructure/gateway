@@ -21,6 +21,7 @@ export interface ContainerContext {
 	error: Error | null
 	type: ContainerType
 	parentId?: string
+	oidcGroups?: string[]
 }
 
 export interface WebdavOptions {

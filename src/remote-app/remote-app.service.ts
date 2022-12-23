@@ -253,13 +253,14 @@ export class RemoteAppService {
 	 * @return Promise<APIContainersResponse>
 	 */
 
-	startSessionWithUserId(id: string, uid: string): ContainerContext[] {
+	async startSessionWithUserId(id: string, uid: string): Promise<ContainerContext[]> {
 		// check for existing
 		let service: any = this.containerServices.find(s => s.machine.id === id)
 		if (service) {
 			return service.state.context
 		}
 
+		const oidcGroups = await this.nextcloudService.oidcGroupsForUser(uid)
 		const sessionNamesArray = this.containerServices
 			.filter(s => s.state.context.type === ContainerType.SERVER)
 			.filter(s => s.state.context.user === uid)
@@ -275,6 +276,7 @@ export class RemoteAppService {
 			state: ContainerState.UNINITIALIZED,
 			error: null,
 			type: ContainerType.SERVER,
+			oidcGroups,
 		}
 		const serverMachine = createContainerMachine(context)
 		service = interpret(serverMachine).start()

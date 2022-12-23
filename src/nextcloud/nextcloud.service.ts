@@ -271,6 +271,22 @@ export class NextcloudService {
 			)
 		}
 	}
+ 
+	public async oidcGroupsForUser(userId: string): Promise<string[]> {
+		const groupMapping = await this.groupMapping()
+		const user = await this.user(userId, true)
+		const { groups } = user
+
+		const iodcGroups = Object.entries(groupMapping).reduce((p, [k, v]) => {
+			if (groups.includes(v)) {
+				return [...p, k]
+			}
+
+			return p
+		}, [])
+		  
+		return iodcGroups
+	}
 
 	private async groupFolders(): Promise<NCGroupFolder[]> {
 		try {
@@ -279,6 +295,23 @@ export class NextcloudService {
 			const groupFolders: NCGroupFolder[] = JSON.parse(message)
 
 			return groupFolders
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
+		}
+	}
+
+	private async groupMapping(): Promise<Record<string, string>> {
+		try {
+			const args = ['config:app:get', 'sociallogin', 'custom_providers']
+			const message = await this.spawnable(args)
+			const customProviders = JSON.parse(JSON.parse(message))
+			const groupMapping = customProviders['custom_oidc'][0]['groupMapping']
+
+			return groupMapping
 		} catch (error) {
 			this.logger.error({ error })
 			throw new HttpException(
@@ -304,7 +337,7 @@ export class NextcloudService {
 
 			child.stderr.setEncoding('utf8')
 			child.stderr.on('data', data => {
-				this.logger.error(`stderr: ${data}`)
+				//this.logger.error(`stderr: ${data}`)
 				// Log but don't reject, as it's often just a warning
 				// message += data.toString()
 			})
