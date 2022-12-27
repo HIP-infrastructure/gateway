@@ -1994,28 +1994,30 @@ export class ToolsService {
 		try {
 			// convert JSON object to TSV formatted string by using the
 			// map function without any framework
-			let json = createBidsDatasetParticipantsTsvDto.Participants
-			let fields = Object.keys(json[0])
-			let replacer = function (_key, value) {
-				return value === null ? 'n/a' : value
+			let participantObjects = createBidsDatasetParticipantsTsvDto.Participants
+			// Extract the keys from the JSON objects and use them to create the header row
+			const keys = new Set<string>()
+			for (const participantObject of participantObjects) {
+				for (const key of Object.keys(participantObject)) {
+					keys.add(key)
+				}
 			}
-			let tsv = json.map(function (row) {
-				return fields
-					.map(function (fieldName) {
-						return JSON.stringify(row[fieldName], replacer)
-					})
-					.join('\t')
-			})
-			tsv.unshift(fields.join('\t')) // add header column
-			const participantsTSVString = tsv.join('\r\n')
-
-			// Write TSV string to file
+			const headerRow = Array.from(keys)
+			// Create a write stream for the TSV file
 			const absDatasetPath = await this.filePath(datasetPath.slice(1), owner)
 			const tsvFilepath = path.join(absDatasetPath, PARTICIPANTS_FILE)
-			writeFileSync(tsvFilepath, participantsTSVString)
+			const tsvStream = fs.createWriteStream(tsvFilepath)
+			// Write the header row to the stream
+			tsvStream.write(`${headerRow.join('\t')}\n`)
+			// Loop through the array of JSON objects and write each row to the stream
+			for (const participantObject of participantObjects) {
+				const row = headerRow.map(key => participantObject[key] || 'n/a')
+				tsvStream.write(`${row.join('\t')}\n`)
+			}
+			// Close the stream
+			tsvStream.end()
 			this.logger.debug(`${tsvFilepath} has been successfully written!`)
 			// this.logger.debug({ participantsTSVString })
-
 			this.logger.debug('(Re-)index dataset...')
 			const bidsDataset = await this.indexBIDSDataset(
 				owner,
