@@ -2318,14 +2318,17 @@ export class ToolsService {
 	 * */
 	private async filePath(path: string, userId: string) {
 		try {
+			// Remove the first slash
+			path = path.replace(/^\//, '')
+			// Get the root path
+			let rootPath = path.split('/')[0]
+			// Get the id of the group folder
 			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
 				userId
 			)
-
-			let rootPath = path.split('/')[0]
 			const id = groupFolders.find(g => g.label === rootPath)?.id
 			rootPath = rootPath + '/'
-
+			// Create the path depending on whether it's a group folder or not
 			const nextPath = id
 				? `${
 						process.env.PRIVATE_FILESYSTEM
