@@ -3,6 +3,7 @@
 		"properties": {
 			"Acknowledgements": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"AgeMin": {
@@ -15,6 +16,7 @@
 			},
 			"Authors": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"BIDSVersion": {
@@ -31,6 +33,7 @@
 			},
 			"DatasetDOI": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"DatasetType": {
@@ -44,16 +47,19 @@
 			"FileCount": { "type": "long" },
 			"Formats": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Funding": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"GeneratedBy": {
 				"properties": {
 					"Name": {
 						"type": "text",
+						"index_options": "positions",
 						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					},
 					"Version": {
@@ -67,10 +73,12 @@
 					"id": { "type": "long" },
 					"label": {
 						"type": "text",
+						"index_options": "positions",
 						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					},
 					"path": {
 						"type": "text",
+						"index_options": "positions",
 						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					}
 				}
@@ -81,20 +89,24 @@
 			},
 			"HowToAcknowledge": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"LastModificationDate": { "type": "date" },
 			"License": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"MiscChannelCount": { "type": "long" },
 			"Modalities": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Name": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Owner": {
@@ -155,10 +167,12 @@
 			},
 			"Path": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"PipelineName": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"RecordingDuration": { "type": "long" },
@@ -176,10 +190,12 @@
 			},
 			"SourceDatasetsURLs": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"Tasks": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"TriggerChannelCount": { "type": "long" },
@@ -193,6 +209,7 @@
 			},
 			"resourceUrl": {
 				"type": "text",
+				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
 			"version": { "type": "long" }
