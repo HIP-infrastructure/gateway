@@ -2030,7 +2030,7 @@ export class ToolsService {
 			this.logger.debug('(Re-)index dataset...')
 			const bidsDataset = await this.indexBIDSDataset(
 				owner,
-				absDatasetPath,
+				datasetPath,
 				undefined
 			)
 			this.logger.debug(bidsDataset.id)
