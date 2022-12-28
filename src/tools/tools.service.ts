@@ -1180,7 +1180,7 @@ export class ToolsService {
 	/**
 	 * This function indexes a BIDS dataset using the elasticsearch index API
 	 * @param owner user owner of the dataset (user id)
-	 * @param path path of the dataset
+	 * @param path relative path of the dataset
 	 * @param id id of the dataset
 	 * @returns {Promise<BIDSDataset>} Promise object represents the indexed BIDS dataset
 	 */
@@ -1191,12 +1191,15 @@ export class ToolsService {
 			bidsGetDatasetDto.owner = owner
 			bidsGetDatasetDto.path = path
 
+			// get abosolute path of the dataset
+			const dsPath = await this.filePath(path, owner)
+
 			const bidsDataset = await this.createDatasetIndexedContent(
 				bidsGetDatasetDto
 			)
 
 			// find if the dataset is already indexed
-			const datasetPathQuery = `Path:"${path}"`
+			const datasetPathQuery = `Path:"${dsPath}"`
 			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
 				textQuery: datasetPathQuery,
@@ -1205,7 +1208,7 @@ export class ToolsService {
 				participantsCountRange: undefined,
 				datatypes: undefined,
 				page: undefined,
-				nbOfResults: undefined,
+				nbOfResults: undefined
 			}
 			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
 			if (searchResults.length > 0) {
@@ -1235,7 +1238,7 @@ export class ToolsService {
 				}
 				bidsDataset.version = 1
 			}
-			bidsDataset.Path = path
+			bidsDataset.Path = await this.filePath(path, owner)
 
 			// create and send elasticsearch bulk to index the dataset
 			await this.sendElasticSearchDatasetsBulk([bidsDataset])
@@ -1252,13 +1255,15 @@ export class ToolsService {
 	/**
 	 * This function deletes a dataset from the index using elasticsearch delete API
 	 * @param owner user id
-	 * @param path path to the dataset
+	 * @param path relative path to the dataset
 	 * @returns	deleted dataset
 	 */
 	public async deleteBIDSDataset(owner: string, path: string) {
 		try {
+			// get abosolute path of the dataset
+			const dsPath = await this.filePath(path, owner)
 			// find the dataset index to be deleted
-			const datasetPathQuery = `Path:"${path}"`
+			const datasetPathQuery = `Path:"${dsPath}"`
 			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
 				textQuery: datasetPathQuery,
@@ -1780,11 +1785,11 @@ export class ToolsService {
 		const { owner, dataset_path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
+		// get absolute path of the dataset
 		const dbPath = await this.filePath(dataset_path, owner)
-
 		try {
 			// retrieve the index used for the dataset
-			const datasetPathQuery = `Path:${dbPath}`
+			const datasetPathQuery = `Path:"${dbPath}"`
 			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
 				textQuery: datasetPathQuery,
@@ -2126,10 +2131,7 @@ export class ToolsService {
 	private async createDatasetIndexedContent(
 		bidsGetDatasetDto: BidsGetDatasetDto
 	): Promise<BIDSDataset> {
-		const {
-			// owner,
-			path,
-		} = bidsGetDatasetDto
+		const { owner, path } = bidsGetDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
@@ -2152,9 +2154,9 @@ export class ToolsService {
 			})
 
 			// Set paths and command to be run
-			// const dsPath = await this.filePath(path, owner)
+			const dsPath = await this.filePath(path, owner)
 
-			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${path}:/output`]
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dsPath}:/output`]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
