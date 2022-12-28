@@ -1835,6 +1835,8 @@ export class ToolsService {
 				...volumes,
 				'-v',
 				`${dbPath}:/output`,
+				// '-v',  // 2 lines can be uncommented to debug interaction with BIDS manager
+				// '/home/stourbie/Softwares/bidsificator/bids_manager:/usr/local/lib/python3.8/dist-packages/bids_manager-0.3.2-py3.8.egg/bids_manager',
 				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
