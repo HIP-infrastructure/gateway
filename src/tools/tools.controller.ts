@@ -128,10 +128,13 @@ export class ToolsController {
 
 		return await this.nextcloudService.authenticate(req).then(async () => {
 			const { cookie, requesttoken } = req.headers
-			this.toolsService.refreshBIDSDatasetsIndex(owner, {
+			// FIXME: See if this.refreshDatasetsIndex is needed as for now,
+			//        it is run in parallel with another one and causes
+			//		  double indexing
+			/* this.toolsService.refreshBIDSDatasetsIndex(owner, {
 				cookie,
 				requesttoken,
-			})
+			}) */
 			const searchResults = await this.toolsService.searchBidsDatasets(
 				searchQueryOpts
 			)
