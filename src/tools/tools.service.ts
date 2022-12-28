@@ -9,7 +9,7 @@ import {
 	HttpStatus,
 	Injectable,
 	InternalServerErrorException,
-	Logger,
+	Logger
 } from '@nestjs/common'
 import { Client, RequestParams, ApiResponse } from '@elastic/elasticsearch'
 
@@ -90,7 +90,9 @@ export interface BIDSDataset {
 	LastModificationDate?: Date
 }
 
-const editScriptCmd = process.env.BIDS_SCRIPTS ? ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`] : undefined
+const editScriptCmd = process.env.BIDS_SCRIPTS
+	? ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`]
+	: undefined
 
 const isFulfilled = <T>(
 	p: PromiseSettledResult<T>
@@ -116,7 +118,7 @@ export class ToolsService {
 
 		// create a new client to our elasticsearch node
 		const es_opt = {
-			node: `${process.env.ELASTICSEARCH_URL}`,
+			node: `${process.env.ELASTICSEARCH_URL}`
 		}
 		this.elastic_client = new Client(es_opt)
 	}
@@ -215,15 +217,15 @@ export class ToolsService {
 				{
 					index: {
 						_index: this.es_index_datasets,
-						_id: dataset.id,
-					},
+						_id: dataset.id
+					}
 				},
-				dataset,
+				dataset
 			])
 		// index the datasets
 		const { body: bulkResponse } = await this.elastic_client.bulk({
 			refresh: true,
-			body,
+			body
 		})
 		if (bulkResponse.errors) {
 			this.logger.error('Errors for (re)indexing datasets')
@@ -234,7 +236,7 @@ export class ToolsService {
 		}
 		// count indexed data
 		const { body: count } = await this.elastic_client.count({
-			index: this.es_index_datasets,
+			index: this.es_index_datasets
 		})
 		this.logger.debug({ count })
 	}
@@ -392,7 +394,7 @@ export class ToolsService {
 			foundPrivateDatasetsNotIndexed,
 			foundPrivateDatasetNamesNotIndexed,
 			foundGroupDatasetsNotIndexed,
-			foundGroupDatasetNamesNotIndexed,
+			foundGroupDatasetNamesNotIndexed
 		}
 	}
 
@@ -444,7 +446,7 @@ export class ToolsService {
 			foundPrivateDatasetsNotIndexed,
 			foundPrivateDatasetNamesNotIndexed,
 			foundGroupDatasetsNotIndexed,
-			foundGroupDatasetNamesNotIndexed,
+			foundGroupDatasetNamesNotIndexed
 		} = this.splitPrivateGroupDatasetsNotIndexed(
 			filteredFoundDatasetsNotIndexed,
 			filteredFoundDatasetNamesNotIndexed,
@@ -455,7 +457,7 @@ export class ToolsService {
 			foundPrivateDatasetsNotIndexed,
 			foundPrivateDatasetNamesNotIndexed,
 			foundGroupDatasetsNotIndexed,
-			foundGroupDatasetNamesNotIndexed,
+			foundGroupDatasetNamesNotIndexed
 		}
 	}
 
@@ -558,7 +560,7 @@ export class ToolsService {
 			foundPrivateRenamedDatasets,
 			foundPrivateRenamedDatasetIDs,
 			foundGroupRenamedDatasets,
-			foundGroupRenamedDatasetIDs,
+			foundGroupRenamedDatasetIDs
 		}
 	}
 
@@ -720,7 +722,7 @@ export class ToolsService {
 			foundDatasets,
 			foundDatasetPaths,
 			foundDatasetIDs,
-			foundRenamedDatasetIDs,
+			foundRenamedDatasetIDs
 			// foundDuplicatedDatasetPaths,
 		}
 	}
@@ -791,7 +793,7 @@ export class ToolsService {
 				foundPrivateDatasetsNotIndexed,
 				// foundPrivateDatasetNamesNotIndexed,
 				foundGroupDatasetsNotIndexed,
-				foundGroupDatasetNamesNotIndexed,
+				foundGroupDatasetNamesNotIndexed
 			} = this.extractAndSplitPrivateGroupDatasetsNotIndexed(
 				foundDatasets,
 				foundDatasetPaths,
@@ -859,7 +861,7 @@ export class ToolsService {
 				foundPrivateRenamedDatasets,
 				foundPrivateRenamedDatasetIDs,
 				foundGroupRenamedDatasets,
-				foundGroupRenamedDatasetIDs,
+				foundGroupRenamedDatasetIDs
 			} = this.extractAndSplitPrivateGroupRenamedDatasets(
 				foundDatasetPaths,
 				foundRenamedDatasetIDs,
@@ -870,7 +872,7 @@ export class ToolsService {
 				this.logger.warn('Update the following indexed private dataset path:')
 				this.logger.warn({
 					foundPrivateRenamedDatasets,
-					foundPrivateRenamedDatasetIDs,
+					foundPrivateRenamedDatasetIDs
 				})
 				renamedBidsDatasets = await this.updateBIDSDatasetIndexedContents(
 					owner,
@@ -883,7 +885,7 @@ export class ToolsService {
 				this.logger.warn('Update the following indexed group dataset path:')
 				this.logger.warn({
 					foundGroupRenamedDatasets,
-					foundGroupRenamedDatasetIDs,
+					foundGroupRenamedDatasetIDs
 				})
 				/* renamedGroupBidsDatasets = await this.updateBIDSDatasetIndexedContents(
 					owner,
@@ -913,7 +915,7 @@ export class ToolsService {
 			participantsCountRange: undefined,
 			datatypes: undefined,
 			page: undefined,
-			nbOfResults: undefined,
+			nbOfResults: undefined
 		}
 		const searchIndexedResults = await this.searchBidsDatasets(searchQueryOpts)
 		// extract absolute path of each dataset
@@ -968,7 +970,7 @@ export class ToolsService {
 					groupFolders
 				)
 			this.logger.debug('Detected new duplicated datasets in user group:', {
-				foundGroupDatasetsDuplicated,
+				foundGroupDatasetsDuplicated
 			})
 			// generate and index content of every new dataset copy
 			if (foundPrivateDatasetsDuplicated.length > 0) {
@@ -1029,7 +1031,7 @@ export class ToolsService {
 				foundDatasets,
 				foundDatasetPaths,
 				foundDatasetIDs,
-				foundRenamedDatasetIDs,
+				foundRenamedDatasetIDs
 				//				foundDuplicatedDatasetPaths,
 			} = await this.parseSearchDatasetsResultsForRefresh(
 				owner,
@@ -1106,7 +1108,7 @@ export class ToolsService {
 		try {
 			// create index for datasets if not existing
 			const exists = await this.elastic_client.indices.exists({
-				index: this.es_index_datasets,
+				index: this.es_index_datasets
 			})
 
 			if (exists.body === false) {
@@ -1114,8 +1116,8 @@ export class ToolsService {
 					const create = await this.elastic_client.indices.create({
 						index: this.es_index_datasets,
 						body: {
-							mappings,
-						},
+							mappings
+						}
 					})
 					this.logger.debug(`New index ${this.es_index_datasets} created`)
 					this.logger.debug(JSON.stringify(create.body, null, 2))
@@ -1146,13 +1148,13 @@ export class ToolsService {
 		try {
 			// delete index for datasets only if it exists
 			const exists = await this.elastic_client.indices.exists({
-				index: this.es_index_datasets,
+				index: this.es_index_datasets
 			})
 
 			if (exists.body === true) {
 				try {
 					const del = await this.elastic_client.indices.delete({
-						index: this.es_index_datasets,
+						index: this.es_index_datasets
 					})
 					this.logger.debug(`Index ${this.es_index_datasets} deleted`)
 					this.logger.debug(JSON.stringify(del.body, null, 2))
@@ -1265,7 +1267,7 @@ export class ToolsService {
 				participantsCountRange: undefined,
 				datatypes: undefined,
 				page: undefined,
-				nbOfResults: undefined,
+				nbOfResults: undefined
 			}
 			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
 			if (searchResults.length > 0) {
@@ -1273,7 +1275,7 @@ export class ToolsService {
 				// delete the document with id related to the dataset
 				const datasetID = {
 					index: dataset._index,
-					id: dataset._id,
+					id: dataset._id
 				}
 				const { body: deleteResponse } = await this.elastic_client.delete(
 					datasetID
@@ -1364,7 +1366,7 @@ export class ToolsService {
 		participantsCountRange = [0, 200],
 		datatypes = ['*'],
 		page = 1,
-		nbOfResults = 200,
+		nbOfResults = 200
 	}: SearchBidsDatasetsQueryOptsDto) {
 		try {
 			// determine index to start based on pagination
@@ -1377,48 +1379,48 @@ export class ToolsService {
 							query_string: {
 								query: textQuery,
 								allow_leading_wildcard: true,
-								analyze_wildcard: true,
-							},
+								analyze_wildcard: true
+							}
 						},
 						{
 							bool: {
 								should: [
 									{
 										range: {
-											AgeMin: { gte: ageRange[0] },
-										},
+											AgeMin: { gte: ageRange[0] }
+										}
 									},
 									{
 										range: {
-											AgeMax: { lte: ageRange[1] },
-										},
+											AgeMax: { lte: ageRange[1] }
+										}
 									},
 									{
 										bool: {
 											must_not: [
 												{
 													exists: {
-														field: 'AgeMin',
-													},
+														field: 'AgeMin'
+													}
 												},
 												{
 													exists: {
-														field: 'AgeMax',
-													},
-												},
-											],
-										},
-									},
-								],
-							},
+														field: 'AgeMax'
+													}
+												}
+											]
+										}
+									}
+								]
+							}
 						},
 						{
 							range: {
-								ParticipantsCount: { gte: participantsCountRange[0] },
-							},
-						},
-					],
-				},
+								ParticipantsCount: { gte: participantsCountRange[0] }
+							}
+						}
+					]
+				}
 			}
 
 			// add upper bound limit on ParticipantsCount only if it is less than 200
@@ -1426,9 +1428,9 @@ export class ToolsService {
 				queryObj['bool']['must'].push({
 					range: {
 						ParticipantsCount: {
-							lte: participantsCountRange[1],
-						},
-					},
+							lte: participantsCountRange[1]
+						}
+					}
 				})
 			}
 
@@ -1440,8 +1442,8 @@ export class ToolsService {
 			) {
 				queryObj['bool']['must'].push({
 					terms: {
-						DataTypes: datatypes,
-					},
+						DataTypes: datatypes
+					}
 				})
 			}
 			// define search query in JSON format expected by elasticsearch
@@ -1450,8 +1452,8 @@ export class ToolsService {
 				body: {
 					from: indexFrom,
 					size: nbOfResults,
-					query: queryObj,
-				},
+					query: queryObj
+				}
 			}
 			// perform and return the search query
 			const foundDatasets = await this.elastic_client
@@ -1503,20 +1505,20 @@ export class ToolsService {
 					query_string: {
 						query: textQuery[index],
 						allow_leading_wildcard: true,
-						analyze_wildcard: true,
-					},
+						analyze_wildcard: true
+					}
 				}
 			})
 			const body =
 				Array.isArray(queryObj) &&
 				queryObj.flatMap(query => [
 					{ index: `${this.es_index_datasets}` },
-					{ query: query },
+					{ query: query }
 				])
 			// define msearch query in JSON format expected by elasticsearch
 			const query_params: RequestParams.Msearch = {
 				index: `${this.es_index_datasets}`,
-				body: body,
+				body: body
 			}
 			// perform and return the msearch query
 			return await this.elastic_client
@@ -1542,8 +1544,8 @@ export class ToolsService {
 			index: `${this.es_index_datasets}`,
 			body: {
 				// you can count based on specific query or remove body at all
-				query: { match_all: {} },
-			},
+				query: { match_all: {} }
+			}
 		}
 
 		// perform and return the search query
@@ -1598,7 +1600,7 @@ export class ToolsService {
 					participantsCountRange: undefined,
 					datatypes: undefined,
 					page: undefined,
-					nbOfResults: undefined,
+					nbOfResults: undefined
 				}
 				searchIndexedResults = await this.searchBidsDatasets(searchAllQueryOpts)
 				// extract ids of indexed datasets
@@ -1664,14 +1666,14 @@ export class ToolsService {
 				'-v',
 				`${tmpDir}:/input`,
 				'-v',
-				`${dsParentPath}:/output`,
+				`${dsParentPath}:/output`
 			]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
 				'--command=dataset.create',
-				'--input_data=/input/dataset.create.json',
+				'--input_data=/input/dataset.create.json'
 			]
 
 			const command = [...cmd1, ...cmd2]
@@ -1739,7 +1741,7 @@ export class ToolsService {
 				this.dataUserId,
 				'--command=sub.get',
 				'--input_data=/input/sub_get.json',
-				'--output_file=/input/sub_info.json',
+				'--output_file=/input/sub_info.json'
 			]
 
 			const command = [...cmd1, ...cmd2]
@@ -1791,7 +1793,7 @@ export class ToolsService {
 				participantsCountRange: undefined,
 				datatypes: undefined,
 				page: undefined,
-				nbOfResults: undefined,
+				nbOfResults: undefined
 			}
 			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
 			const datasetID = searchResults[0].id
@@ -1806,8 +1808,8 @@ export class ToolsService {
 				...createSubject,
 				files: createSubject.files.map((file, i) => ({
 					...file,
-					path: pathes[i],
-				})),
+					path: pathes[i]
+				}))
 			}
 
 			fs.mkdirSync(tmpDir, true)
@@ -1832,7 +1834,7 @@ export class ToolsService {
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.import',
-				'--input_data=/import-data/sub.import.json',
+				'--input_data=/import-data/sub.import.json'
 			]
 
 			this.logger.debug(command.join(' '))
@@ -1874,7 +1876,7 @@ export class ToolsService {
 			'-v',
 			`${dbPath}:/output`,
 			'bids/validator',
-			'/data',
+			'/data'
 		]
 
 		return this.spawnable('docker', dockerParams)
@@ -1906,14 +1908,14 @@ export class ToolsService {
 				'-v',
 				`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
 				'-v',
-				`${dbPath}:/output`,
+				`${dbPath}:/output`
 			]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.edit.clinical',
-				'--input_data=/import-data/sub_edit_clinical.json',
+				'--input_data=/import-data/sub_edit_clinical.json'
 			]
 
 			const command = [...cmd1, ...cmd2]
@@ -1966,7 +1968,7 @@ export class ToolsService {
 						(obj, item, i) =>
 							Object.assign(obj, { [tsvheaders[i].trim()]: item }),
 						{}
-					),
+					)
 				],
 				[]
 			)
@@ -1992,10 +1994,10 @@ export class ToolsService {
 		createBidsDatasetParticipantsTsvDto: CreateBidsDatasetParticipantsTsvDto
 	) {
 		try {
-			// convert JSON object to TSV formatted string by using the
+			// convert array of Participant object to TSV formatted string by using the
 			// map function without any framework
 			let participantObjects = createBidsDatasetParticipantsTsvDto.Participants
-			// Extract the keys from the JSON objects and use them to create the header row
+			// extract the keys from the Participant objects and use them to create the header row
 			const keys = new Set<string>()
 			for (const participantObject of participantObjects) {
 				for (const key of Object.keys(participantObject)) {
@@ -2003,13 +2005,13 @@ export class ToolsService {
 				}
 			}
 			const headerRow = Array.from(keys)
-			// Create a write stream for the TSV file
+			// create a write stream for the TSV file
 			const absDatasetPath = await this.filePath(datasetPath.slice(1), owner)
 			const tsvFilepath = path.join(absDatasetPath, PARTICIPANTS_FILE)
 			const tsvStream = fs.createWriteStream(tsvFilepath)
-			// Write the header row to the stream
+			// write the header row to the stream
 			tsvStream.write(`${headerRow.join('\t')}\n`)
-			// Loop through the array of JSON objects and write each row to the stream
+			// loop through the array of Participant objects and write each row to the stream
 			for (const participantObject of participantObjects) {
 				const row = headerRow.map(key => participantObject[key] || 'n/a')
 				tsvStream.write(`${row.join('\t')}\n`)
@@ -2159,12 +2161,12 @@ export class ToolsService {
 				this.dataUserId,
 				'--command=dataset.get',
 				'--input_data=/input/dataset_get.json',
-				'--output_file=/input/dataset_info.json',
+				'--output_file=/input/dataset_info.json'
 			]
 
 			const command =
-				(process.env.NODE_ENV === 'development' && editScriptCmd !== undefined)
-					? [...cmd1, ...editScriptCmd, ...cmd2] 
+				process.env.NODE_ENV === 'development' && editScriptCmd !== undefined
+					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
@@ -2216,8 +2218,8 @@ export class ToolsService {
 				...bidsGetDatasetsDto,
 				datasets: bidsGetDatasetsDto.map((dataset, i) => ({
 					...dataset,
-					path: pathes[i],
-				})),
+					path: pathes[i]
+				}))
 			}
 
 			fs.mkdirSync(tmpDir, true)
@@ -2249,12 +2251,12 @@ export class ToolsService {
 				this.dataUserId,
 				'--command=datasets.get',
 				'--input_data=/input/datasets_get.json',
-				'--output_file=/input/datasets_info.json',
+				'--output_file=/input/datasets_info.json'
 			]
 
 			const command =
-				(process.env.NODE_ENV === 'development' && editScriptCmd !== undefined)
-					? [...cmd1, ...editScriptCmd, ...cmd2] 
+				process.env.NODE_ENV === 'development' && editScriptCmd !== undefined
+					? [...cmd1, ...editScriptCmd, ...cmd2]
 					: [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
 
