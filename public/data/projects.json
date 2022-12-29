@@ -1,19 +1,15 @@
 [
 	{
-		"label": "Epilepsy 101",
+		"name": "Epilepsy 101",
 		"id": "HIP-project-epilepsy-101",
-		"pi": "Dr. Olivier David",
-		"country": "France",
-		"city": "Marseille",
+		"owner": "Dr. Olivier David",
 		"logo": "media/amu-tng__logo.jpeg",
 		"description": "Identification of pharmacoresistant epilepsy"
 	},
 	{
-		"label": "Epilepsy 102",
+		"name": "Epilepsy 102",
 		"id": "HIP-project-epilepsy-102",
-		"pi": "Professor Philippe Ryvlin",
-		"country": "Switzerland",
-		"city": "Lausanne",
+		"owner": "Professor Philippe Ryvlin",
 		"logo": "media/chuv__logo.png",
 		"description": "Incidence of unprovoked seizures and epilepsy in Iceland and assessment of the epilepsy syndrome classification: a prospective study"
 	}
