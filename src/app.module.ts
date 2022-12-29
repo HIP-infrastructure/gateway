@@ -18,7 +18,7 @@ import { UsersModule } from './users/users.module'
 		ConfigModule.forRoot({
 			isGlobal: true,
 			envFilePath: ['.env'],
-			load: [redisConfig] //[postgresConfig, redisConfig],
+			load: [postgresConfig, redisConfig],
 		}),
 		FilesModule,
 		RemoteAppModule,
@@ -33,14 +33,14 @@ import { UsersModule } from './users/users.module'
 				} 
 			}),
 		}),
-		// TypeOrmModule.forRootAsync({
-		// 	inject: [ConfigService],
-		// 	useFactory: (config: ConfigService) => ({
-		// 		...config.get('postgres'),
-		// 		autoLoadEntities: true,
-		// 		synchronize: false,
-		// 	}),
-		// }),
+		TypeOrmModule.forRootAsync({
+			inject: [ConfigService],
+			useFactory: (config: ConfigService) => ({
+				...config.get('postgres'),
+				autoLoadEntities: true,
+				synchronize: false,
+			}),
+		}),
 		ToolsModule,
 		UsersModule,
 		GroupsModule,
