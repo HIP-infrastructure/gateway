@@ -20,9 +20,7 @@ import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
 import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
-import { writeFileSync } from 'fs'
 import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
-// import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
 const { spawn } = require('child_process')
