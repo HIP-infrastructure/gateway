@@ -12,7 +12,7 @@ import {
 	Request as Req,
 	Response as Res,
 	UsePipes,
-	ValidationPipe,
+	ValidationPipe
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
@@ -87,7 +87,7 @@ export class ToolsController {
 			const { cookie, requesttoken } = req.headers
 			this.toolsService.refreshBIDSDatasetsIndex(owner, {
 				cookie,
-				requesttoken,
+				requesttoken
 			})
 		})
 		return res.status(HttpStatus.OK).send()
@@ -123,7 +123,7 @@ export class ToolsController {
 			participantsCountRange,
 			datatypes,
 			page,
-			nbOfResults,
+			nbOfResults
 		}
 
 		return await this.nextcloudService.authenticate(req).then(async () => {
@@ -142,7 +142,7 @@ export class ToolsController {
 			const foundDatasets = searchResults.map(dataset => ({
 				// query metadata fields returned by elastic
 				id: dataset._id,
-				...dataset._source,
+				...dataset._source
 			}))
 
 			if (foundDatasets.length > 0) {
@@ -184,7 +184,7 @@ export class ToolsController {
 			const bidsGetSubjectDto: BidsGetSubjectDto = {
 				owner,
 				path,
-				sub,
+				sub
 			}
 			return this.toolsService.getSubject(bidsGetSubjectDto)
 		})
