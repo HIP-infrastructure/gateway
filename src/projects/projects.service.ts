@@ -1,8 +1,38 @@
 import { Injectable } from '@nestjs/common'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { UpdateProjectDto } from './dto/update-project.dto'
-import * as MOCKED_RESPONSE from '../../public/data/projects.json'
-
+const MOCKED_RESPONSE = [
+    {
+        "name": "Epilepsy 101",
+        "id": "HIP-project-epilepsy-101",
+        "owner": "Professor Philippe Ryvlin",
+        "logo": "media/amu-tng__logo.jpeg",
+        "description": "Identification of pharmacoresistant epilepsy",
+        "status": "active"
+    },
+    {
+        "name": "Epilepsy 102",
+        "id": "HIP-project-epilepsy-102",
+        "owner": "Martin J. Brodie",
+        "logo": "media/chuv__logo.png",
+        "description": "Clobazam and clonazepam use in epilepsy: Results from a UK database incident user cohort study",
+        "status": "active"
+    },
+    {
+        "name": "Epilepsy 103",
+        "id": "HIP-project-epilepsy-103",
+        "owner": "Brian D. Moseley",
+        "logo": "media/chuv__logo.png",
+        "description": "A review of the drug−drug interactions of the antiepileptic drug brivaracetam"
+    },
+    {
+        "name": "Epilepsy 104",
+        "id": "HIP-project-epilepsy-104",
+        "owner": "Dr. Olivier David",
+        "logo": "media/chuv__logo.png",
+        "description": "Incidence of unprovoked seizures and epilepsy in Iceland and assessment of the epilepsy syndrome classification: a prospective study"
+    }
+]
 @Injectable()
 export class ProjectsService {
 	/*
