@@ -1,7 +1,6 @@
 import { Logger } from '@nestjs/common'
-import { start } from 'repl'
 import { AnyEventObject, assign, createMachine } from 'xstate'
-import { httpService } from './remote-app.service'
+import { domainConfig, httpService } from './remote-app.service'
 import {
 	ContainerAction,
 	ContainerContext,
@@ -49,7 +48,9 @@ export const invokeRemoteContainer = (
 					groups: JSON.stringify(oidcGroups),
 			  }
 
-	const url = `${process.env.REMOTE_APP_API}/control/${type}?${toParams(
+	const config = domainConfig(context.domain)
+	logger.debug(context.domain, `invokeRemoteContainer-${id}`)
+	const url = `${config.url}/control/${type}?${toParams(
 		params
 	)}`
 
@@ -58,7 +59,7 @@ export const invokeRemoteContainer = (
 	return httpService
 		.get(url, {
 			headers: {
-				Authorization: process.env.REMOTE_APP_BASIC_AUTH,
+				Authorization: config.auth,
 				'Cache-Control': 'no-cache',
 			},
 		})
