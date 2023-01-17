@@ -92,7 +92,7 @@ export interface BIDSDataset {
 
 // FIXME: this should be updated with the new BIDS tools architecture
 const editScriptCmd = process.env.BIDS_SCRIPTS
-	? ['-v', `"${process.env.BIDS_SCRIPTS}":/scripts`]
+	? ['-v', `${process.env.BIDS_SCRIPTS}:/scripts`]
 	: undefined
 
 const isFulfilled = <T>(
@@ -1670,9 +1670,9 @@ export class ToolsService {
 			const cmd1 = [
 				'run',
 				'-v',
-				`"${tmpDir}":/input`,
+				`${tmpDir}:/input`,
 				'-v',
-				`"${dsParentPath}":/output`
+				`${dsParentPath}:/output`
 			]
 			const cmd2 = [
 				'bids-tools',
@@ -1740,13 +1740,7 @@ export class ToolsService {
 
 			const dbPath = await this.filePath(path, owner)
 
-			const cmd1 = [
-				'run',
-				'-v',
-				`"${tmpDir}":/input`,
-				'-v',
-				`"${dbPath}":/output`
-			]
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
@@ -1831,17 +1825,17 @@ export class ToolsService {
 			)
 
 			const volumes = nextCreateSubject.files.reduce(
-				(p, file) => [...p, '-v', `"${file.path}":"${file.path}"`],
+				(p, file) => [...p, '-v', `${file.path}:${file.path}`],
 				[]
 			)
 
 			const command = [
 				'run',
 				'-v',
-				`"${tmpDir}":/import-data`,
+				`${tmpDir}:/import-data`,
 				...volumes,
 				'-v',
-				`"${dbPath}":/output`,
+				`${dbPath}:/output`,
 				// '-v',  // 2 lines can be uncommented to debug interaction with BIDS manager
 				// '/home/stourbie/Softwares/bidsificator/bids_manager:/usr/local/lib/python3.8/dist-packages/bids_manager-0.3.2-py3.8.egg/bids_manager',
 				'bids-tools',
@@ -1888,7 +1882,7 @@ export class ToolsService {
 		const dockerParams = [
 			'run',
 			'-v',
-			`"${dbPath}":/output`,
+			`${dbPath}:/output`,
 			'bids/validator',
 			'/data'
 		]
@@ -1918,11 +1912,11 @@ export class ToolsService {
 			const cmd1 = [
 				'run',
 				'-v',
-				`"${tmpDir}":/import-data`,
+				`${tmpDir}:/import-data`,
 				'-v',
-				`"${process.env.PRIVATE_FILESYSTEM}/${owner}/files":/input`,
+				`${process.env.PRIVATE_FILESYSTEM}/${owner}/files:/input`,
 				'-v',
-				`"${dbPath}":/output`
+				`${dbPath}:/output`
 			]
 			const cmd2 = [
 				'bids-tools',
@@ -2165,13 +2159,7 @@ export class ToolsService {
 			// Set paths and command to be run
 			const dsPath = await this.filePath(path, owner)
 
-			const cmd1 = [
-				'run',
-				'-v',
-				`"${tmpDir}":/input`,
-				'-v',
-				`"${dsPath}":/output`
-			]
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dsPath}:/output`]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
@@ -2246,7 +2234,7 @@ export class ToolsService {
 			)
 
 			const volumes = nextGetDatasets.datasets.reduce(
-				(p, dataset) => [...p, '-v', `"${dataset.path}":"${dataset.path}"`],
+				(p, dataset) => [...p, '-v', `${dataset.path}:${dataset.path}`],
 				[]
 			)
 
@@ -2261,7 +2249,7 @@ export class ToolsService {
 				}
 			})
 
-			const cmd1 = ['run', '-v', `"${tmpDir}":/input`, ...volumes]
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, ...volumes]
 			const cmd2 = [
 				'bids-tools',
 				this.dataUser,
