@@ -2014,7 +2014,7 @@ export class ToolsService {
 			}
 			const headerRow = Array.from(keys)
 			// create a write stream for the TSV file
-			const absDatasetPath = await this.filePath(datasetPath.slice(1), owner)
+			const absDatasetPath = await this.filePath(datasetPath, owner)
 			const tsvFilepath = path.join(absDatasetPath, PARTICIPANTS_FILE)
 			const tsvStream = fs.createWriteStream(tsvFilepath)
 			// write the header row to the stream
