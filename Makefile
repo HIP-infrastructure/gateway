@@ -30,6 +30,7 @@ r.package:
 deploy.dev: deploy.dev.stop
 	# TODO: prevent the build if no .env
 	cp ../.env .env
+	sudo chmod 777 .
 	sudo chown -R www-data: dist
 	npm install
 	sudo -u www-data -E npm run start:dev
