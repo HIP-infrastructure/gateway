@@ -154,6 +154,14 @@ export class ToolsController {
 	}
 
 	@UsePipes(ValidationPipe)
+	@Get('/bids/datasets/count')
+	async getBidsDatasetsCount(@Req() req: Request) {
+		return await this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.getDatasetsCount()
+		})
+	}
+
+	@UsePipes(ValidationPipe)
 	@Post('/bids/dataset')
 	async createDataset(
 		@Body() createBidsDatasetDto: CreateBidsDatasetDto,
