@@ -2021,7 +2021,12 @@ export class ToolsService {
 			tsvStream.write(`${headerRow.join('\t')}\n`)
 			// loop through the array of Participant objects and write each row to the stream
 			for (const participantObject of participantObjects) {
-				const row = headerRow.map(key => participantObject[key] || 'n/a')
+				const row = headerRow.map(
+					key =>
+						participantObject[key]
+							.toString()
+							.replace(/"/g, '') /* remove double */ || 'n/a'
+				)
 				tsvStream.write(`${row.join('\t')}\n`)
 			}
 			// Close the stream
