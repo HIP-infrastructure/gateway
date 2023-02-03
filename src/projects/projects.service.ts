@@ -1,70 +1,98 @@
 import { Injectable } from '@nestjs/common'
+import { Group, IamService } from 'src/iam/iam.service'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { UpdateProjectDto } from './dto/update-project.dto'
-const MOCKED_RESPONSE = [
-    {
-        "name": "Epilepsy 101",
-        "id": "HIP-project-epilepsy-101",
-        "owner": "Professor Philippe Ryvlin",
-        "logo": "media/amu-tng__logo.jpeg",
-        "description": "Identification of pharmacoresistant epilepsy",
-        "status": "active"
-    },
-    {
-        "name": "Epilepsy 102",
-        "id": "HIP-project-epilepsy-102",
-        "owner": "Martin J. Brodie",
-        "logo": "media/chuv__logo.png",
-        "description": "Clobazam and clonazepam use in epilepsy: Results from a UK database incident user cohort study",
-        "status": "active"
-    },
-    {
-        "name": "Epilepsy 103",
-        "id": "HIP-project-epilepsy-103",
-        "owner": "Brian D. Moseley",
-        "logo": "media/chuv__logo.png",
-        "description": "A review of the drug−drug interactions of the antiepileptic drug brivaracetam"
-    },
-    {
-        "name": "Epilepsy 104",
-        "id": "HIP-project-epilepsy-104",
-        "owner": "Dr. Olivier David",
-        "logo": "media/chuv__logo.png",
-        "description": "Incidence of unprovoked seizures and epilepsy in Iceland and assessment of the epilepsy syndrome classification: a prospective study"
-    }
-]
+
+interface Project extends Group {
+	members?: string[]
+	admins?: string[]
+}
+
+// FIXME: CHECKIF GROUP EXISTS
+const ROOT_PROJECT_GROUP_NAME = 'HIP-Projects'
+
+// FIXME: regex from config
+const SERVICE_ACCOUNT = 'service-account-hip_service_dev'
+
 @Injectable()
 export class ProjectsService {
 	/*
 	 * TODO:
 	 * Mount the Collab Filesystem
 	 */
-	constructor() {}
+	constructor(
+		private readonly iamService: IamService,
+		private readonly nextcloudService: NextcloudService
+	) {}
 
-	/*
-	 * TODO:
-	 * 1. Create a new group within iam.ebrains.eu
-   * 2. Add the owner as admin to the group
-	 * 3. Create a new folder in the Collab Filesystem
-	 */
-	create(createProjectDto: CreateProjectDto) {
-		return 'This action adds a new project'
+	async create(createProjectDto: CreateProjectDto) {
+		try {
+			const { title, description, admin } = createProjectDto
+			const name = `HIP-${title.toLowerCase().replace(/ /g, '-')}`
+
+			await this.iamService.createGroup(name, title, description)
+			await this.iamService.addUserToGroup(name, 'administrator', admin)
+			await this.iamService.addUserToGroup(name, 'member', admin)
+			return this.iamService.assignGroupToGroup(
+				name,
+				'member',
+				ROOT_PROJECT_GROUP_NAME
+			)
+		} catch (error) {
+			console.error(error)
+			throw new Error('Could not create project')
+		}
 	}
 
-  findAll() {
-    return MOCKED_RESPONSE
+	async findAll(): Promise<Project[]> {
+		try {
+			const rootProject = await this.iamService.getGroup(
+				ROOT_PROJECT_GROUP_NAME
+			)
+
+			return rootProject.members.groups
+		} catch (error) {
+			throw new Error('Could not get projects')
+		}
 	}
 
-  /*
-  * TODO:
-  * 1. Find all projects where the user is a member at iam.ebrains.eu
-  */
-  findUserProjects(userId: string) {
-    return MOCKED_RESPONSE.filter(p => p.status === 'active')
-  }
+	async findUserProjects(userId: string): Promise<Project[]> {
+		try {
+			const projects = await this.findAll()
+			const userGroups = await this.iamService.getUserGroups(userId)
+			const userGroupNames = userGroups.map(g => g.name)
 
-	findOne(id: number) {
-		return `This action returns a #${id} project`
+			return projects
+				.filter(p => userGroupNames.includes(p.name))
+				.map(p => ({
+					name: p.name,
+					title: p.title,
+					description: p.description,
+					acceptMembershipRequest: p.acceptMembershipRequest
+				}))
+		} catch (error) {
+			throw new Error('Could not get projects for user')
+		}
+	}
+
+	async findOne(name: string): Promise<Project> {
+		try {
+			const group = await this.iamService.getGroup(name)
+
+			return {
+				name: group.name,
+				title: group.title,
+				description: group.description,
+				acceptMembershipRequest: group.acceptMembershipRequest,
+				members: group.members.users.map(u => u.username),
+				admins: group.administrators.users
+					.filter(u => u.username !== SERVICE_ACCOUNT)
+					.map(u => u.username)
+			}
+		} catch (error) {
+			throw new Error('Could not get project')
+		}
 	}
 
 	update(id: number, updateProjectDto: UpdateProjectDto) {
@@ -73,5 +101,9 @@ export class ProjectsService {
 
 	remove(id: number) {
 		return `This action removes a #${id} project`
+	}
+
+	invite(projectName: string, username: string) {
+		return this.iamService.addUserToGroup(projectName, 'member', username)
 	}
 }

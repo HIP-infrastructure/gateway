@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios'
-import { HttpException, Inject, Injectable, Logger } from '@nestjs/common'
+import { HttpException, Injectable, Logger } from '@nestjs/common'
 import { AxiosError, AxiosResponse } from 'axios'
 import { catchError, firstValueFrom } from 'rxjs'
 
@@ -20,14 +20,14 @@ interface User {
 	active: boolean
 }
 
-interface Group {
+export interface Group {
 	name: string
 	title: string
 	description: string
 	acceptMembershipRequest: boolean
 }
 
-interface GroupLists {
+export interface GroupLists {
 	users: User[]
 	units: any[]
 	groups: Group[]
@@ -43,9 +43,9 @@ export class IamService {
 	private readonly eBrainsApiUrl = process.env.EBRAINS_API_URL || '';
 
 	constructor(
-		private readonly httpService: HttpService,
-		@Inject('TOKEN') private token: string // private readonly configService: ConfigService
-	) {}
+		private readonly httpService: HttpService
+	) // @Inject('TOKEN') private token: string // private readonly configService: ConfigService
+	{}
 
 	private async getAuthToken() {
 		this.logger.debug(`getAuthToken()`)
@@ -87,25 +87,23 @@ export class IamService {
 				this.httpService[method](url, { headers }).pipe(
 					catchError((error: AxiosError) => {
 						this.logger.error(error)
-						console.log(error)
 						throw new HttpException(error.response.data, error.response.status)
 					})
 				)
 			)
 		}
-        
+
 		return await firstValueFrom(
 			this.httpService[method](url, body ?? {}, { headers }).pipe(
 				catchError((error: AxiosError) => {
 					this.logger.error(error)
-					console.log(error)
 					throw new HttpException(error.response.data, error.response.status)
 				})
 			)
 		)
 	}
 
-	private async getGroupInfo(groupName: string) {
+	private async getGroupInfo(groupName: string): Promise<Group> {
 		this.logger.debug(`getGroup(${groupName})`)
 		const url = `${this.eBrainsApiUrl}/identity/groups/${groupName}`
 		const { data } = await this.request(url, 'get', {})
@@ -113,7 +111,10 @@ export class IamService {
 		return data
 	}
 
-	private async getGroupListsByRole(groupName: string, role: Role) {
+	private async getGroupListsByRole(
+		groupName: string,
+		role: Role
+	): Promise<GroupLists> {
 		this.logger.debug(`getGroupListsByRole(${groupName}, ${role})`)
 		const url = `${this.eBrainsApiUrl}/identity/groups/${groupName}/${role}`
 		const { data } = await this.request(url, 'get', {})
@@ -121,25 +122,34 @@ export class IamService {
 		return data
 	}
 
-	public async createGroup(name: string) {
+	public async getUserGroups(
+		userName: string,
+		role?: Role
+	): Promise<Group[]> {
+		this.logger.debug(`getUserGroups(${userName})`)
+
+		const baseUrl = `${this.eBrainsApiUrl}/identity/groups?username=${userName}`
+		const url = role ? `${baseUrl}&role=${role}` : baseUrl
+		const { data } = await this.request(url, 'get', {})
+
+		return data
+	}
+
+	public async createGroup(name: string, title: string, description: string) {
 		this.logger.debug(`createGroup(${name})`)
 		const url = `${this.eBrainsApiUrl}/identity/groups`
-		const body = {
-			name,
-			title: 'Test Group created from service account',
-			description: 'Everything is in the title'
-		}
-		const response = await this.request(url, 'post', body)
+		const body = { name, title, description }
+		const { status } = await this.request(url, 'post', body)
 
-		return { data: 'Success', status: response.status }
+		return { data: 'Success', status }
 	}
 
 	public async deleteGroup(name: string) {
 		this.logger.debug(`deleteGroup(${name})`)
 		const url = `${this.eBrainsApiUrl}/identity/groups/${name}`
-		const response = await this.request(url, 'delete')
+		const { status } = await this.request(url, 'delete')
 
-		return { data: 'Success', status: response.status }
+		return { data: 'Success', status }
 	}
 
 	public async assignGroupToGroup(
@@ -150,18 +160,18 @@ export class IamService {
 		this.logger.debug(
 			`assignGroupToGroup(${groupName1}, ${role}, ${groupName2})`
 		)
-		const url = `${this.eBrainsApiUrl}/identity/groups/${groupName1}/${role}/groups/${groupName2}`
-		const response = await this.request(url, 'put')
+		const url = `${this.eBrainsApiUrl}/identity/groups/${groupName2}/${role}/groups/${groupName1}`
+		const { status } = await this.request(url, 'put')
 
-		return { data: 'Success', status: response.status }
+		return { data: 'Success', status }
 	}
 
 	public async addUserToGroup(groupName: string, role: Role, userName: string) {
 		this.logger.debug(`addUserToGroup(${groupName}, ${role}, ${userName})`)
 		const url = `${this.eBrainsApiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
-		const response = await this.request(url, 'put', {})
+		const { status } = await this.request(url, 'put', {})
 
-		return { data: 'Success', status: response.status }
+		return { data: 'Success', status }
 	}
 
 	public async removeUserFromGroup(
@@ -171,13 +181,15 @@ export class IamService {
 	) {
 		this.logger.debug(`removeUserFromGroup(${groupName}, ${role}, ${userName})`)
 		const url = `${this.eBrainsApiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
-		const response = await this.request(url, 'delete', {})
+		const { status } = await this.request(url, 'delete', {})
 
-		return { data: 'Success', status: response.status }
+		return { data: 'Success', status }
 	}
 
-	public async getGroup(groupName: string) {
-		this.logger.debug(`getEverythingInGroup(${groupName})`)
+	public async getGroup(
+		groupName: string
+	): Promise<Group & { members: GroupLists; administrators: GroupLists }> {
+		this.logger.debug(`getGroup(${groupName})`)
 
 		const group = await this.getGroupInfo(groupName)
 		const groupList = await this.getGroupListsByRole(groupName, 'member')
