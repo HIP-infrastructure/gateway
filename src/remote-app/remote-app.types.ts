@@ -1,4 +1,5 @@
 import { StateMachine, AnyEventObject, Interpreter } from 'xstate'
+import { Domain } from './remote-app.controller';
 
 export type ContainerStateMachine = StateMachine<
 	any,
@@ -22,6 +23,7 @@ export interface ContainerContext {
 	type: ContainerType
 	parentId?: string
 	oidcGroups?: string[]
+	domain: Domain
 }
 
 export interface WebdavOptions {
