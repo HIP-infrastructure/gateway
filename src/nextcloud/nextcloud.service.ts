@@ -5,7 +5,7 @@ import {
 	HttpStatus,
 	Injectable,
 	Logger,
-	UnauthorizedException,
+	UnauthorizedException
 } from '@nestjs/common'
 import { Request } from 'express'
 import { firstValueFrom } from 'rxjs'
@@ -16,7 +16,7 @@ const OCC_DOCKER_ARGS = [
 	'www-data:www-data',
 	'cron',
 	'php',
-	'occ',
+	'occ'
 ]
 
 const LOGGED_IN_PATH = '/apps/hip/api/isloggedin'
@@ -94,8 +94,8 @@ export class NextcloudService {
 					cookie,
 					requesttoken,
 					accept: 'application/json, text/plain, */*',
-					'content-type': 'application/json',
-				},
+					'content-type': 'application/json'
+				}
 			})
 
 			const isLoggedIn = await firstValueFrom(response).then(r => {
@@ -106,6 +106,33 @@ export class NextcloudService {
 		} catch (error) {
 			this.logger.error(` ${error.status} ${error.message}`)
 			throw new UnauthorizedException()
+		}
+	}
+
+	public async users(): Promise<User[]> {
+		try {
+			const args = ['user:list', '-i']
+			const message = await this.spawnable(args)
+			const ncusers = JSON.parse(message)
+			const users = Object.keys(ncusers).map(k => {
+				const user = ncusers[k]
+				return {
+					id: user.user_id,
+					displayName: user.display_name,
+					email: user.email,
+					lastLogin: user.last_seen,
+					groups: user.groups,
+					enabled: user.enabled
+				}
+			})
+
+			return users || []
+		} catch (error) {
+			this.logger.error({ error })
+			throw new HttpException(
+				error.message,
+				error.status ?? HttpStatus.BAD_REQUEST
+			)
 		}
 	}
 
@@ -123,8 +150,8 @@ export class NextcloudService {
 					cookie,
 					requesttoken,
 					accept: 'application/json, text/plain, */*',
-					'content-type': 'application/json',
-				},
+					'content-type': 'application/json'
+				}
 			})
 
 			const uid = await firstValueFrom(response).then(r => {
@@ -153,14 +180,14 @@ export class NextcloudService {
 				email: user.email,
 				lastLogin: user.last_seen,
 				groups: user.groups,
-				enabled: user.enabled,
+				enabled: user.enabled
 			}
 
 			if (isOwner)
 				return {
 					...nextUser,
 					storage: user.storage,
-					quota: user.quota,
+					quota: user.quota
 				}
 
 			return nextUser
@@ -205,7 +232,7 @@ export class NextcloudService {
 					id,
 					label: mount_point,
 					acl,
-					groups: Object.keys(groups).map(group => group.toLowerCase()),
+					groups: Object.keys(groups).map(group => group.toLowerCase())
 				})
 			)
 
@@ -271,7 +298,7 @@ export class NextcloudService {
 			)
 		}
 	}
- 
+
 	public async oidcGroupsForUser(userId: string): Promise<string[]> {
 		const groupMapping = await this.groupMapping()
 		const user = await this.user(userId, true)
@@ -284,7 +311,7 @@ export class NextcloudService {
 
 			return p
 		}, [])
-		  
+
 		return iodcGroups
 	}
 
@@ -322,11 +349,10 @@ export class NextcloudService {
 	}
 
 	private spawnable = (args: string[]): Promise<string> => {
-		const child = spawn('docker', [
-			...OCC_DOCKER_ARGS,
-			...args,
-			'--output=json',
-		])
+		const cmd = [...OCC_DOCKER_ARGS, ...args, '--output=json']
+		this.logger.error('docker', cmd.join(' '))
+
+		const child = spawn('docker', cmd)
 		let message = ''
 
 		return new Promise((resolve, reject) => {
@@ -337,7 +363,7 @@ export class NextcloudService {
 
 			child.stderr.setEncoding('utf8')
 			child.stderr.on('data', data => {
-				//this.logger.error(`stderr: ${data}`)
+				this.logger.error(`stderr: ${data}`)
 				// Log but don't reject, as it's often just a warning
 				// message += data.toString()
 			})
