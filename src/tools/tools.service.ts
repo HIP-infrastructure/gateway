@@ -1705,7 +1705,7 @@ export class ToolsService {
 				// Index the dataset
 				await this.indexBIDSDataset(
 					owner,
-					`${dsParentPath}${createBidsDatasetDto.dataset_dirname}`,
+					`${createBidsDatasetDto.dataset_dirname}`,
 					datasetId
 				)
 
