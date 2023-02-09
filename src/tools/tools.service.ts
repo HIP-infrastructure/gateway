@@ -104,7 +104,8 @@ export class ToolsService {
 	private readonly logger = new Logger('ToolsService')
 	private dataUser: string
 	private dataUserId
-	private elastic_client: Client
+	private elastic_client_ro: Client
+	private elastic_client_rw: Client
 	private readonly es_index_datasets =
 		process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
 
@@ -117,11 +118,22 @@ export class ToolsService {
 
 		if (uid) this.dataUserId = uid
 
-		// create a new client to our elasticsearch node
-		const es_opt = {
-			node: `${process.env.ELASTICSEARCH_URL}`
-		}
-		this.elastic_client = new Client(es_opt)
+		// create a new client with read-only privileges to our elasticsearch node
+		this.elastic_client_ro = new Client({
+			node: `${process.env.ELASTICSEARCH_URL}`,
+			auth: {
+				username: `${process.env.ELASTICSEARCH_USER_RO}`,
+				password: `${process.env.ELASTICSEARCH_PASSWORD_RO}`
+			}
+		})
+		// create a new client with read-write privileges to our elasticsearch node
+		this.elastic_client_rw = new Client({
+			node: `${process.env.ELASTICSEARCH_URL}`,
+			auth: {
+				username: `${process.env.ELASTICSEARCH_USER_RW}`,
+				password: `${process.env.ELASTICSEARCH_PASSWORD_RW}`
+			}
+		})
 	}
 
 	// public async getBIDSDatasets({ cookie }) {
@@ -224,7 +236,7 @@ export class ToolsService {
 				dataset
 			])
 		// index the datasets
-		const { body: bulkResponse } = await this.elastic_client.bulk({
+		const { body: bulkResponse } = await this.elastic_client_rw.bulk({
 			refresh: true,
 			body
 		})
@@ -236,7 +248,7 @@ export class ToolsService {
 			}
 		}
 		// count indexed data
-		const { body: count } = await this.elastic_client.count({
+		const { body: count } = await this.elastic_client_ro.count({
 			index: this.es_index_datasets
 		})
 		this.logger.debug({ count })
@@ -1108,13 +1120,13 @@ export class ToolsService {
 	public async createBIDSDatasetsIndex() {
 		try {
 			// create index for datasets if not existing
-			const exists = await this.elastic_client.indices.exists({
+			const exists = await this.elastic_client_ro.indices.exists({
 				index: this.es_index_datasets
 			})
 
 			if (exists.body === false) {
 				try {
-					const create = await this.elastic_client.indices.create({
+					const create = await this.elastic_client_rw.indices.create({
 						index: this.es_index_datasets,
 						body: {
 							mappings
@@ -1148,13 +1160,13 @@ export class ToolsService {
 	public async deleteBIDSDatasetsIndex() {
 		try {
 			// delete index for datasets only if it exists
-			const exists = await this.elastic_client.indices.exists({
+			const exists = await this.elastic_client_ro.indices.exists({
 				index: this.es_index_datasets
 			})
 
 			if (exists.body === true) {
 				try {
-					const del = await this.elastic_client.indices.delete({
+					const del = await this.elastic_client_rw.indices.delete({
 						index: this.es_index_datasets
 					})
 					this.logger.debug(`Index ${this.es_index_datasets} deleted`)
@@ -1283,7 +1295,7 @@ export class ToolsService {
 					index: dataset._index,
 					id: dataset._id
 				}
-				const { body: deleteResponse } = await this.elastic_client.delete(
+				const { body: deleteResponse } = await this.elastic_client_rw.delete(
 					datasetID
 				)
 				if (deleteResponse.errors) {
@@ -1462,7 +1474,7 @@ export class ToolsService {
 				}
 			}
 			// perform and return the search query
-			const foundDatasets = await this.elastic_client
+			const foundDatasets = await this.elastic_client_ro
 				.search(query_params)
 				.then((result: ApiResponse) => {
 					// remove "Path" in dataset objects returned to the frontend
@@ -1527,7 +1539,7 @@ export class ToolsService {
 				body: body
 			}
 			// perform and return the msearch query
-			return await this.elastic_client
+			return await this.elastic_client_ro
 				.msearch(query_params)
 				.then((result: ApiResponse) => {
 					return result.body.responses.map(response => {
@@ -1555,7 +1567,7 @@ export class ToolsService {
 		}
 
 		// perform and return the search query
-		return this.elastic_client
+		return this.elastic_client_ro
 			.count(count_params)
 			.then(res => {
 				return res.body.count
@@ -1693,7 +1705,7 @@ export class ToolsService {
 				// Index the dataset
 				await this.indexBIDSDataset(
 					owner,
-					`${dsParentPath}${createBidsDatasetDto.dataset_dirname}`,
+					`${createBidsDatasetDto.dataset_dirname}`,
 					datasetId
 				)
 
