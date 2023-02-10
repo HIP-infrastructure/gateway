@@ -30,7 +30,6 @@ export class ProjectsService {
 
 	constructor(
 		private readonly iamService: IamEbrainsService,
-		private readonly nextcloudService: NextcloudService,
 		private readonly httpService: HttpService,
 		private readonly cacheService: CacheService,
 		private readonly configService: ConfigService

@@ -9,6 +9,6 @@ import { CacheService } from 'src/cache/cache.service';
 		IamEbrainsService,
 		CacheService
 	],
-	exports: [EbrainsModule]
+	exports: [IamEbrainsModule]
 })
-export class EbrainsModule {}
+export class IamEbrainsModule {}

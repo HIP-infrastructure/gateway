@@ -1,53 +1,70 @@
-import { HttpService } from '@nestjs/axios';
-import { Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
-import { Interval } from '@nestjs/schedule';
-import { Domain } from './remote-app.controller';
-import { firstValueFrom } from 'rxjs';
-import { NextcloudService } from 'src/nextcloud/nextcloud.service';
-import { interpret } from 'xstate';
-import { CacheService } from '../cache/cache.service';
+import { HttpService } from '@nestjs/axios'
+import {
+	Injectable,
+	Logger,
+	NotFoundException,
+	ServiceUnavailableException
+} from '@nestjs/common'
+import { Interval } from '@nestjs/schedule'
+import { Domain } from './remote-app.controller'
+import { firstValueFrom } from 'rxjs'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
+import { interpret } from 'xstate'
+import { CacheService } from '../cache/cache.service'
 import {
 	createContainerMachine,
-	invokeRemoteContainer,
-} from './remote-app.container-machine';
+	invokeRemoteContainer
+} from './remote-app.container-machine'
 import {
 	ContainerAction,
 	ContainerContext,
 	ContainerState,
 	ContainerType,
-	WebdavOptions,
-} from './remote-app.types';
+	WebdavOptions
+} from './remote-app.types'
+import { ProjectsService } from 'src/projects/projects.service'
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-export const httpService = new HttpService();
+export const httpService = new HttpService()
 
 export const domainConfig = (domain: Domain) => {
-	const url = domain === 'center' ? process.env.REMOTE_APP_API : process.env.COLLAB_REMOTE_APP_API;
-	const auth = domain === 'center' ? process.env.REMOTE_APP_BASIC_AUTH : process.env.COLLAB_REMOTE_APP_BASIC_AUTH;
+	const url =
+		domain === 'center'
+			? process.env.REMOTE_APP_API
+			: process.env.COLLAB_REMOTE_APP_API
+	const auth =
+		domain === 'center'
+			? process.env.REMOTE_APP_BASIC_AUTH
+			: process.env.COLLAB_REMOTE_APP_BASIC_AUTH
 
-	return { url, auth };
-};
+	return { url, auth }
+}
 
 export const fsConfig = (domain: Domain) => {
-	const url = domain === 'center' ? process.env.PRIVATE_FS_URL : process.env.COLLAB_FS_URL;
-	const authurl = domain === 'center' ? process.env.PRIVATE_FS_AUTH_BACKEND_URL : process.env.COLLAB_FS_AUTH_BACKEND_URL;
+	const url =
+		domain === 'center' ? process.env.PRIVATE_FS_URL : process.env.COLLAB_FS_URL
+	const authurl =
+		domain === 'center'
+			? process.env.PRIVATE_FS_AUTH_BACKEND_URL
+			: process.env.COLLAB_FS_AUTH_BACKEND_URL
 
-	return { url, authurl };
-};
+	return { url, authurl }
+}
 
-const INTERVAL = 5;
+const INTERVAL = 5
 @Injectable()
 export class RemoteAppService {
-	private readonly logger = new Logger('RemoteAppService');
-	private containerServices: any[] = [];
+	private readonly logger = new Logger('RemoteAppService')
+	private containerServices: any[] = []
 
 	constructor(
 		private readonly cacheService: CacheService,
-		private readonly nextcloudService: NextcloudService
+		private readonly nextcloudService: NextcloudService,
+		private readonly projectsService: ProjectsService
 	) {
 		// this.cacheService.flushall()
-		this.restoreCachedContainers();
+		this.restoreCachedContainers()
 	}
 
 	/**
@@ -58,26 +75,26 @@ export class RemoteAppService {
 	@Interval(INTERVAL * 1000)
 	pollRemoteState() {
 		this.containerServices?.forEach(async service => {
-			const currentContext = service.state.context;
+			const currentContext = service.state.context
 			try {
 				const remoteContext = await invokeRemoteContainer(currentContext, {
-					type: ContainerAction.STATUS,
-				});
+					type: ContainerAction.STATUS
+				})
 
 				if (remoteContext.error) {
 					// this.logger.debug(JSON.stringify(remoteContext.error, null, 2))
 					service.send({
 						type: ContainerAction.REMOTE_STOPPED,
 						nextContext: remoteContext,
-						error: remoteContext.error,
-					});
+						error: remoteContext.error
+					})
 
-					return;
+					return
 				}
 
 				const childApps = this.containerServices.filter(
 					s => s.state.context.parentId === service.machine.id
-				);
+				)
 
 				// Destroy server sequence
 				// Remove if there is no more apps inside
@@ -92,10 +109,10 @@ export class RemoteAppService {
 								nextContext: {
 									...currentContext,
 									nextAction: ContainerAction.DESTROY,
-									error: undefined,
-								},
-							});
-							break;
+									error: undefined
+								}
+							})
+							break
 
 						default:
 					}
@@ -111,10 +128,10 @@ export class RemoteAppService {
 								type: ContainerAction.DESTROY,
 								nextContext: {
 									...remoteContext,
-									error: undefined,
-								},
-							});
-							break;
+									error: undefined
+								}
+							})
+							break
 						}
 
 						service.send({
@@ -122,67 +139,66 @@ export class RemoteAppService {
 							nextContext: {
 								...remoteContext,
 								nextAction: ContainerAction.DESTROY,
-								error: { message: 'Container is not reachable' },
-							},
-						});
-						break;
+								error: { message: 'Container is not reachable' }
+							}
+						})
+						break
 
 					case ContainerState.RUNNING:
 						service.send({
 							type: ContainerAction.REMOTE_STARTED,
 							nextContext: {
 								...remoteContext,
-								error: undefined,
-							},
-						});
-						break;
+								error: undefined
+							}
+						})
+						break
 
 					case ContainerState.CREATED:
 						service.send({
 							type: ContainerAction.REMOTE_CREATED,
 							nextContext: {
 								...remoteContext,
-								error: undefined,
-							},
-						});
-						break;
+								error: undefined
+							}
+						})
+						break
 				}
 			} catch (error) {
 				service.state.context = {
-					...currentContext,
+					...currentContext
 					// ...error,
-				};
+				}
 			}
-		});
+		})
 	}
 
-
 	async availableApps(domain: Domain): Promise<any> {
-		const config = domainConfig(domain);
-		const url = `${config.url}/control/app/list`;
+		const config = domainConfig(domain)
+		const url = `${config.url}/control/app/list`
 		const response = httpService.get(url, {
 			headers: {
 				Authorization: config.auth,
-				'Cache-Control': 'no-cache',
-			},
-		});
+				'Cache-Control': 'no-cache'
+			}
+		})
 
 		return await firstValueFrom(response)
 			.then(r =>
 				Object.keys(r.data).map(k => ({
 					...r.data[k],
 					name: k,
-					label: r.data[k].name,
+					label: r.data[k].name
 				}))
 			)
 			.catch(error => {
-				const e = error.toJSON();
-				this.logger.error(e);
+				const e = error.toJSON()
+				this.logger.error(e)
 
 				// Return Service unavailable rather than backend login issue
 				//if (e.status) throw new HttpException(e.message, e.status)
-				throw new ServiceUnavailableException(e.message);
-			});
+				throw new ServiceUnavailableException(e.message)
+			})
 	}
 
 	/**
@@ -192,10 +208,10 @@ export class RemoteAppService {
 	 */
 
 	async forceRemove(id: string): Promise<ContainerContext[]> {
-		this.removeService(id);
+		this.removeService(id)
 		return this.containerServices.map(service => {
-			const { id, name, user, url, error, type, app, parentId, domain } = service.state
-				.context as Partial<ContainerContext & WebdavOptions>;
+			const { id, name, user, url, error, type, app, parentId, domain } =
+				service.state.context as Partial<ContainerContext & WebdavOptions>
 			return {
 				id,
 				name,
@@ -207,8 +223,8 @@ export class RemoteAppService {
 				parentId,
 				state: service.state.value as ContainerState,
 				domain
-			};
-		});
+			}
+		})
 	}
 
 	/**
@@ -221,8 +237,8 @@ export class RemoteAppService {
 			this.containerServices
 				.filter(service => service.state.context.domain === domain)
 				.map(service => {
-					const { id, name, user, url, error, type, app, parentId, domain } = service
-						.state.context as Partial<ContainerContext & WebdavOptions>;
+					const { id, name, user, url, error, type, app, parentId, domain } =
+						service.state.context as Partial<ContainerContext & WebdavOptions>
 					return {
 						id,
 						name,
@@ -234,9 +250,9 @@ export class RemoteAppService {
 						parentId,
 						state: service.state.value as ContainerState,
 						domain
-					};
+					}
 				}) ?? []
-		);
+		)
 	}
 
 	/**
@@ -246,13 +262,15 @@ export class RemoteAppService {
 	 */
 
 	getContainer(id: string): ContainerContext {
-		const service = this.containerServices
-			.find(service => service.state.context.id === id);
+		const service = this.containerServices.find(
+			service => service.state.context.id === id
+		)
 
-		if (!service) throw new NotFoundException('Container not found');
+		if (!service) throw new NotFoundException('Container not found')
 
-		const { name, user, url, error, type, parentId, domain } = service.state.context;
-		this.logger.debug({ name, user, url, error, type, parentId, domain });
+		const { name, user, url, error, type, parentId, domain } =
+			service.state.context
+		this.logger.debug({ name, user, url, error, type, parentId, domain })
 		return {
 			id,
 			name,
@@ -262,8 +280,8 @@ export class RemoteAppService {
 			type,
 			parentId,
 			state: service.state.value as ContainerState,
-			domain,
-		};
+			domain
+		}
 	}
 
 	/**
@@ -278,8 +296,8 @@ export class RemoteAppService {
 				.filter(service => service.state.context.user === uid)
 				.filter(service => service.state.context.domain === domain)
 				.map(service => {
-					const { id, name, user, url, error, type, app, parentId, domain } = service
-						.state.context as Partial<ContainerContext & WebdavOptions>;
+					const { id, name, user, url, error, type, app, parentId, domain } =
+						service.state.context as Partial<ContainerContext & WebdavOptions>
 					return {
 						id,
 						name,
@@ -290,10 +308,10 @@ export class RemoteAppService {
 						app,
 						parentId,
 						state: service.state.value as ContainerState,
-						domain,
-					};
+						domain
+					}
 				}) ?? []
-		);
+		)
 	}
 
 	/**
@@ -303,21 +321,36 @@ export class RemoteAppService {
 	 * @return Promise<APIContainersResponse>
 	 */
 
-	async startSessionWithUserId(id: string, uid: string, domain: Domain): Promise<ContainerContext[]> {
+	async startSessionWithUserId(
+		id: string,
+		uid: string,
+		domain: Domain
+	): Promise<ContainerContext[]> {
+		this.logger.debug(`startSessionWithUserId(${id}, ${uid}, ${domain})`)
+
 		// check for existing
-		let service: any = this.containerServices.find(s => s.machine.id === id);
+		let service: any = this.containerServices.find(s => s.machine.id === id)
 		if (service) {
-			return service.state.context;
+			return service.state.context
 		}
 
-		const oidcGroups = await this.nextcloudService.oidcGroupsForUser(uid);
+		let oidcGroups
+		if (domain === 'center') {
+			oidcGroups = await this.nextcloudService.oidcGroupsForUser(uid)
+		} else {
+			// FIXME: specfy the project from frontend
+			const projects = await this.projectsService.findUserProjects(uid)
+			oidcGroups = projects.map(projects => projects.name)
+		}
+		this.logger.debug({ oidcGroups })
+
 		const sessionNamesArray = this.containerServices
 			.filter(s => s.state.context.type === ContainerType.SERVER)
 			.filter(s => s.state.context.user === uid)
 			.map(s => s.state.context.name)
-			.map(n => parseInt(n));
-		const sessionNames = sessionNamesArray.length > 0 ? sessionNamesArray : [0];
-		const name = `${Math.max(...sessionNames) + 1}`;
+			.map(n => parseInt(n))
+		const sessionNames = sessionNamesArray.length > 0 ? sessionNamesArray : [0]
+		const name = `${Math.max(...sessionNames) + 1}`
 		const context: ContainerContext = {
 			id,
 			name,
@@ -327,15 +360,15 @@ export class RemoteAppService {
 			error: null,
 			type: ContainerType.SERVER,
 			oidcGroups,
-			domain,
-		};
-		const serverMachine = createContainerMachine(context);
-		service = interpret(serverMachine).start();
-		this.handleTransitionFor(service);
-		service.send({ type: ContainerAction.START });
-		this.containerServices.push(service);
+			domain
+		}
+		const serverMachine = createContainerMachine(context)
+		service = interpret(serverMachine).start()
+		this.handleTransitionFor(service)
+		service.send({ type: ContainerAction.START })
+		this.containerServices.push(service)
 
-		return this.getContainers(uid, domain);
+		return this.getContainers(uid, domain)
 	}
 
 	/**
@@ -352,35 +385,44 @@ export class RemoteAppService {
 		appName: string,
 		userId: string
 	): Promise<ContainerContext[]> {
+		this.logger.debug(`startApp ${appName} for user ${userId}`)
+
 		// check existing server
 		const serverService = this.containerServices.find(
 			s => s.machine.id === serverId
-		);
+		)
 		if (!serverService) {
 			return {
 				...serverService.state.context,
-				error: { message: 'Server is not ready', code: '' },
-			};
+				error: { message: 'Server is not ready', code: '' }
+			}
 		}
 
 		// check existing app
 		let appService: any = this.containerServices.find(
 			s => s.machine.id === appId
-		);
+		)
 		if (appService) {
-			return appService.state.context;
+			return appService.state.context
 		}
 
-		// get groupfolders mount point
-		// const groupFolders = await this.nextcloudService.groupFoldersForUserId(
-		// 	userId
-		// );
+		let groupFolders: WebdavOptions['groupFolders']
+		if (serverService.state.context.domain === 'center') {
+			groupFolders = await this.nextcloudService.groupFoldersForUserId(userId)
+		} else {
+			const projects = await this.projectsService.findUserProjects(userId)
+			// FIXME: remove id
+			groupFolders = projects.map(projects => ({
+				id: 1,
+				label: projects.name,
+				path: `__groupfolders/${projects.name}`
+			}))
+		}
 
-		const groupFolders = [{"id":1,"label":"HIP-101","path":"__groupfolders/HIP-101"}]
+		this.logger.debug({ groupFolders })
 
-
-		const domain = serverService.state.context.domain;
-		const config = fsConfig(domain);
+		const domain = serverService.state.context.domain
+		const config = fsConfig(domain)
 
 		const context: ContainerContext & WebdavOptions = {
 			id: appId,
@@ -394,20 +436,16 @@ export class RemoteAppService {
 			parentId: serverId,
 			nc: config.url,
 			ab: config.authurl,
-			groupFolders: groupFolders.map(({ id, label, path }) => ({
-				id,
-				label,
-				path,
-			})),
-			domain,
-		};
-		const machine = createContainerMachine(context);
-		appService = interpret(machine).start();
-		this.handleTransitionFor(appService);
-		appService.send({ type: ContainerAction.START });
-		this.containerServices.push(appService); // TODO, immutable state by reducer
+			groupFolders,
+			domain
+		}
+		const machine = createContainerMachine(context)
+		appService = interpret(machine).start()
+		this.handleTransitionFor(appService)
+		appService.send({ type: ContainerAction.START })
+		this.containerServices.push(appService) // TODO, immutable state by reducer
 
-		return this.getContainers(userId, domain);
+		return this.getContainers(userId, domain)
 	}
 
 	/**
@@ -420,28 +458,28 @@ export class RemoteAppService {
 	async stopAppInSession(
 		userId: string,
 		serverId: string,
-		appId: string,
+		appId: string
 	): Promise<ContainerContext[]> {
 		// check existing server
-		const service = this.containerServices.find(s => s.machine.id === serverId);
+		const service = this.containerServices.find(s => s.machine.id === serverId)
 
 		if (!service) {
-			throw new Error('Container is not available');
+			throw new Error('Container is not available')
 		}
 
-		let appService = this.containerServices.find(s => s.machine.id === appId);
-		const domain = appService.state.context.domain;
+		let appService = this.containerServices.find(s => s.machine.id === appId)
+		const domain = appService.state.context.domain
 
 		appService.send({
 			type: ContainerAction.STOP,
 			nextContext: {
 				...appService.state.context,
 				nextAction: ContainerAction.DESTROY,
-				error: undefined,
-			},
-		});
+				error: undefined
+			}
+		})
 
-		return this.getContainers(userId, domain);
+		return this.getContainers(userId, domain)
 	}
 
 	/**
@@ -451,21 +489,21 @@ export class RemoteAppService {
 	 */
 
 	removeAppsAndSession(serverId: string, userId: string): ContainerContext[] {
-		const service = this.containerServices.find(s => s.machine.id === serverId);
+		const service = this.containerServices.find(s => s.machine.id === serverId)
 		const appServices = this.containerServices.filter(
 			s => s.state.context.parentId === service.machine.id
-		);
+		)
 		if (!service) {
-			throw new Error('Container is not available');
+			throw new Error('Container is not available')
 		}
 
-		const currentContext = service.state.context;
+		const currentContext = service.state.context
 		// stale: remove already exited apps and session
 		if (service.state.value === ContainerState.EXITED) {
 			appServices.forEach(s => {
-				s.send({ type: ContainerAction.DESTROY });
-			});
-			service.send({ type: ContainerAction.DESTROY });
+				s.send({ type: ContainerAction.DESTROY })
+			})
+			service.send({ type: ContainerAction.DESTROY })
 		}
 		// Stop child apps, schedule a destroy with next
 		// Schedule a stop server with nextAction
@@ -476,18 +514,18 @@ export class RemoteAppService {
 					error: undefined,
 					nextContext: {
 						...s.state.context,
-						nextAction: ContainerAction.DESTROY,
-					},
-				});
-			});
+						nextAction: ContainerAction.DESTROY
+					}
+				})
+			})
 
 			// set the server context, don't send a direct action
 			// Will be handled in polling, so server and apps get detroyed sequentially
 			// TODO: should not be set directly
 			service.state.context = {
 				...currentContext,
-				nextAction: ContainerAction.STOP,
-			};
+				nextAction: ContainerAction.STOP
+			}
 		}
 		// stop service, schedule destroy
 		else {
@@ -496,21 +534,21 @@ export class RemoteAppService {
 				nextContext: {
 					...currentContext,
 					nextAction: ContainerAction.DESTROY,
-					error: undefined,
-				},
-			});
+					error: undefined
+				}
+			})
 		}
-		const domain = service.state.context.domain;
+		const domain = service.state.context.domain
 
-		return this.getContainers(userId, domain);
+		return this.getContainers(userId, domain)
 	}
 
 	pauseAppsAndSession(userId: string, serverId: string): ContainerContext[] {
-		const service = this.containerServices.find(s => s.machine.id === serverId);
+		const service = this.containerServices.find(s => s.machine.id === serverId)
 
 		if (!service) {
 			// FIXME: should return a promise
-			return;
+			return
 			// {
 			// 	data: undefined,
 			// 	error: {
@@ -520,42 +558,42 @@ export class RemoteAppService {
 			// }
 		}
 
-		const currentContext = service.state.context;
-		service.send({ type: ContainerAction.PAUSE });
+		const currentContext = service.state.context
+		service.send({ type: ContainerAction.PAUSE })
 
 		this.containerServices
 			.filter(s => s.state.context.parentId === service.machine.id)
 			.forEach(s => {
-				s.send({ type: ContainerAction.PAUSE });
-			});
+				s.send({ type: ContainerAction.PAUSE })
+			})
 
 		const nextContext: ContainerContext = {
 			...currentContext,
-			state: service.state.value,
-		};
-		const domain = service.state.context.domain;
+			state: service.state.value
+		}
+		const domain = service.state.context.domain
 
-		return this.getContainers(userId, domain);
+		return this.getContainers(userId, domain)
 	}
 
 	resumeAppsAndSession(userId: string, serverId: string): ContainerContext[] {
-		const service = this.containerServices.find(s => s.machine.id === serverId);
+		const service = this.containerServices.find(s => s.machine.id === serverId)
 
 		if (!service) {
-			throw new Error('Container is not available');
+			throw new Error('Container is not available')
 		}
 
-		const currentContext = service.state.context;
-		service.send({ type: ContainerAction.RESUME });
+		const currentContext = service.state.context
+		service.send({ type: ContainerAction.RESUME })
 
 		this.containerServices
 			.filter(s => s.state.context.parentId === service.machine.id)
 			.forEach(s => {
-				s.send({ type: ContainerAction.RESUME });
-			});
-		const domain = service.state.context.domain;
+				s.send({ type: ContainerAction.RESUME })
+			})
+		const domain = service.state.context.domain
 
-		return this.getContainers(userId, domain);
+		return this.getContainers(userId, domain)
 	}
 
 	/**
@@ -567,13 +605,13 @@ export class RemoteAppService {
 		service.onTransition(state => {
 			if (state.changed) {
 				if (state.value === ContainerState.DESTROYED) {
-					this.removeService(service.machine.id);
+					this.removeService(service.machine.id)
 				} else {
-					this.setCacheContainer({ context: service.state.context });
+					this.setCacheContainer({ context: service.state.context })
 				}
 			}
-		});
-	};
+		})
+	}
 
 	/**
 	 * @Description: Remove and stop service and its apps services
@@ -585,19 +623,19 @@ export class RemoteAppService {
 		const servicesToRemove =
 			this.containerServices.filter(
 				s => s.machine.id === id || s.state.context.parentId === id
-			) || [];
+			) || []
 		servicesToRemove.forEach(s => {
-			s.stop();
-			this.removeCacheContainer(s.machine.id);
-		});
+			s.stop()
+			this.removeCacheContainer(s.machine.id)
+		})
 
 		const nextServices =
 			this.containerServices.filter(
 				s => s.machine.id !== id && s.state.context.parentId !== id
-			) || [];
-		this.containerServices = nextServices;
-		this.removeCacheContainer(id);
-	};
+			) || []
+		this.containerServices = nextServices
+		this.removeCacheContainer(id)
+	}
 
 	/**
 	 * @Description: Persist a container in cache
@@ -606,13 +644,13 @@ export class RemoteAppService {
 	 */
 
 	private setCacheContainer = async ({
-		context,
+		context
 	}: {
-		context: Partial<ContainerContext & WebdavOptions>;
+		context: Partial<ContainerContext & WebdavOptions>
 	}): Promise<any> => {
-		this.cacheService.set(`container:${context.id}`, context);
-		this.cacheService.sadd(`containers`, context.id);
-	};
+		this.cacheService.set(`container:${context.id}`, context)
+		this.cacheService.sadd(`containers`, context.id)
+	}
 
 	/**
 	 * @Description: Remove a container from cache
@@ -621,9 +659,9 @@ export class RemoteAppService {
 	 */
 
 	private removeCacheContainer = containerId => {
-		this.cacheService.del(`container:${containerId}`);
-		this.cacheService.srem(`containers`, containerId);
-	};
+		this.cacheService.del(`container:${containerId}`)
+		this.cacheService.srem(`containers`, containerId)
+	}
 
 	/**
 	 * @Description: Restore all containers in cache to services
@@ -631,9 +669,9 @@ export class RemoteAppService {
 	 */
 
 	private restoreCachedContainers = async () => {
-		const containerIds = await this.cacheService.smembers('containers');
+		const containerIds = await this.cacheService.smembers('containers')
 		if (!containerIds) {
-			this.containerServices = [];
+			this.containerServices = []
 		}
 
 		const containers: ContainerContext[] = await Promise.all(
@@ -641,15 +679,14 @@ export class RemoteAppService {
 				async containerId =>
 					await this.cacheService.get(`container:${containerId}`)
 			)
-		);
+		)
 
-
-		this.logger.debug(JSON.stringify(containers, null, 2));
+		this.logger.debug(JSON.stringify(containers, null, 2))
 		this.containerServices = containers.map(container => {
-			const service = interpret(createContainerMachine(container)).start();
-			this.handleTransitionFor(service);
+			const service = interpret(createContainerMachine(container)).start()
+			this.handleTransitionFor(service)
 
-			return service;
-		});
-	};
+			return service
+		})
+	}
 }

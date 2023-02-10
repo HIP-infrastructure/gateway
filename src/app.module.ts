@@ -15,7 +15,7 @@ import { RemoteAppModule } from './remote-app/remote-app.module';
 import { ToolsModule } from './tools/tools.module';
 import { UsersModule } from './users/users.module';
 import { ProjectsModule } from './projects/projects.module';
-import { EbrainsModule } from './iam-ebrains/iam-ebrains.module';
+import { IamEbrainsModule } from './iam-ebrains/iam-ebrains.module';
 
 @Module({
 	imports: [
@@ -50,7 +50,7 @@ import { EbrainsModule } from './iam-ebrains/iam-ebrains.module';
 		GroupsModule,
 		NextcloudModule,
 		ProjectsModule,
-		EbrainsModule,
+		IamEbrainsModule,
 	],
 	controllers: [AppController],
 })
