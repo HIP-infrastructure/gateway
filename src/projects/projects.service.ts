@@ -50,13 +50,13 @@ export class ProjectsService {
 	async create(createProjectDto: CreateProjectDto) {
 		try {
 			const { title, description, adminId } = createProjectDto
-			const name = `HIP-${title.toLowerCase().replace(/ /g, '-')}`
+			const projectName = `HIP-${title.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}`
 
-			await this.iamService.createGroup(name, title, description)
-			await this.iamService.addUserToGroup(name, 'administrator', adminId)
-			await this.iamService.addUserToGroup(name, 'member', adminId)
+			await this.iamService.createGroup(projectName, title, description)
+			await this.iamService.addUserToGroup(adminId, 'administrator', projectName)
+			await this.iamService.addUserToGroup(adminId, 'member', projectName)
 			await this.iamService.assignGroupToGroup(
-				name,
+				projectName,
 				'member',
 				ROOT_PROJECT_GROUP_NAME
 			)
@@ -69,7 +69,7 @@ export class ProjectsService {
 				})
 				.then(() => {
 					this.ssh
-						.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/${name}`)
+						.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/${projectName}`)
 						.then(result => {
 							this.logger.debug(`STDOUT: ${result.stdout}`)
 							this.logger.debug(`STDERR: ${result.stderr}`)

@@ -54,7 +54,7 @@ export class IamEbrainsService {
 		this.logger.debug(`getAuthToken()`)
 
 		try {
-			const cachedToken = await this.cacheService.get(`iam_token`)
+			const cachedToken = await this.cacheService.get(`iam_ebrains_token`)
 			if (cachedToken) {
 				this.logger.debug(`getAuthToken() - cached`)
 				return cachedToken
@@ -81,7 +81,7 @@ export class IamEbrainsService {
 				)
 			)
 
-			await this.cacheService.set(`iam_token`, access_token, 3600)
+			await this.cacheService.set(`iam_ebrains_token`, access_token, 3600 * 24 * 5)
 
 			return access_token
 		} catch (error) {
@@ -220,6 +220,7 @@ export class IamEbrainsService {
 
 		try {
 			const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
+			console.log(url)
 			const { status } = await this.request(url, 'put', {})
 
 			return { data: 'Success', status }
