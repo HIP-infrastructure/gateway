@@ -141,6 +141,7 @@ export class NextcloudService {
 		try {
 			const { cookie, requesttoken }: any = req.headers
 			if (!cookie || !requesttoken) {
+				this.logger.debug(`nextcloud uid: ${cookie} ${requesttoken}`)
 				throw new UnauthorizedException()
 			}
 

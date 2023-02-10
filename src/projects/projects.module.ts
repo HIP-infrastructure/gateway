@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { ProjectsController } from './projects.controller';
-import { IamService } from 'src/iam/iam.service';
+import { IamEbrainsService } from 'src/iam-ebrains/iam-ebrains.service';
 import { NextcloudService } from 'src/nextcloud/nextcloud.service';
-import { IamModule } from 'src/iam/iam.module';
+import { EbrainsModule } from 'src/iam-ebrains/iam-ebrains.module';
 import { NextcloudModule } from 'src/nextcloud/nextcloud.module';
 import { HttpModule } from '@nestjs/axios';
+import { CacheService } from 'src/cache/cache.service';
 
 @Module({
-  imports: [HttpModule, IamModule, NextcloudModule],
+  imports: [HttpModule, EbrainsModule, NextcloudModule],
   controllers: [ProjectsController],
-  providers: [ProjectsService, IamService, NextcloudService]
+  providers: [CacheService, ProjectsService, IamEbrainsService, NextcloudService]
 })
 export class ProjectsModule {}

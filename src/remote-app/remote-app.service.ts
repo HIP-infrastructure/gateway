@@ -30,8 +30,8 @@ export const domainConfig = (domain: Domain) => {
 };
 
 export const fsConfig = (domain: Domain) => {
-	const url = domain === 'center' ? process.env.PRIVATE_FS_URL : process.env.COLLAB_PRIVATE_FS_URL;
-	const authurl = domain === 'center' ? process.env.PRIVATE_FS_AUTH_BACKEND_URL : process.env.COLLAB_PRIVATE_FS_AUTH_BACKEND_URL;
+	const url = domain === 'center' ? process.env.PRIVATE_FS_URL : process.env.COLLAB_FS_URL;
+	const authurl = domain === 'center' ? process.env.PRIVATE_FS_AUTH_BACKEND_URL : process.env.COLLAB_FS_AUTH_BACKEND_URL;
 
 	return { url, authurl };
 };
@@ -372,9 +372,13 @@ export class RemoteAppService {
 		}
 
 		// get groupfolders mount point
-		const groupFolders = await this.nextcloudService.groupFoldersForUserId(
-			userId
-		);
+		// const groupFolders = await this.nextcloudService.groupFoldersForUserId(
+		// 	userId
+		// );
+
+		const groupFolders = [{"id":1,"label":"HIP-101","path":"__groupfolders/HIP-101"}]
+
+
 		const domain = serverService.state.context.domain;
 		const config = fsConfig(domain);
 
