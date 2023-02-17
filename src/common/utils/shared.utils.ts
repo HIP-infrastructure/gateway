@@ -16,3 +16,11 @@ export const getLogLevels = (level: number): LogLevel[] => {
   
   return LOG_LEVELS[internLevel] as LogLevel[]
 }
+
+export const uniq = (type = 'session'): string => {
+	const uniqueId = `${type === 'session' ? 'session' : 'app'}-${Date.now()
+		.toString()
+		.slice(-3)}`
+
+	return uniqueId
+}
