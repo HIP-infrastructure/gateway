@@ -49,12 +49,9 @@ export const invokeRemoteContainer = (
 			  }
 
 	const config = backendConfig(context.backend)
-	logger.debug(context.workspace, `invokeRemoteContainer-${id}`)
 	const url = `${config.url}/control/${type}?${toParams(
 		params
 	)}`
-
-	logger.debug(url, `invokeRemoteContainer-${id}`)
 
 	return httpService
 		.get(url, {
@@ -136,6 +133,7 @@ export const createContainerMachine = (
 ): ContainerStateMachine => {
 	return createMachine(
 		{
+			predictableActionArguments: true,
 			id: context.id,
 			initial: context.state,
 			context,

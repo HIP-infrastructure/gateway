@@ -86,7 +86,6 @@ export class IamEbrainsService {
 			return access_token
 		} catch (error) {
 			this.logger.error(error)
-			console.log(error)
 			throw new HttpException(error.response.data, error.response.status)
 		}
 	}
@@ -220,7 +219,6 @@ export class IamEbrainsService {
 
 		try {
 			const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
-			console.log(url)
 			const { status } = await this.request(url, 'put', {})
 
 			return { data: 'Success', status }
