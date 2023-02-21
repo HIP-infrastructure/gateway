@@ -1,67 +1,67 @@
-import { HttpService } from '@nestjs/axios';
+import { HttpService } from '@nestjs/axios'
 import {
 	Injectable,
 	Logger,
 	NotFoundException,
 	ServiceUnavailableException
-} from '@nestjs/common';
-import { Interval } from '@nestjs/schedule';
-import { Backend, Workspace } from './remote-app.controller';
-import { firstValueFrom } from 'rxjs';
-import { NextcloudService } from 'src/nextcloud/nextcloud.service';
-import { interpret } from 'xstate';
-import { CacheService } from '../cache/cache.service';
+} from '@nestjs/common'
+import { Interval } from '@nestjs/schedule'
+import { Backend, Workspace } from './remote-app.controller'
+import { firstValueFrom } from 'rxjs'
+import { NextcloudService } from 'src/nextcloud/nextcloud.service'
+import { interpret } from 'xstate'
+import { CacheService } from '../cache/cache.service'
 import {
 	createContainerMachine,
 	invokeRemoteContainer
-} from './remote-app.container-machine';
+} from './remote-app.container-machine'
 import {
 	ContainerAction,
 	ContainerContext,
 	ContainerState,
 	ContainerType,
 	GhostFSOptions
-} from './remote-app.types';
-import { ProjectsService } from 'src/projects/projects.service';
-import { uniq } from 'src/common/utils/shared.utils';
-import { ConfigService } from '@nestjs/config';
+} from './remote-app.types'
+import { ProjectsService } from 'src/projects/projects.service'
+import { uniq } from 'src/common/utils/shared.utils'
+import { ConfigService } from '@nestjs/config'
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-export const httpService = new HttpService();
+export const httpService = new HttpService()
 
 export const backendConfig = (backend: Backend) => {
 	const url =
 		backend === 'cpu1'
 			? process.env.REMOTE_APP_API
-			: process.env.COLLAB_REMOTE_APP_API;
+			: process.env.COLLAB_REMOTE_APP_API
 
 	const auth =
 		backend === 'cpu1'
 			? process.env.REMOTE_APP_BASIC_AUTH
-			: process.env.COLLAB_REMOTE_APP_BASIC_AUTH;
+			: process.env.COLLAB_REMOTE_APP_BASIC_AUTH
 
-	return { url, auth };
-};
+	return { url, auth }
+}
 
 export const fsConfig = (workspace: Workspace) => {
 	const url =
 		workspace === 'private'
 			? process.env.PRIVATE_FS_URL
-			: process.env.COLLAB_FS_URL;
+			: process.env.COLLAB_FS_URL
 	const authurl =
 		workspace === 'private'
 			? process.env.PRIVATE_FS_AUTH_BACKEND_URL
-			: process.env.COLLAB_FS_AUTH_BACKEND_URL;
+			: process.env.COLLAB_FS_AUTH_BACKEND_URL
 
-	return { url, authurl };
-};
+	return { url, authurl }
+}
 
-const INTERVAL = Number(process.env.POLLING_INTERVAL) || 5;
+const INTERVAL = Number(process.env.POLLING_INTERVAL) || 5
 @Injectable()
 export class RemoteAppService {
-	private readonly logger = new Logger('RemoteAppService');
-	private containerServices: any[] = [];
+	private readonly logger = new Logger('RemoteAppService')
+	private containerServices: any[] = []
 
 	constructor(
 		private readonly cacheService: CacheService,
@@ -70,7 +70,7 @@ export class RemoteAppService {
 		private readonly configService: ConfigService
 	) {
 		// this.cacheService.flushall()
-		this.restoreCachedContainers();
+		this.restoreCachedContainers()
 	}
 
 	/**
@@ -83,16 +83,16 @@ export class RemoteAppService {
 			if (state.changed) {
 				if (state.value === ContainerState.DESTROYED) {
 					if (state.context.type === ContainerType.APP) {
-						this.removeService(service.machine.id);
+						this.removeService(service.machine.id)
 					} else {
-						this.stopService(service.machine.id);
+						this.stopService(service.machine.id)
 					}
 				} else {
-					this.setCacheContainer({ context: service.state.context });
+					this.setCacheContainer({ context: service.state.context })
 				}
 			}
-		});
-	};
+		})
+	}
 
 	/**
 	 * @Description: Remove and stop service and its apps services
@@ -104,29 +104,29 @@ export class RemoteAppService {
 		const servicesToRemove =
 			this.containerServices.filter(
 				s => s.machine.id === id || s.state.context.parentId === id
-			) || [];
+			) || []
 		servicesToRemove.forEach(s => {
-			s.stop();
-			this.removeCacheContainer(s.machine.id);
-		});
+			s.stop()
+			this.removeCacheContainer(s.machine.id)
+		})
 
 		const nextServices =
 			this.containerServices.filter(
 				s => s.machine.id !== id && s.state.context.parentId !== id
-			) || [];
-		this.containerServices = nextServices;
-		this.removeCacheContainer(id);
-	};
+			) || []
+		this.containerServices = nextServices
+		this.removeCacheContainer(id)
+	}
 
 	private stopService = (id: string) => {
 		const servicesToStop =
 			this.containerServices.filter(
 				s => s.machine.id === id || s.state.context.parentId === id
-			) || [];
+			) || []
 		servicesToStop.forEach(s => {
-			s.stop();
-		});
-	};
+			s.stop()
+		})
+	}
 
 	/**
 	 * @Description: Persist a container in cache
@@ -137,11 +137,11 @@ export class RemoteAppService {
 	private setCacheContainer = async ({
 		context
 	}: {
-		context: Partial<ContainerContext & GhostFSOptions>;
+		context: Partial<ContainerContext & GhostFSOptions>
 	}): Promise<any> => {
-		this.cacheService.set(`container:${context.id}`, context);
-		this.cacheService.sadd(`containers`, context.id);
-	};
+		this.cacheService.set(`container:${context.id}`, context)
+		this.cacheService.sadd(`containers`, context.id)
+	}
 
 	/**
 	 * @Description: Remove a container from cache
@@ -150,9 +150,9 @@ export class RemoteAppService {
 	 */
 
 	private removeCacheContainer = containerId => {
-		this.cacheService.del(`container:${containerId}`);
-		this.cacheService.srem(`containers`, containerId);
-	};
+		this.cacheService.del(`container:${containerId}`)
+		this.cacheService.srem(`containers`, containerId)
+	}
 
 	/**
 	 * @Description: Restore all containers in cache to services
@@ -160,9 +160,9 @@ export class RemoteAppService {
 	 */
 
 	private restoreCachedContainers = async () => {
-		const containerIds = await this.cacheService.smembers('containers');
+		const containerIds = await this.cacheService.smembers('containers')
 		if (!containerIds) {
-			this.containerServices = [];
+			this.containerServices = []
 		}
 
 		const containers: ContainerContext[] = await Promise.all(
@@ -170,16 +170,16 @@ export class RemoteAppService {
 				async containerId =>
 					await this.cacheService.get(`container:${containerId}`)
 			)
-		);
+		)
 
-		this.logger.debug(JSON.stringify(containers, null, 2));
+		this.logger.debug(JSON.stringify(containers, null, 2))
 		this.containerServices = containers.map(container => {
-			const service = interpret(createContainerMachine(container)).start();
-			this.handleTransitionFor(service);
+			const service = interpret(createContainerMachine(container)).start()
+			this.handleTransitionFor(service)
 
-			return service;
-		});
-	};
+			return service
+		})
+	}
 
 	/**
 	 * @Description: Poll remote api to update the status of all containers
@@ -189,11 +189,11 @@ export class RemoteAppService {
 	@Interval(INTERVAL * 1000)
 	pollRemoteState() {
 		this.containerServices?.forEach(async service => {
-			const currentContext = service.state.context;
+			const currentContext = service.state.context
 			try {
 				const remoteContext = await invokeRemoteContainer(currentContext, {
 					type: ContainerAction.STATUS
-				});
+				})
 
 				if (remoteContext.error) {
 					// this.logger.debug(JSON.stringify(remoteContext.error, null, 2))
@@ -201,14 +201,14 @@ export class RemoteAppService {
 						type: ContainerAction.REMOTE_STOPPED,
 						nextContext: remoteContext,
 						error: remoteContext.error
-					});
+					})
 
-					return;
+					return
 				}
 
 				const childApps = this.containerServices.filter(
 					s => s.state.context.parentId === service.machine.id
-				);
+				)
 
 				// Destroy server sequence
 				// Remove if there is no more apps inside
@@ -224,7 +224,7 @@ export class RemoteAppService {
 								nextAction: ContainerAction.DESTROY,
 								error: undefined
 							}
-						});
+						})
 					}
 				}
 
@@ -240,8 +240,8 @@ export class RemoteAppService {
 									...remoteContext,
 									error: undefined
 								}
-							});
-							break;
+							})
+							break
 						}
 
 						service.send({
@@ -251,8 +251,8 @@ export class RemoteAppService {
 								nextAction: ContainerAction.DESTROY,
 								error: { message: 'Container is not reachable' }
 							}
-						});
-						break;
+						})
+						break
 
 					case ContainerState.RUNNING:
 						service.send({
@@ -261,8 +261,8 @@ export class RemoteAppService {
 								...remoteContext,
 								error: undefined
 							}
-						});
-						break;
+						})
+						break
 
 					case ContainerState.CREATED:
 						service.send({
@@ -271,27 +271,27 @@ export class RemoteAppService {
 								...remoteContext,
 								error: undefined
 							}
-						});
-						break;
+						})
+						break
 				}
 			} catch (error) {
 				service.state.context = {
 					...currentContext
 					// ...error,
-				};
+				}
 			}
-		});
+		})
 	}
 
 	async availableApps(backend: Backend): Promise<any> {
-		const config = backendConfig(backend);
-		const url = `${config.url}/control/app/list`;
+		const config = backendConfig(backend)
+		const url = `${config.url}/control/app/list`
 		const response = httpService.get(url, {
 			headers: {
 				Authorization: config.auth,
 				'Cache-Control': 'no-cache'
 			}
-		});
+		})
 
 		return await firstValueFrom(response)
 			.then(r =>
@@ -302,13 +302,13 @@ export class RemoteAppService {
 				}))
 			)
 			.catch(error => {
-				const e = error.toJSON();
-				this.logger.error(e);
+				const e = error.toJSON()
+				this.logger.error(e)
 
 				// Return Service unavailable rather than backend login issue
 				//if (e.status) throw new HttpException(e.message, e.status)
-				throw new ServiceUnavailableException(e.message);
-			});
+				throw new ServiceUnavailableException(e.message)
+			})
 	}
 
 	/**
@@ -318,10 +318,21 @@ export class RemoteAppService {
 	 */
 
 	async forceRemove(id: string): Promise<ContainerContext[]> {
-		this.removeService(id);
+		this.removeService(id)
 		return this.containerServices.map(service => {
-			const { id, name, userId, groupIds, url, error, type, app, parentId, workspace, backend } =
-				service.state.context as Partial<ContainerContext & GhostFSOptions>;
+			const {
+				id,
+				name,
+				userId,
+				groupIds,
+				url,
+				error,
+				type,
+				app,
+				parentId,
+				workspace,
+				backend
+			} = service.state.context as Partial<ContainerContext & GhostFSOptions>
 			return {
 				id,
 				name,
@@ -335,8 +346,8 @@ export class RemoteAppService {
 				state: service.state.value as ContainerState,
 				workspace,
 				backend
-			};
-		});
+			}
+		})
 	}
 
 	/**
@@ -344,29 +355,39 @@ export class RemoteAppService {
 	 * @return Promise<ContainerContext>
 	 */
 
-	async getAllContainers(workspace: Workspace): Promise<ContainerContext[]> {
+	async getAllContainers(): Promise<ContainerContext[]> {
+		this.logger.debug('getAllContainers')
 		return (
-			this.containerServices
-				.filter(service => service.state.context.workspace === workspace)
-				.map(service => {
-					const { id, name, userId, groupIds, url, error, type, app, parentId, workspace, backend } =
-						service.state.context as Partial<ContainerContext & GhostFSOptions>;
-					return {
-						id,
-						name,
-						userId,
-						groupIds,
-						url,
-						error,
-						type,
-						app,
-						parentId,
-						state: service.state.value as ContainerState,
-						workspace,
-						backend
-					};
-				}) ?? []
-		);
+			this.containerServices.map(service => {
+				const {
+					id,
+					name,
+					userId,
+					groupIds,
+					url,
+					error,
+					type,
+					app,
+					parentId,
+					workspace,
+					backend
+				} = service.state.context as Partial<ContainerContext & GhostFSOptions>
+				return {
+					id,
+					name,
+					userId,
+					groupIds,
+					url,
+					error,
+					type,
+					app,
+					parentId,
+					state: service.state.value as ContainerState,
+					workspace,
+					backend
+				}
+			}) ?? []
+		)
 	}
 
 	/**
@@ -378,15 +399,24 @@ export class RemoteAppService {
 	getContainer(id: string): ContainerContext {
 		const service = this.containerServices.find(
 			service => service.state.context.id === id
-		);
+		)
 
-		if (!service) throw new NotFoundException('Container not found');
+		if (!service) throw new NotFoundException('Container not found')
 
-		const { name, userId, groupIds, url, error, type, parentId, workspace, backend } =
-			service.state.context;
+		const {
+			name,
+			userId,
+			groupIds,
+			url,
+			error,
+			type,
+			parentId,
+			workspace,
+			backend
+		} = service.state.context
 
-		const pathId = url.split('/').slice(-2, -1) || '';
-		const path = encodeURIComponent(`/session/${pathId}/`);
+		const pathId = url.split('/').slice(-2, -1) || ''
+		const path = encodeURIComponent(`/session/${pathId}/`)
 
 		return {
 			id,
@@ -400,7 +430,7 @@ export class RemoteAppService {
 			state: service.state.value as ContainerState,
 			workspace,
 			backend
-		};
+		}
 	}
 
 	/**
@@ -409,14 +439,40 @@ export class RemoteAppService {
 	 * @return ContainerContext[]
 	 */
 
-	getContainers(workspace: Workspace, userId: string, groupIds: string[], isAdmin: boolean = false): ContainerContext[] {
+	getContainers(
+		workspace: Workspace,
+		userId: string,
+		groupIds: string[]
+	): ContainerContext[] {
+		this.logger.debug(`getContainers: ${userId} ${groupIds}`)
+
 		return (
 			this.containerServices
 				.filter(service => service.state.context.userId === userId)
-				.filter(service => service.state.context.workspace === workspace)
+				.filter(service =>
+					workspace === 'private'
+						? workspace === service.state.context.workspace
+						: service.state.context.groupIds.some(id =>
+								groupIds.map(g => `group-${g}`).includes(id)
+						  )
+				)
 				.map(service => {
-					const { id, name, userId, groupIds, url, error, type, app, parentId, workspace, backend } =
-						service.state.context as Partial<ContainerContext & GhostFSOptions>;
+					const {
+						id,
+						name,
+						userId,
+						groupIds,
+						url,
+						error,
+						type,
+						app,
+						parentId,
+						workspace,
+						backend
+					} = service.state.context as Partial<
+						ContainerContext & GhostFSOptions
+					>
+
 					return {
 						id,
 						name,
@@ -430,9 +486,9 @@ export class RemoteAppService {
 						state: service.state.value as ContainerState,
 						workspace,
 						backend
-					};
+					}
 				}) ?? []
-		);
+		)
 	}
 
 	/**
@@ -446,25 +502,23 @@ export class RemoteAppService {
 		backend: Backend,
 		workspace: Workspace,
 		userId: string,
-		groupIds: string[],
+		groupIds: string[]
 	): Promise<ContainerContext[]> {
-		const serverId = uniq();
-		let groupFolders: ContainerContext['groupFolders'];
-		let oidcGroupIds: string[];
+		const serverId = uniq()
+		let groupFolders: ContainerContext['groupFolders']
+		let oidcGroupIds: string[]
 
 		if (workspace === 'private') {
-			oidcGroupIds = await this.nextcloudService.oidcGroupsForUser(userId);
-			groupFolders = await this.nextcloudService.groupFoldersForUserId(userId);
-
+			oidcGroupIds = await this.nextcloudService.oidcGroupsForUser(userId)
+			groupFolders = await this.nextcloudService.groupFoldersForUserId(userId)
 		} else {
-			oidcGroupIds = groupIds;
+			oidcGroupIds = groupIds.map(g => `group-${g}`)
 			groupFolders = groupIds.map(group => ({
 				id: 1,
 				label: group,
 				path: `__groupfolders/${group}`
-			}));
+			}))
 		}
-
 
 		// Forge a name for the container
 		// That's pretty stupid btw, FIXME
@@ -472,11 +526,12 @@ export class RemoteAppService {
 			.filter(s => s.state.context.type === ContainerType.SERVER)
 			.filter(s => s.state.context.userId === userId)
 			.map(s => s.state.context.name)
-			.map(n => parseInt(n));
-		const sessionNames = sessionNamesArray.length > 0 ? sessionNamesArray : [0];
-		const name = `${Math.max(...sessionNames) + 1}`;
+			.map(n => parseInt(n))
+		const sessionNames = sessionNamesArray.length > 0 ? sessionNamesArray : [0]
+		const name = `${Math.max(...sessionNames) + 1}`
+		const config = fsConfig(workspace)
 
-		const context: ContainerContext = {
+		const context: ContainerContext & GhostFSOptions = {
 			id: serverId,
 			name,
 			userId,
@@ -487,15 +542,22 @@ export class RemoteAppService {
 			type: ContainerType.SERVER,
 			groupFolders,
 			workspace,
-			backend
-		};
-		const serverMachine = createContainerMachine(context);
-		const service = interpret(serverMachine).start();
-		this.handleTransitionFor(service);
-		service.send({ type: ContainerAction.START });
-		this.containerServices.push(service);
+			backend,
+			nc: config.url,
+			ab: config.authurl,
+			app: null
+		}
 
-		return this.getContainers(workspace, userId, oidcGroupIds);
+		console.log('createServer')
+		console.log(context)
+
+		const serverMachine = createContainerMachine(context)
+		const service = interpret(serverMachine).start()
+		this.handleTransitionFor(service)
+		service.send({ type: ContainerAction.START })
+		this.containerServices.push(service)
+
+		return this.getContainers(workspace, userId, oidcGroupIds)
 	}
 
 	/**
@@ -509,34 +571,32 @@ export class RemoteAppService {
 	async createApp(
 		serverId: string,
 		appName: string,
-		userId: string,
+		userId: string
 	): Promise<ContainerContext[]> {
 		const serverService = this.containerServices.find(
 			s => s.machine.id === serverId
-		);
+		)
 
 		if (!serverService) {
 			return {
 				...serverService.state.context,
 				error: { message: 'Server is not ready', code: '' }
-			};
+			}
 		}
 
 		// FIXME: check if apName is already running
 		// check if existing app
 		const service: any = this.containerServices.find(
 			s => s.state.context.name === appName
-		);
+		)
 
 		if (service) {
-			return service.state.context;
+			return service.state.context
 		}
 
-		console.log('createApp: server', serverService.state.context);
-
-		const appId = uniq('app');
-		const { groupIds, groupFolders, workspace, backend } = serverService.state.context;
-		const config = fsConfig(workspace);
+		const appId = uniq('app')
+		const { groupIds, groupFolders, workspace, backend, ab, nc } =
+			serverService.state.context
 
 		const context: ContainerContext & GhostFSOptions = {
 			id: appId,
@@ -549,25 +609,27 @@ export class RemoteAppService {
 			type: ContainerType.APP,
 			app: appName,
 			parentId: serverId,
-			nc: config.url,
-			ab: config.authurl,
 			groupFolders,
 			workspace,
-			backend
-		};
+			backend,
+			nc,
+			ab
+		}
 
-		console.log('createApp', context);
-		const machine = createContainerMachine(context);
-		const appService = interpret(machine).start();
-		this.handleTransitionFor(appService);
-		appService.send({ type: ContainerAction.START });
-		this.containerServices.push(appService); // TODO, immutable state by reducer
+		console.log('createApp')
+		console.log(context)
 
-		return this.getContainers(workspace, userId, groupIds);
+		const machine = createContainerMachine(context)
+		const appService = interpret(machine).start()
+		this.handleTransitionFor(appService)
+		appService.send({ type: ContainerAction.START })
+		this.containerServices.push(appService) // TODO, immutable state by reducer
+
+		return this.getContainers(workspace, userId, groupIds)
 	}
 
 	/**
-	 * @Description: Stop an app in session
+	 * @Description: Stop an app in server
 	 * @param serverId {String} The id of the server
 	 * @param appId {String} The id of the app
 	 * @return Promise<ContainerContext[]>
@@ -579,14 +641,15 @@ export class RemoteAppService {
 		appId: string
 	): Promise<ContainerContext[]> {
 		// check existing server
-		const service = this.containerServices.find(s => s.machine.id === serverId);
+		const service = this.containerServices.find(s => s.machine.id === serverId)
 
 		if (!service) {
-			throw new Error('Container is not available');
+			throw new Error('Container is not available')
 		}
 
-		let appService = this.containerServices.find(s => s.machine.id === appId &&
-			s.state.context.userId === userId);
+		let appService = this.containerServices.find(
+			s => s.machine.id === appId && s.state.context.userId === userId
+		)
 
 		appService.send({
 			type: ContainerAction.STOP,
@@ -595,9 +658,13 @@ export class RemoteAppService {
 				nextAction: ContainerAction.DESTROY,
 				error: undefined
 			}
-		});
+		})
 
-		return this.getContainers(appService.state.context.workspace, userId, service.state.context.groupIds);
+		return this.getContainers(
+			appService.state.context.workspace,
+			userId,
+			service.state.context.groupIds
+		)
 	}
 
 	/**
@@ -607,22 +674,23 @@ export class RemoteAppService {
 	 */
 
 	removeAppsAndServer(serverId: string, userId: string): ContainerContext[] {
-		const service = this.containerServices.find(s => s.machine.id === serverId);
+		const service = this.containerServices.find(s => s.machine.id === serverId)
 		const appServices = this.containerServices.filter(
-			s => s.state.context.parentId === service.machine.id &&
+			s =>
+				s.state.context.parentId === service.machine.id &&
 				s.state.context.userId === userId
-		);
+		)
 		if (!service) {
-			throw new Error('Container is not available');
+			throw new Error('Container is not available')
 		}
 
-		const currentContext = service.state.context;
-		// stale: remove already exited apps and session
+		const currentContext = service.state.context
+		// stale: remove already exited apps and server
 		if (service.state.value === ContainerState.EXITED) {
 			appServices.forEach(s => {
-				s.send({ type: ContainerAction.DESTROY });
-			});
-			service.send({ type: ContainerAction.DESTROY });
+				s.send({ type: ContainerAction.DESTROY })
+			})
+			service.send({ type: ContainerAction.DESTROY })
 		}
 		// Stop child apps, schedule a destroy with next
 		// Schedule a stop server with nextAction
@@ -635,8 +703,8 @@ export class RemoteAppService {
 						...s.state.context,
 						nextAction: ContainerAction.DESTROY
 					}
-				});
-			});
+				})
+			})
 
 			// set the server context, don't send a direct action
 			// Will be handled in polling, so server and apps get detroyed sequentially
@@ -644,7 +712,7 @@ export class RemoteAppService {
 			service.state.context = {
 				...currentContext,
 				nextAction: ContainerAction.STOP
-			};
+			}
 		}
 		// stop service, schedule destroy
 		else {
@@ -655,46 +723,60 @@ export class RemoteAppService {
 					nextAction: ContainerAction.DESTROY,
 					error: undefined
 				}
-			});
+			})
 		}
 
-		return this.getContainers(currentContext.workspace, userId, service.state.context.groupIds);
+		return this.getContainers(
+			currentContext.workspace,
+			userId,
+			service.state.context.groupIds
+		)
 	}
 
 	pauseAppsAndServer(userId: string, serverId: string): ContainerContext[] {
-		const service = this.containerServices.find(s => s.machine.id === serverId &&
-			s.state.context.userId === userId);
+		const service = this.containerServices.find(
+			s => s.machine.id === serverId && s.state.context.userId === userId
+		)
 
 		if (!service) {
-			throw new Error('Container is not available');
+			throw new Error('Container is not available')
 		}
 
-		service.send({ type: ContainerAction.PAUSE });
+		service.send({ type: ContainerAction.PAUSE })
 		this.containerServices
 			.filter(s => s.state.context.parentId === service.machine.id)
 			.forEach(s => {
-				s.send({ type: ContainerAction.PAUSE });
-			});
+				s.send({ type: ContainerAction.PAUSE })
+			})
 
-		return this.getContainers(service.state.context.workspace, userId, service.state.context.groupIds);
+		return this.getContainers(
+			service.state.context.workspace,
+			userId,
+			service.state.context.groupIds
+		)
 	}
 
 	resumeAppsAndServer(userId: string, serverId: string): ContainerContext[] {
-		const service = this.containerServices.find(s => s.machine.id === serverId &&
-			s.state.context.userId === userId);
+		const service = this.containerServices.find(
+			s => s.machine.id === serverId && s.state.context.userId === userId
+		)
 
 		if (!service) {
-			throw new Error('Container is not available');
+			throw new Error('Container is not available')
 		}
 
-		service.send({ type: ContainerAction.RESUME });
+		service.send({ type: ContainerAction.RESUME })
 
 		this.containerServices
 			.filter(s => s.state.context.parentId === service.machine.id)
 			.forEach(s => {
-				s.send({ type: ContainerAction.RESUME });
-			});
+				s.send({ type: ContainerAction.RESUME })
+			})
 
-		return this.getContainers(service.state.context.workspace, userId, service.state.context.groupIds);
+		return this.getContainers(
+			service.state.context.workspace,
+			userId,
+			service.state.context.groupIds
+		)
 	}
 }
