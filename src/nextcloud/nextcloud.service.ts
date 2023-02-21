@@ -82,6 +82,7 @@ export class NextcloudService {
 
 	// This takes a request object and checks if the user is logged in
 	public async authenticate(req: Request): Promise<boolean> {
+		this.logger.debug(`authenticate`)
 		try {
 			const { cookie, requesttoken }: any = req.headers
 			if (!cookie || !requesttoken) {
@@ -110,6 +111,7 @@ export class NextcloudService {
 	}
 
 	public async users(): Promise<User[]> {
+		this.logger.debug(`users`)
 		try {
 			const args = ['user:list', '-i']
 			const message = await this.spawnable(args)
@@ -138,6 +140,7 @@ export class NextcloudService {
 
 	// This takes a request object and returns the user id
 	public async uid(req: Request): Promise<string> {
+		this.logger.debug(`uid`)
 		try {
 			const { cookie, requesttoken }: any = req.headers
 			if (!cookie || !requesttoken) {
@@ -170,6 +173,7 @@ export class NextcloudService {
 		userid: string,
 		isOwner: boolean = false
 	): Promise<User & Partial<NCUser>> {
+		this.logger.debug(`user ${userid}, ${isOwner}`)
 		try {
 			const args = ['user:info', userid]
 			const message = await this.spawnable(args)
@@ -202,6 +206,7 @@ export class NextcloudService {
 	}
 
 	public async usersForGroup(groupid: string): Promise<string[]> {
+		this.logger.debug(`usersForGroup ${groupid}`)
 		try {
 			const args = ['group:list']
 			const message = await this.spawnable(args)
@@ -224,6 +229,7 @@ export class NextcloudService {
 	 */
 
 	public async groupFoldersForUserId(userid: string): Promise<GroupFolder[]> {
+		this.logger.debug(`groupFoldersForUserId ${userid}`)
 		try {
 			const user = await this.user(userid)
 			const groupFolders: NCGroupFolder[] = await this.groupFolders()
@@ -251,6 +257,7 @@ export class NextcloudService {
 	}
 
 	public async userSettings(userid: string, settings: string): Promise<string> {
+		this.logger.debug(`userSettings ${userid}`)
 		try {
 			const args = ['user:setting', userid, settings || '']
 			const message = await this.spawnable(args)
@@ -266,6 +273,7 @@ export class NextcloudService {
 	}
 
 	public async scanUserFiles(userid: string): Promise<string> {
+		this.logger.debug(`scanUserFiles ${userid}`)
 		try {
 			const args = ['files:scan', userid]
 			const message = await this.spawnable(args)
@@ -285,6 +293,7 @@ export class NextcloudService {
 	 */
 
 	public async scanPath(userid: string, path: string): Promise<string> {
+		this.logger.debug(`scanPath ${userid}`)
 		try {
 			const ncPath = `${userid}/files/${path}`
 			const args = ['files:scan', '--path', ncPath]
@@ -301,6 +310,7 @@ export class NextcloudService {
 	}
 
 	public async oidcGroupsForUser(userId: string): Promise<string[]> {
+		this.logger.debug(`oidcGroupsForUser ${userId}`)
 		const groupMapping = await this.groupMapping()
 		const user = await this.user(userId, true)
 		const { groups } = user
@@ -317,6 +327,7 @@ export class NextcloudService {
 	}
 
 	private async groupFolders(): Promise<NCGroupFolder[]> {
+		this.logger.debug(`groupFolders`)
 		try {
 			const args = ['groupfolders:list']
 			const message = await this.spawnable(args)
@@ -333,6 +344,7 @@ export class NextcloudService {
 	}
 
 	private async groupMapping(): Promise<Record<string, string>> {
+		this.logger.debug(`groupMapping`)
 		try {
 			const args = ['config:app:get', 'sociallogin', 'custom_providers']
 			const message = await this.spawnable(args)
@@ -351,7 +363,7 @@ export class NextcloudService {
 
 	private spawnable = (args: string[]): Promise<string> => {
 		const cmd = [...OCC_DOCKER_ARGS, ...args, '--output=json']
-		this.logger.error('docker', cmd.join(' '))
+		this.logger.debug(`spawnable docker ${cmd.join(' ')}`)
 
 		const child = spawn('docker', cmd)
 		let message = ''
