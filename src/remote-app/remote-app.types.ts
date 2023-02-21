@@ -1,5 +1,5 @@
 import { StateMachine, AnyEventObject, Interpreter } from 'xstate'
-import { Domain } from './remote-app.controller';
+import { Backend, Workspace } from './remote-app.controller';
 
 export type ContainerStateMachine = StateMachine<
 	any,
@@ -15,26 +15,27 @@ export type ContainerStateMachine = StateMachine<
 export interface ContainerContext {
 	id: string
 	name: string
-	user: string
+	userId: string
 	url: string
 	state: ContainerState
 	nextAction?: ContainerAction
 	error: Error | null
 	type: ContainerType
 	parentId?: string
-	oidcGroups?: string[]
-	domain: Domain
-}
-
-export interface WebdavOptions {
-	nc: string
-	app: string
-	ab: string
+	groupIds?: string[]
+	workspace: Workspace
+	backend: Backend
 	groupFolders?: {
 		label: string
 		id: number
 		path: string
 	}[]
+}
+
+export interface GhostFSOptions {
+	nc: string
+	app: string
+	ab: string
 }
 
 export enum ContainerState {
