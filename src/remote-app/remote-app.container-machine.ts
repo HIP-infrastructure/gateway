@@ -6,8 +6,7 @@ import {
 	ContainerContext,
 	ContainerState,
 	ContainerStateMachine,
-	ContainerType,
-	GhostFSOptions,
+	ContainerType
 } from './remote-app.types'
 
 const toParams = data =>
@@ -18,7 +17,7 @@ const toParams = data =>
 const logger = new Logger('Container Machine')
 
 export const invokeRemoteContainer = (
-	context: ContainerContext & GhostFSOptions,
+	context: ContainerContext,
 	event: AnyEventObject
 ) => {
 	const { type: action } = event
@@ -30,25 +29,25 @@ export const invokeRemoteContainer = (
 	const params =
 		type === ContainerType.APP
 			? {
-					sid: parentId,
-					aid: id,
-					hipuser: userId,
-					action,
-					...(startApp && {
-						nc: context.nc,
-						ab: context.ab,
-						gf: JSON.stringify(context.groupFolders),
-					}),
-					app: context.app,
-			  }
+				sid: parentId,
+				aid: id,
+				hipuser: userId,
+				action,
+				...(startApp && {
+					nc: context.dataSource.nc,
+					ab: context.dataSource.ab,
+					gf: JSON.stringify(context.dataSource.groupFolders),
+				}),
+				app: context.name,
+			}
 			: {
-					sid: id,
-					hipuser: userId,
-					action,
-					groups: JSON.stringify(groupIds),
-			  }
+				sid: id,
+				hipuser: userId,
+				action,
+				groups: JSON.stringify(groupIds),
+			}
 
-	const config = backendConfig(context.backend)
+	const config = backendConfig(context.computeSource.backendId)
 	const url = `${config.url}/control/${type}?${toParams(
 		params
 	)}`
