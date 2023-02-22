@@ -43,7 +43,7 @@
         "rxjs": "^7.2.0",
         "typeorm": "^0.3.11",
         "userid": "^1.2.5",
-        "xstate": "^4.32.1"
+        "xstate": "^4.36.0"
     },
     "devDependencies": {
         "@nestjs/cli": "^9.1.8",

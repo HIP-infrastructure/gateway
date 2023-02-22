@@ -7,36 +7,45 @@ import {
 	Param,
 	Delete,
 	Query,
-	Request as Req
+	Request as Req,
+	Logger
 } from '@nestjs/common'
 import { Request } from 'express'
 
 import { Project, ProjectsService } from './projects.service'
 import { CreateProjectDto } from './dto/create-project.dto'
-import { UpdateProjectDto } from './dto/update-project.dto'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 @Controller('projects')
 export class ProjectsController {
+	private readonly logger = new Logger('ProjectsController');
+
 	constructor(
 		private readonly projectsService: ProjectsService,
 		private readonly nextcloudService: NextcloudService
 	) {}
 
 	@Get()
-	findAll(@Query('userId') userId?: string): Promise<Project[]> {
-		if (userId) return this.projectsService.findUserProjects(userId)
-
+	findAll() {
+		this.logger.debug(`findAll()`)
 		return this.projectsService.findAll()
+	}
+
+	@Get('forUser/:userId')
+	findUserProjects(@Param('userId') userId: string): Promise<Project[]> {
+		this.logger.debug(`findUserProjects(${userId})`)
+		return this.projectsService.findUserProjects(userId)
 	}
 
 	@Get(':projectName')
 	findOne(@Param('projectName') projectName: string): Promise<Project> {
+		this.logger.debug(`findOne(${projectName})`)
 		return this.projectsService.findOne(projectName)
 	}
 
 	@Post()
 	create(@Body() createProjectDto: CreateProjectDto) {
+		this.logger.debug(`create(${JSON.stringify(createProjectDto)})`)
 		return this.projectsService.create(createProjectDto)
 	}
 
@@ -47,6 +56,7 @@ export class ProjectsController {
 
 	@Delete(':projectName')
 	remove(@Param('projectName') projectName: string, @Req() req: Request) {
+		this.logger.debug(`remove(${projectName})`)
 		return this.nextcloudService.uid(req).then(userId => {
 			return this.projectsService.remove(projectName, userId)
 		})
@@ -58,7 +68,7 @@ export class ProjectsController {
 		@Param('username') username: string,
 		@Req() req: Request
 	) {
-		console.log(`addUser(${projectName}, ${username})`)
+		this.logger.debug(`addUser(${projectName}, ${username})`)
 		return this.nextcloudService.uid(req).then(() => {
 			return this.projectsService.addUserToProject(username, projectName)
 		})
@@ -71,6 +81,7 @@ export class ProjectsController {
 		@Req() req: Request
 	) {
 		return this.nextcloudService.uid(req).then(userId => {
+			this.logger.debug(`files(${projectName}, ${path}, ${userId})`)
 			return this.projectsService.files(projectName, path, userId)
 		})
 	}

@@ -120,7 +120,7 @@ export class IamEbrainsService {
 	}
 
 	private async getGroupInfo(groupName: string): Promise<Group> {
-		this.logger.debug(`getGroup(${groupName})`)
+		this.logger.debug(`getGroupInfo(${groupName})`)
 
 		try {
 			const url = `${this.apiUrl}/identity/groups/${groupName}`
@@ -249,7 +249,6 @@ export class IamEbrainsService {
 	public async getGroup(
 		groupName: string
 	): Promise<Group & { members: GroupLists; administrators: GroupLists }> {
-		this.logger.debug(`getGroup(${groupName})`)
 
 		try {
 			const group = await this.getGroupInfo(groupName)

@@ -1,5 +1,5 @@
 import { StateMachine, AnyEventObject, Interpreter } from 'xstate'
-import { Backend, Workspace } from './remote-app.controller';
+import { BackendId as BackendId, WorkspaceType as WorkspaceType } from './remote-app.controller';
 
 export type ContainerStateMachine = StateMachine<
 	any,
@@ -23,20 +23,23 @@ export interface ContainerContext {
 	type: ContainerType
 	parentId?: string
 	groupIds?: string[]
-	workspace: Workspace
-	backend: Backend
-	groupFolders?: {
-		label: string
-		id: number
-		path: string
-	}[]
+	workspace: WorkspaceType
+	dataSource: {
+		nc: string
+		ab: string
+		groupFolders: {
+			label: string
+			id: number | string
+			path: string
+		}[]
+	}
+	computeSource: {
+		backendId: BackendId
+	}
 }
 
-export interface GhostFSOptions {
-	nc: string
-	app: string
-	ab: string
-}
+export type ResponseContext = Omit<ContainerContext, 
+"nextAction" | "dataSource" | "computeSource" >;
 
 export enum ContainerState {
 	UNINITIALIZED = 'uninitialized',

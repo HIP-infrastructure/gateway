@@ -5,7 +5,6 @@ import { spawn } from 'child_process'
 import { catchError, firstValueFrom } from 'rxjs'
 import { CacheService } from 'src/cache/cache.service'
 import { Group, IamEbrainsService } from 'src/iam-ebrains/iam-ebrains.service'
-import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 
 const { NodeSSH } = require('node-ssh')
@@ -17,10 +16,11 @@ export interface Project extends Group {
 
 // FIXME: CHECKIF GROUP EXISTS
 const ROOT_PROJECT_GROUP_NAME = 'HIP-Projects'
+const CACHE_ROOT_KEY = 'projects'
 
 @Injectable()
 export class ProjectsService {
-	private readonly logger = new Logger(ProjectsService.name)
+	private readonly logger = new Logger(ProjectsService.name);
 	private readonly ssh: any
 	private readonly authBackendUsername: string
 	private readonly authBackendPassword: string
@@ -75,7 +75,8 @@ export class ProjectsService {
 						})
 				})
 
-			await this.cacheService.del(`userProjects:${adminId}`)
+			await this.cacheService.del(`${CACHE_ROOT_KEY}:${adminId}`)
+			await this.cacheService.del(`${CACHE_ROOT_KEY}:all`)
 		} catch (error) {
 			console.error(error)
 			throw new HttpException(error.response.description, error.response.status)
@@ -83,24 +84,31 @@ export class ProjectsService {
 	}
 
 	async findAll(): Promise<Project[]> {
+		const cached = await this.cacheService.get(`${CACHE_ROOT_KEY}:all`)
+		if (cached) {
+			this.logger.debug(`${CACHE_ROOT_KEY}:all - cached`)
+			return cached
+		}
 		try {
 			const rootProject = await this.iamService.getGroup(
 				ROOT_PROJECT_GROUP_NAME
 			)
 
-			return rootProject.members.groups
+			const groups = rootProject.members.groups
+			this.cacheService.set(`${CACHE_ROOT_KEY}:all`, groups, 3600)
+
+			return groups
 		} catch (error) {
 			throw new Error('Could not get projects')
 		}
 	}
 
 	async findUserProjects(userId: string): Promise<Project[]> {
-		this.logger.debug(`findUserProjects(${userId})`)
-		// const cached = await this.cacheService.get(`userProjects:${userId}`)
-		// if (cached) {
-		// 	this.logger.debug(`findUserProjects(${userId}) - cached`)
-		// 	return cached
-		// }
+		const cached = await this.cacheService.get(`${CACHE_ROOT_KEY}:${userId}`)
+		if (cached) {
+			this.logger.debug(`${CACHE_ROOT_KEY}:${userId} - cached`)
+			return cached
+		}
 		try {
 			const projects = await this.findAll()
 			const userGroups = await this.iamService.getUserGroups(userId)
@@ -115,7 +123,7 @@ export class ProjectsService {
 					acceptMembershipRequest: p.acceptMembershipRequest
 				}))
 
-			// this.cacheService.set(`userProjects:${userId}`, userProjects, 3600)
+			this.cacheService.set(`${CACHE_ROOT_KEY}:${userId}`, userProjects, 3600)
 
 			return userProjects
 		} catch (error) {
@@ -331,5 +339,5 @@ export class ProjectsService {
 			this.logger.error(error)
 			throw new HttpException(error.response.data, error.response.status)
 		}
-	}
+	};
 }
