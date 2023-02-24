@@ -404,7 +404,7 @@ export class RemoteAppService {
 			this.containerServices
 				.filter(service => workspace === 'private'
 					? service.state.context.userId === userId && service.state.context.workspace === workspace
-					: service.state.context.groupIds.some(id => groupIds.includes(id))
+					: service.state.context.groupIds?.some(id => groupIds.includes(id))
 				)
 				.map(service => {
 					const { id, name, userId, groupIds, url, error, type, parentId, workspace } =
