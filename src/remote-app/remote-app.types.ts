@@ -25,8 +25,8 @@ export interface ContainerContext {
 	groupIds?: string[]
 	workspace: WorkspaceType
 	dataSource: {
-		nc: string
-		ab: string
+		fsUrl: string
+		authUrl: string
 		groupFolders: {
 			label: string
 			id: number | string
