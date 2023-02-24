@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
+const net = require('net')
+
 import { LogLevel } from '@nestjs/common'
 
 export const LOG_LEVELS = [
@@ -13,14 +15,27 @@ export const LOG_LEVELS = [
 export const getLogLevels = (level: number): LogLevel[] => {
   let internLevel = level - 1
   if (internLevel > LOG_LEVELS.length || internLevel < 0) internLevel = 0
-  
+
   return LOG_LEVELS[internLevel] as LogLevel[]
 }
 
 export const uniq = (type: 'server' | 'app' = 'server'): string => {
-	const uniqueId = `${type === 'server' ? 'server' : 'app'}-${Date.now()
-		.toString()
-		.slice(-3)}`
+  const uniqueId = `${type === 'server' ? 'server' : 'app'}-${Date.now()
+    .toString()
+    .slice(-3)}`
 
-	return uniqueId
+  return uniqueId
+}
+
+export const findFreePort = (): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer((sock) => {
+      sock.end('Hello world\n')
+    }).listen(0, () => {
+      const port = srv.address().port
+      srv.close(() => {
+        resolve(port)
+      })
+    })
+  })
 }
