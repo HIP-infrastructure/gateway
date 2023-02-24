@@ -4,10 +4,21 @@ import { ConfigService } from '@nestjs/config'
 import { spawn } from 'child_process'
 import { catchError, firstValueFrom } from 'rxjs'
 import { CacheService } from 'src/cache/cache.service'
+import { findFreePort } from 'src/common/utils/shared.utils'
 import { Group, IamEbrainsService } from 'src/iam-ebrains/iam-ebrains.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 
 const { NodeSSH } = require('node-ssh')
+interface FileMetadata {
+	name: string
+	size: number
+	fullPath: string
+	created: string
+	updated: string
+	md5Hash: string
+	contentType: string
+	contentEncoding: string
+}
 
 export interface Project extends Group {
 	members?: string[]
@@ -34,7 +45,6 @@ export class ProjectsService {
 		private readonly cacheService: CacheService,
 		private readonly configService: ConfigService
 	) {
-		this.ssh = new NodeSSH()
 		this.authBackendUsername = this.configService.get(
 			'collab.authBackendUsername'
 		)
@@ -44,6 +54,28 @@ export class ProjectsService {
 		this.authBackendUrl = this.configService.get('collab.authBackendUrl')
 		this.authFSUrl = this.configService.get('collab.authFSUrl')
 		this.authDockerFsCert = this.configService.get('collab.authDockerFsCert')
+	}
+
+	private async sshConnect() {
+		return new NodeSSH()
+			.connect({
+				host: process.env.COLLAB_SSH_HOST,
+				username: process.env.COLLAB_SSH_USER,
+				privateKey: process.env.COLLAB_SSH_PRIVATE_KEY
+			})
+	}
+
+	private async createUserFolder(userId: string) {
+		this.logger.debug(`createUserFolder: userId=${userId}`)
+		this.sshConnect().then((ssh) => {
+			ssh
+				.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/../${userId}/files`)
+				.then(result => {
+					this.logger.debug(`STDOUT: ${result.stdout}`)
+					this.logger.debug(`STDERR: ${result.stderr}`)
+					ssh.dispose()
+				})
+		})
 	}
 
 	async create(createProjectDto: CreateProjectDto) {
@@ -60,30 +92,20 @@ export class ProjectsService {
 				ROOT_PROJECT_GROUP_NAME
 			)
 
-			this.ssh
-				.connect({
-					host: process.env.COLLAB_SSH_HOST,
-					username: process.env.COLLAB_SSH_USER,
-					privateKey: process.env.COLLAB_SSH_PRIVATE_KEY
-				})
-				.then(() => {
+			// create group folder
+			this.sshConnect().then((ssh) => {
+				ssh
+					.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/${projectName}`)
+					.then(result => {
+						this.logger.debug(`STDOUT: ${result.stdout}`)
+						this.logger.debug(`STDERR: ${result.stderr}`)
+						ssh.dispose()
+					})
 
-					// create group folder
-					this.ssh
-						.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/${projectName}`)
-						.then(result => {
-							this.logger.debug(`STDOUT: ${result.stdout}`)
-							this.logger.debug(`STDERR: ${result.stderr}`)
-						})
+			})
 
-						// create user folder
-						this.ssh
-						.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/../${adminId}`)
-						.then(result => {
-							this.logger.debug(`STDOUT: ${result.stdout}`)
-							this.logger.debug(`STDERR: ${result.stderr}`)
-						})
-				})
+			// create user folder
+			await this.createUserFolder(adminId)
 
 			await this.cacheService.del(`${CACHE_ROOT_KEY}:${adminId}`)
 			await this.cacheService.del(`${CACHE_ROOT_KEY}:all`)
@@ -175,7 +197,6 @@ export class ProjectsService {
 
 	async addUserToProject(username: string, projectName: string) {
 		this.logger.debug(`addUserToProject(${username}, ${projectName})`)
-
 		try {
 			return await this.iamService.addUserToGroup(
 				username,
@@ -268,10 +289,15 @@ export class ProjectsService {
 		}
 	}
 
-	async files(name: string, path: string, userId: string) {
-		this.logger.debug(`files: name=${name}, path=${path} userId=${userId}`)
-		// await this.cacheService.del(`collab-project-${userId}`);
-		// return
+	async refreshApi(userId: string) {
+		this.logger.debug(`refreshApi: userId=${userId}`)
+		return await this.cacheService.del(`fs-api-collab-${userId}`)
+	}
+
+	async metadataTree(name: string, path: string, userId: string, refreshApi: boolean = false) {
+		this.logger.debug(`treeMetadata: name=${name}, path=${path} userId=${userId} refresh=${refreshApi}`)
+
+		if (refreshApi) await this.refreshApi(userId)
 
 		try {
 			const userApiUrlKey = `fs-api-collab-${userId}`
@@ -281,27 +307,24 @@ export class ProjectsService {
 			if (cached) {
 				baseUrl = cached
 			} else {
+				// Act a a gatekeeper to prevent multiple requests to mount the same project
+				await this.cacheService.set(userApiUrlKey, 'placeholder')
+
 				const projects = await this.findUserProjects(userId)
-				//
-				// #get a random free port
-				// s=socket.socket()
-				// s.bind(("", 0))
-				// port=s.getsockname()[1]
-				// s.close()
-				const port = Math.round(Math.random() * 1000 + 3000)
+				await this.createUserFolder(userId)
+				const port = await findFreePort()
 				const { code } = await this.mountProjectFolders(userId, projects, port)
 
 				if (code === 0) {
 					baseUrl = `http://127.0.0.1:${port}`
-
 					await this.cacheService.set(userApiUrlKey, baseUrl)
-					this.logger.debug(baseUrl)
+				} else {
+					await this.cacheService.del(userApiUrlKey)
 				}
 			}
 
-			this.logger.debug(baseUrl)
-
 			const url = `${baseUrl}/inspect/${name}`
+			this.logger.debug(url)
 			const { data } = await firstValueFrom(
 				this.httpService.get(url).pipe(
 					catchError((error: any) => {
@@ -310,7 +333,6 @@ export class ProjectsService {
 					})
 				)
 			)
-
 			return data
 		} catch (error) {
 			this.logger.error(error)

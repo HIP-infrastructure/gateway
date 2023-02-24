@@ -74,15 +74,16 @@ export class ProjectsController {
 		})
 	}
 
-	@Get(':projectName/files')
-	files(
+	@Get(':projectName/metadataTree')
+	metadataTree(
 		@Param('projectName') projectName: string,
 		@Query('path') path: string,
+		@Query('refreshApi') refreshApi: boolean,
 		@Req() req: Request
 	) {
 		return this.nextcloudService.uid(req).then(userId => {
-			this.logger.debug(`files(${projectName}, ${path}, ${userId})`)
-			return this.projectsService.files(projectName, path, userId)
+			this.logger.debug(`metadataTree(${projectName}, ${path}, ${userId})`)
+			return this.projectsService.metadataTree(projectName, path, userId, refreshApi)
 		})
 	}
 }
