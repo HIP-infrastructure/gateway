@@ -67,8 +67,18 @@ export class ProjectsService {
 					privateKey: process.env.COLLAB_SSH_PRIVATE_KEY
 				})
 				.then(() => {
+
+					// create group folder
 					this.ssh
 						.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/${projectName}`)
+						.then(result => {
+							this.logger.debug(`STDOUT: ${result.stdout}`)
+							this.logger.debug(`STDERR: ${result.stderr}`)
+						})
+
+						// create user folder
+						this.ssh
+						.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/../${adminId}`)
 						.then(result => {
 							this.logger.debug(`STDOUT: ${result.stdout}`)
 							this.logger.debug(`STDERR: ${result.stderr}`)
