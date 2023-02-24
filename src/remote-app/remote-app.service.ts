@@ -399,11 +399,12 @@ export class RemoteAppService {
 	 */
 
 	getContainers(workspace: WorkspaceType, userId: string, groupIds: string[]): ResponseContext[] {
+		this.logger.debug(`Get containers for ${userId} and group ${groupIds} in ${workspace} workspace`)
 		return (
 			this.containerServices
 				.filter(service => workspace === 'private'
 					? service.state.context.userId === userId && service.state.context.workspace === workspace
-					: service.state.context.groupIds.some(id => groupIds.map(group => `group-${group}`).includes(id))
+					: service.state.context.groupIds.some(id => groupIds.includes(id))
 				)
 				.map(service => {
 					const { id, name, userId, groupIds, url, error, type, parentId, workspace } =
@@ -447,7 +448,7 @@ export class RemoteAppService {
 			groupFolders = await this.nextcloudService.groupFoldersForUserId(userId)
 
 		} else {
-			oidcGroupIds = groupIds.map(group => `group-${group}`)
+			oidcGroupIds = groupIds
 			groupFolders = groupIds.map(group => ({
 				id: 1,
 				label: group,
@@ -478,8 +479,8 @@ export class RemoteAppService {
 			type: ContainerType.SERVER,
 			workspace,
 			dataSource: {
-				nc: config.url,
-				ab: config.authurl,
+				fsUrl: config.url,
+				authUrl: config.authurl,
 				groupFolders
 			},
 			computeSource: {
@@ -657,7 +658,7 @@ export class RemoteAppService {
 			})
 		}
 
-		return this.getContainers(currentContext.workspace, userId, service.state.context.groupIds)
+		return this.getContainers(currentContext.workspace, userId, currentContext.groupIds)
 	}
 
 	pauseAppsAndServer(userId: string, serverId: string): ResponseContext[] {

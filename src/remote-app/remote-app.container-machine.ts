@@ -21,11 +21,12 @@ export const invokeRemoteContainer = (
 	event: AnyEventObject
 ) => {
 	const { type: action } = event
-	const { id, userId, type, parentId, groupIds } = context
+	const { id, userId, type, parentId, groupIds, workspace } = context
 
 	const startApp =
 		action === ContainerAction.START && type === ContainerType.APP
 
+	// TODO: remove group- prefix which comes probably from an addition in sociallogin plugin
 	const params =
 		type === ContainerType.APP
 			? {
@@ -34,8 +35,8 @@ export const invokeRemoteContainer = (
 				hipuser: userId,
 				action,
 				...(startApp && {
-					nc: context.dataSource.nc,
-					ab: context.dataSource.ab,
+					nc: context.dataSource.fsUrl,
+					ab: context.dataSource.authUrl,
 					gf: JSON.stringify(context.dataSource.groupFolders),
 				}),
 				app: context.name,
@@ -44,13 +45,15 @@ export const invokeRemoteContainer = (
 				sid: id,
 				hipuser: userId,
 				action,
-				groups: JSON.stringify(groupIds),
+				groups: JSON.stringify(workspace === 'private' ? groupIds : groupIds.map(g => `group-${g}`)),
 			}
 
 	const config = backendConfig(context.computeSource.backendId)
 	const url = `${config.url}/control/${type}?${toParams(
 		params
 	)}`
+
+	if (action === ContainerAction.START) logger.debug(url)
 
 	return httpService
 		.get(url, {

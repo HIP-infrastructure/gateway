@@ -1,6 +1,6 @@
 import { ProjectDto } from "./project.dto"
 
-export class CreateProjectDto extends ProjectDto{
+export class CreateProjectDto {
     readonly title: string
     readonly description: string
     readonly adminId: string
