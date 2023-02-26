@@ -78,6 +78,12 @@ export class ProjectsService {
 		})
 	}
 
+	private async invalidateProjectsCache(userId: string) {
+		await this.refreshApi(userId)
+		await this.cacheService.del(`${CACHE_ROOT_KEY}:all`)
+		return this.cacheService.del(`${CACHE_ROOT_KEY}:${userId}`)
+	}
+
 	async create(createProjectDto: CreateProjectDto) {
 		try {
 			const { title, description, adminId } = createProjectDto
@@ -107,8 +113,7 @@ export class ProjectsService {
 			// create user folder
 			await this.createUserFolder(adminId)
 
-			await this.cacheService.del(`${CACHE_ROOT_KEY}:${adminId}`)
-			await this.cacheService.del(`${CACHE_ROOT_KEY}:all`)
+			return this.invalidateProjectsCache(adminId)
 		} catch (error) {
 			console.error(error)
 			throw new HttpException(error.response.description, error.response.status)
@@ -188,21 +193,24 @@ export class ProjectsService {
 		try {
 			return this.iamService
 				.deleteGroup(projectName)
-				.then(() => this.cacheService.del(`userProjects:${adminId}`))
-		} catch (error) {
+				.then(() => {
+					return this.invalidateProjectsCache(adminId)
+				})
+		} catch(error) {
 			this.logger.error(error)
 			throw new Error('Could not delete project')
 		}
 	}
 
-	async addUserToProject(username: string, projectName: string) {
-		this.logger.debug(`addUserToProject(${username}, ${projectName})`)
+	async addUserToProject(userId: string, projectName: string) {
+	this.logger.debug(`addUserToProject(${userId}, ${projectName})`)
 		try {
-			return await this.iamService.addUserToGroup(
-				username,
+		await this.iamService.addUserToGroup(
+			userId,
 				'member',
 				projectName
 			)
+		return this.invalidateProjectsCache(userId)
 		} catch (error) {
 			this.logger.error(error)
 			throw new Error('Could not add user to project')
