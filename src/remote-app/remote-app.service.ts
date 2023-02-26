@@ -510,6 +510,8 @@ export class RemoteAppService {
 		appName: string,
 		userId: string,
 	): Promise<ResponseContext[]> {
+		this.logger.debug(`createApp ${serverId}, ${appName} ${userId}`)
+
 		const serverService = this.containerServices.find(
 			s => s.machine.id === serverId
 		)
@@ -521,14 +523,14 @@ export class RemoteAppService {
 			}
 		}
 
-		// FIXME: check if apName is already running
-		// check if existing app
-		const service: any = this.containerServices.find(
-			s => s.state.context.name === appName
+		// check if an existing app already exists on that server
+		const serviceWithSameApp: any = this.containerServices.find(
+			s => s.state.context.parentId === serverService.id &&
+				s.state.context.name === appName
 		)
 
-		if (service) {
-			return service.state.context
+		if (serviceWithSameApp) {
+			return serviceWithSameApp.state.context
 		}
 
 		const appId = uniq('app')
@@ -553,9 +555,6 @@ export class RemoteAppService {
 			dataSource,
 			computeSource
 		}
-
-		console.log('createApp')
-		console.log(context)
 
 		const machine = createContainerMachine(context)
 		const appService = interpret(machine).start()
