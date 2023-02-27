@@ -10,6 +10,6 @@ export default registerAs('collab', () => {
     path: process.env.COLLAB_FILESYSTEM || '/',
     sshHost: process.env.COLLAB_SSH_HOST || '',
     sshUsername: process.env.COLLAB_SSH_USER || '',
-    sshPrivateKey: process.env.COLLAB_SSH_PRIVATE_KEY
+    sshPrivateKeyPath: process.env.COLLAB_SSH_PRIVATE_KEY_PATH
   }
 })
