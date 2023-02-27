@@ -7,5 +7,9 @@ export default registerAs('collab', () => {
     authBackendUrl: process.env.COLLAB_FS_AUTH_BACKEND_URL || '',
     authFSUrl: process.env.COLLAB_FS_URL || '',
     authDockerFsCert: process.env.COLLAB_DOCKERFS_CERT || '',
+    path: process.env.COLLAB_FILESYSTEM || '/',
+    sshHost: process.env.COLLAB_SSH_HOST || '',
+    sshUsername: process.env.COLLAB_SSH_USER || '',
+    sshPrivateKey: process.env.COLLAB_SSH_PRIVATE_KEY
   }
 })

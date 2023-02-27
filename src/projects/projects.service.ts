@@ -31,7 +31,7 @@ const CACHE_ROOT_KEY = 'projects'
 
 @Injectable()
 export class ProjectsService {
-	private readonly logger = new Logger(ProjectsService.name);
+	private readonly logger = new Logger(ProjectsService.name)
 	private readonly ssh: any
 	private readonly authBackendUsername: string
 	private readonly authBackendPassword: string
@@ -57,25 +57,27 @@ export class ProjectsService {
 	}
 
 	private async sshConnect() {
-		return new NodeSSH()
-			.connect({
-				host: process.env.COLLAB_SSH_HOST,
-				username: process.env.COLLAB_SSH_USER,
-				privateKey: process.env.COLLAB_SSH_PRIVATE_KEY
-			})
+		return new NodeSSH().connect({
+			host: this.configService.get('collab.sshHost'),
+			username: this.configService.get('collab.sshUsername'),
+			privateKey: this.configService.get('collab.sshPrivateKey')
+		})
 	}
 
 	private async createUserFolder(userId: string) {
 		this.logger.debug(`createUserFolder: userId=${userId}`)
-		this.sshConnect().then((ssh) => {
-			ssh
-				.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/../${userId}/files`)
-				.then(result => {
-					this.logger.debug(`STDOUT: ${result.stdout}`)
-					this.logger.debug(`STDERR: ${result.stderr}`)
-					ssh.dispose()
-				})
+		const userFolder = `${this.configService.get('collab.path')}/../${userId}`
+
+		const ssh = await this.sshConnect()
+		await ssh.execCommand(`mkdir -p ${userFolder}/files`).then(result => {
+			this.logger.debug(`STDOUT: ${result.stdout}, STDERR: ${result.stderr}`)
 		})
+		await ssh
+			.execCommand(`sudo chown -R www-data: ${userFolder}`)
+			.then(result => {
+				this.logger.debug(`STDOUT: ${result.stdout}, STDERR: ${result.stderr}`)
+			})
+		return ssh.dispose()
 	}
 
 	private async invalidateProjectsCache(userId: string) {
@@ -87,10 +89,16 @@ export class ProjectsService {
 	async create(createProjectDto: CreateProjectDto) {
 		try {
 			const { title, description, adminId } = createProjectDto
-			const projectName = `HIP-${title.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}`
+			const projectName = `HIP-${title
+				.replace(/[^a-zA-Z0-9]+/g, '-')
+				.toLowerCase()}`
 
 			await this.iamService.createGroup(projectName, title, description)
-			await this.iamService.addUserToGroup(adminId, 'administrator', projectName)
+			await this.iamService.addUserToGroup(
+				adminId,
+				'administrator',
+				projectName
+			)
 			await this.iamService.addUserToGroup(adminId, 'member', projectName)
 			await this.iamService.assignGroupToGroup(
 				projectName,
@@ -99,16 +107,21 @@ export class ProjectsService {
 			)
 
 			// create group folder
-			this.sshConnect().then((ssh) => {
-				ssh
-					.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/${projectName}`)
-					.then(result => {
-						this.logger.debug(`STDOUT: ${result.stdout}`)
-						this.logger.debug(`STDERR: ${result.stderr}`)
-						ssh.dispose()
-					})
-
+			const ssh = await this.sshConnect()
+			const groupFolder = `${this.configService.get(
+				'collab.path'
+			)}/${projectName}`
+			await ssh.execCommand(`mkdir -p ${groupFolder}`).then(result => {
+				this.logger.debug(`STDOUT: ${result.stdout}, STDERR: ${result.stderr}`)
 			})
+			await ssh
+				.execCommand(`sudo chown -R www-data: ${groupFolder}`)
+				.then(result => {
+					this.logger.debug(
+						`STDOUT: ${result.stdout}, STDERR: ${result.stderr}`
+					)
+				})
+			ssh.dispose()
 
 			// create user folder
 			await this.createUserFolder(adminId)
@@ -191,26 +204,20 @@ export class ProjectsService {
 
 	remove(projectName: string, adminId: string) {
 		try {
-			return this.iamService
-				.deleteGroup(projectName)
-				.then(() => {
-					return this.invalidateProjectsCache(adminId)
-				})
-		} catch(error) {
+			return this.iamService.deleteGroup(projectName).then(() => {
+				return this.invalidateProjectsCache(adminId)
+			})
+		} catch (error) {
 			this.logger.error(error)
 			throw new Error('Could not delete project')
 		}
 	}
 
 	async addUserToProject(userId: string, projectName: string) {
-	this.logger.debug(`addUserToProject(${userId}, ${projectName})`)
+		this.logger.debug(`addUserToProject(${userId}, ${projectName})`)
 		try {
-		await this.iamService.addUserToGroup(
-			userId,
-				'member',
-				projectName
-			)
-		return this.invalidateProjectsCache(userId)
+			await this.iamService.addUserToGroup(userId, 'member', projectName)
+			return this.invalidateProjectsCache(userId)
 		} catch (error) {
 			this.logger.error(error)
 			throw new Error('Could not add user to project')
@@ -302,8 +309,15 @@ export class ProjectsService {
 		return await this.cacheService.del(`fs-api-collab-${userId}`)
 	}
 
-	async metadataTree(name: string, path: string, userId: string, refreshApi: boolean = false) {
-		this.logger.debug(`treeMetadata: name=${name}, path=${path} userId=${userId} refresh=${refreshApi}`)
+	async metadataTree(
+		name: string,
+		path: string,
+		userId: string,
+		refreshApi: boolean = false
+	) {
+		this.logger.debug(
+			`metadataTree: name=${name}, path=${path} userId=${userId} refresh=${refreshApi}`
+		)
 
 		if (refreshApi) await this.refreshApi(userId)
 
@@ -379,5 +393,5 @@ export class ProjectsService {
 			this.logger.error(error)
 			throw new HttpException(error.response.data, error.response.status)
 		}
-	};
+	}
 }
