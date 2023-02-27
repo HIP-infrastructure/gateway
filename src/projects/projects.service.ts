@@ -60,7 +60,7 @@ export class ProjectsService {
 		return new NodeSSH().connect({
 			host: this.configService.get('collab.sshHost'),
 			username: this.configService.get('collab.sshUsername'),
-			privateKey: this.configService.get('collab.sshPrivateKey')
+			privateKeyPath: this.configService.get('collab.sshPrivateKeyPath')
 		})
 	}
 
