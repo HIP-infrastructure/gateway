@@ -81,6 +81,15 @@ export class ProjectsService {
 				this.logger.debug(`STDOUT: ${result.stdout}, STDERR: ${result.stderr}`)
 			})
 		return ssh.dispose()
+
+		// TODO
+		// bind mount
+		// bidstools.createProjectDataset - /projectfolder= title= description= 
+		// - create folder structure
+		//		- README
+		//  	- /input/
+		// 		OK / KO
+		
 	}
 
 	private async invalidateProjectsCache(userId: string) {
@@ -91,6 +100,19 @@ export class ProjectsService {
 
 	// TODO
 	private async checkIfRootFolderExists() {}
+
+
+	public importBIDSSubject() {
+		// TODO
+		// bidstools(source: { datasetpath, subjectid }, destination: { projectname })
+		// return OK / KO
+	}
+
+	public importDocument() {
+			// TODO
+		// bidstools(source: [{ path, file }], destination: { projectname, path})
+		// return OK / KO
+	}
 
 	private async createAdminRoleGroup() {
 		// this.cacheService.del(`${CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`)
