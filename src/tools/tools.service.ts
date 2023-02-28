@@ -237,12 +237,14 @@ export class ToolsService {
 				dataset
 			])
 		// index the datasets
-		const bulkResponse = await this.elastic_client_rw.bulk({
+		const bulk_params: estypes.BulkRequest = {
 			refresh: true,
-			body
-		})
+			operations: body
+		}
+		const bulkResponse = await this.elastic_client_rw.bulk(bulk_params)
 		if (bulkResponse.errors) {
 			this.logger.error('Errors for (re)indexing datasets')
+			this.logger.error(JSON.stringify(bulkResponse, null, 4))
 			for (let it of bulkResponse.items) {
 				if (it.index.status === 400)
 					this.logger.error(JSON.stringify(it.index, null, 4))
@@ -1527,21 +1529,21 @@ export class ToolsService {
 				])
 			// define msearch query in JSON format expected by elasticsearch
 			const query_params: estypes.MsearchRequest = {
-				index: `${this.es_index_datasets}`,
-				...body
+				searches: body
 			}
 			// perform and return the msearch query
 			return await this.elastic_client_ro
 				.msearch<BIDSDataset>(query_params)
 				.then((result: estypes.MsearchResponse) => {
-					return result.responses.map((response: estypes.MsearchResponseItem<BIDSDataset>) => {
-						if ('error' in response) {
-							return []
+					return result.responses.map(
+						(response: estypes.MsearchResponseItem<BIDSDataset>) => {
+							if ('error' in response) {
+								return []
+							} else {
+								return response.hits.hits
+							}
 						}
-						else {
-							return response.hits.hits
-						}
-					})
+					)
 				})
 		} catch (e) {
 			this.logger.error(e)
