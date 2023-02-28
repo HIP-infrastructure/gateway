@@ -125,7 +125,7 @@ export class RemoteAppController {
 		@Query('force') force: boolean = false
 	) {
 		this.logger.debug(`/removeAppsAndSession at ${serverId}`)
-		return this.nextcloudService.uid(req).then(async userId => {
+		return this.nextcloudService.authUserIdFromRequest(req).then(async userId => {
 			if (force) return this.remoteAppService.forceRemove(serverId)
 
 			return this.remoteAppService.removeAppsAndServer(serverId, userId)

@@ -17,7 +17,7 @@ export class GroupsController {
 
 	@Get(':userid')
 	async findGroups(@Param('userid') userid: string, @Req() req: Request): Promise<GroupFolder[]> {
-		const uid =  await this.nextcloudService.uid(req)
+		const uid =  await this.nextcloudService.authUserIdFromRequest(req)
 		return await this.nextcloudService.groupFoldersForUserId(uid)
 	}
 	

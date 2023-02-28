@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios'
-import { HttpException, Injectable, Logger } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { spawn } from 'child_process'
 import { catchError, firstValueFrom } from 'rxjs'
@@ -26,7 +26,10 @@ export interface Project extends Group {
 }
 
 // FIXME: CHECKIF GROUP EXISTS
-const ROOT_PROJECT_GROUP_NAME = 'HIP-Projects'
+// Holds all HIP projects as sub groups
+const PROJECTS_ROOT_GROUP = 'HIP-Projects'
+// Gives members access to administrate HIP projects
+const PROJECTS_GROUP_ADMINS = 'HIP-Projects-admins'
 const CACHE_ROOT_KEY = 'projects'
 
 @Injectable()
@@ -86,6 +89,81 @@ export class ProjectsService {
 		return this.cacheService.del(`${CACHE_ROOT_KEY}:${userId}`)
 	}
 
+	// TODO
+	private async checkIfRootFolderExists() {}
+
+	private async createAdminRoleGroup() {
+		// this.cacheService.del(`${CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`)
+		try {
+			if (this.cacheService.get(`${CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`))
+				return
+
+			this.logger.debug(`createAdminRoleGroup`)
+			await this.iamService.createGroup(
+				PROJECTS_GROUP_ADMINS,
+				PROJECTS_GROUP_ADMINS,
+				'Gives members access to administrate HIP projects'
+			)
+			const admins = this.configService.get('iam.platformAdmins')
+			await Promise.all(
+				admins.map(adminId =>
+					this.iamService.addUserToGroup(
+						adminId,
+						'administrator',
+						PROJECTS_GROUP_ADMINS
+					)
+				)
+			)
+			this.cacheService.set(`${CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`, true)
+		} catch (error) {
+			this.logger.error(error)
+			throw error
+		}
+	}
+
+	public async userIsAdmin(userId) {
+		try {
+			await this.createAdminRoleGroup()
+			const group = await this.iamService.getGroupListsByRole(
+				PROJECTS_GROUP_ADMINS,
+				'member'
+			)
+			const isMember = group.users.map(u => u.username).includes(userId)
+			if (!isMember)
+				throw new HttpException(
+					`${userId} is not an admin.`,
+					HttpStatus.FORBIDDEN
+				)
+
+			return userId
+		} catch (error) {
+			this.logger.error(error)
+			throw error
+		}
+		//
+	}
+
+	public async userIsProjectAdmin(projectName, userId) {
+		try {
+			const group = await this.iamService.getGroupListsByRole(
+				projectName,
+				'administrator'
+			)
+			const isAdmin = group.users.map(u => u.username).includes(userId)
+			if (!isAdmin)
+				throw new HttpException(
+					`${userId} is not an admin.`,
+					HttpStatus.FORBIDDEN
+				)
+
+			return userId
+		} catch (error) {
+			this.logger.error(error)
+			throw error
+		}
+		//
+	}
+
 	async create(createProjectDto: CreateProjectDto) {
 		try {
 			const { title, description, adminId } = createProjectDto
@@ -103,10 +181,10 @@ export class ProjectsService {
 			await this.iamService.assignGroupToGroup(
 				projectName,
 				'member',
-				ROOT_PROJECT_GROUP_NAME
+				PROJECTS_ROOT_GROUP
 			)
 
-			// create group folder
+			// create group folder on collab
 			const ssh = await this.sshConnect()
 			const groupFolder = `${this.configService.get(
 				'collab.path'
@@ -123,13 +201,13 @@ export class ProjectsService {
 				})
 			ssh.dispose()
 
-			// create user folder
+			// create user folder if it doesn't exists
 			await this.createUserFolder(adminId)
 
 			return this.invalidateProjectsCache(adminId)
 		} catch (error) {
-			console.error(error)
-			throw new HttpException(error.response.description, error.response.status)
+			this.logger.debug(error)
+			throw error
 		}
 	}
 
@@ -140,9 +218,7 @@ export class ProjectsService {
 			return cached
 		}
 		try {
-			const rootProject = await this.iamService.getGroup(
-				ROOT_PROJECT_GROUP_NAME
-			)
+			const rootProject = await this.iamService.getGroup(PROJECTS_ROOT_GROUP)
 
 			const groups = rootProject.members.groups
 			this.cacheService.set(`${CACHE_ROOT_KEY}:all`, groups, 3600)
@@ -202,10 +278,17 @@ export class ProjectsService {
 	// 	return `This action updates a #${projectName} project`
 	// }
 
-	remove(projectName: string, adminId: string) {
+	async remove(projectName: string, adminId: string) {
 		try {
+			const groupList = await this.iamService.getGroupListsByRole(
+				projectName,
+				'member'
+			)
 			return this.iamService.deleteGroup(projectName).then(() => {
-				return this.invalidateProjectsCache(adminId)
+				const users = groupList.users.map(u => u.username)
+				return Promise.all(
+					[...users, adminId].map(uid => this.invalidateProjectsCache(uid))
+				)
 			})
 		} catch (error) {
 			this.logger.error(error)
@@ -217,7 +300,12 @@ export class ProjectsService {
 		this.logger.debug(`addUserToProject(${userId}, ${projectName})`)
 		try {
 			await this.iamService.addUserToGroup(userId, 'member', projectName)
-			return this.invalidateProjectsCache(userId)
+			const groupList = await this.iamService.getGroupListsByRole(
+				projectName,
+				'member'
+			)
+			const users = groupList.users.map(u => u.username)
+			return Promise.all(users.map(uid => this.invalidateProjectsCache(uid)))
 		} catch (error) {
 			this.logger.error(error)
 			throw new Error('Could not add user to project')
