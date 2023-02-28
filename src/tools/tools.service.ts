@@ -108,6 +108,7 @@ export class ToolsService {
 	private elastic_client_rw: Client
 	private readonly es_index_datasets =
 		process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
+	private readonly bidsToolsImage = `${process.env.BIDS_TOOLS_IMAGE}:${process.env.BIDS_TOOLS_VERSION}`
 
 	constructor(
 		private readonly httpService: HttpService,
@@ -1682,7 +1683,7 @@ export class ToolsService {
 				`${dsParentPath}:/output`
 			]
 			const cmd2 = [
-				'bids-tools',
+				this.bidsToolsImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=dataset.create',
@@ -1749,7 +1750,7 @@ export class ToolsService {
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
-				'bids-tools',
+				this.bidsToolsImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.get',
@@ -1843,9 +1844,9 @@ export class ToolsService {
 				...volumes,
 				'-v',
 				`${dbPath}:/output`,
-				//'-v', // 2 lines can be uncommented to debug interaction with BIDS manager
-				//'/home/stourbie/Softwares/BIDS_Manager/bids_manager:/usr/local/lib/python3.8/dist-packages/bids_manager-0.3.2-py3.8.egg/bids_manager',
-				'bids-tools',
+				// '-v',  // 2 lines can be uncommented to debug interaction with BIDS manager
+				// '/home/stourbie/Softwares/bidsificator/bids_manager:/usr/local/lib/python3.8/dist-packages/bids_manager-0.3.2-py3.8.egg/bids_manager',
+				this.bidsToolsImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.import',
@@ -1926,7 +1927,7 @@ export class ToolsService {
 				`${dbPath}:/output`
 			]
 			const cmd2 = [
-				'bids-tools',
+				this.bidsToolsImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.edit.clinical',
@@ -2176,7 +2177,7 @@ export class ToolsService {
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dsPath}:/output`]
 			const cmd2 = [
-				'bids-tools',
+				this.bidsToolsImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=dataset.get',
@@ -2266,7 +2267,7 @@ export class ToolsService {
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, ...volumes]
 			const cmd2 = [
-				'bids-tools',
+				this.bidsToolsImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=datasets.get',
