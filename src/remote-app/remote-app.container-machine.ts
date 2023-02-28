@@ -1,13 +1,13 @@
 import { Logger } from '@nestjs/common'
 import { AnyEventObject, assign, createMachine } from 'xstate'
-import { domainConfig, httpService } from './remote-app.service'
+import { backendConfig, httpService } from './remote-app.service'
 import {
 	ContainerAction,
 	ContainerContext,
 	ContainerState,
 	ContainerStateMachine,
 	ContainerType,
-	WebdavOptions,
+	GhostFSOptions,
 } from './remote-app.types'
 
 const toParams = data =>
@@ -18,11 +18,11 @@ const toParams = data =>
 const logger = new Logger('Container Machine')
 
 export const invokeRemoteContainer = (
-	context: ContainerContext & WebdavOptions,
+	context: ContainerContext & GhostFSOptions,
 	event: AnyEventObject
 ) => {
 	const { type: action } = event
-	const { id, user, type, parentId, oidcGroups } = context
+	const { id, userId, type, parentId, groupIds } = context
 
 	const startApp =
 		action === ContainerAction.START && type === ContainerType.APP
@@ -32,7 +32,7 @@ export const invokeRemoteContainer = (
 			? {
 					sid: parentId,
 					aid: id,
-					hipuser: user,
+					hipuser: userId,
 					action,
 					...(startApp && {
 						nc: context.nc,
@@ -43,18 +43,15 @@ export const invokeRemoteContainer = (
 			  }
 			: {
 					sid: id,
-					hipuser: user,
+					hipuser: userId,
 					action,
-					groups: JSON.stringify(oidcGroups),
+					groups: JSON.stringify(groupIds),
 			  }
 
-	const config = domainConfig(context.domain)
-	logger.debug(context.domain, `invokeRemoteContainer-${id}`)
+	const config = backendConfig(context.backend)
 	const url = `${config.url}/control/${type}?${toParams(
 		params
 	)}`
-
-	logger.debug(url, `invokeRemoteContainer-${id}`)
 
 	return httpService
 		.get(url, {
@@ -136,6 +133,7 @@ export const createContainerMachine = (
 ): ContainerStateMachine => {
 	return createMachine(
 		{
+			predictableActionArguments: true,
 			id: context.id,
 			initial: context.state,
 			context,

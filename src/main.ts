@@ -5,6 +5,7 @@ import { NestExpressApplication } from '@nestjs/platform-express'
 import { join } from 'path'
 import { getLogLevels } from './common/utils/shared.utils'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { ValidationPipe } from '@nestjs/common'
 
 const globalPrefix = '/api/v1'
 const publicFolder = join(__dirname, '../public')
@@ -30,6 +31,9 @@ async function bootstrap() {
 	app.enableCors()
 	app.use(cookieParser())
 	app.useStaticAssets(publicFolder)
+	app.useGlobalPipes(new ValidationPipe({
+		transform: true,
+	}));
 
 	const document = SwaggerModule.createDocument(app, config)
 	SwaggerModule.setup('api', app, document)

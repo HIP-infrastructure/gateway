@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import postgresConfig from './config/db.postgres.config';
 import redisConfig from './config/db.redis.config';
+import ebrains from './config/api.iam-ebrains.config';
+import collab from './config/collab.config';
 import { FilesModule } from './files/files.module';
 import { GroupsModule } from './groups/groups.module';
 import { NextcloudModule } from './nextcloud/nextcloud.module';
@@ -13,14 +15,14 @@ import { RemoteAppModule } from './remote-app/remote-app.module';
 import { ToolsModule } from './tools/tools.module';
 import { UsersModule } from './users/users.module';
 import { ProjectsModule } from './projects/projects.module';
-import { IamModule } from './iam/iam.module';
+import { IamEbrainsModule } from './iam-ebrains/iam-ebrains.module';
 
 @Module({
 	imports: [
 		ConfigModule.forRoot({
 			isGlobal: true,
 			envFilePath: ['.env'],
-			load: [postgresConfig, redisConfig],
+			load: [collab, ebrains, postgresConfig, redisConfig],
 		}),
 		FilesModule,
 		RemoteAppModule,
@@ -48,7 +50,7 @@ import { IamModule } from './iam/iam.module';
 		GroupsModule,
 		NextcloudModule,
 		ProjectsModule,
-		IamModule,
+		IamEbrainsModule,
 	],
 	controllers: [AppController],
 })
