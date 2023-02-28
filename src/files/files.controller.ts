@@ -23,14 +23,14 @@ export class FilesController {
 
 	@Get('/')
 	async path(@Query('path') queryPath: string, @Req() req: Request) {
-		return this.nextcloudService.uid(req).then(async userId => {
+		return this.nextcloudService.authUserIdFromRequest(req).then(async userId => {
 			return await this.fileService.files(userId, queryPath)
 		})
 	}
 
 	@Get('/content')
 	async content(@Query('path') queryPath: string, @Req() req: Request) {
-		return this.nextcloudService.uid(req).then(async userId => {
+		return this.nextcloudService.authUserIdFromRequest(req).then(async userId => {
 			return await this.fileService.content(userId, queryPath)
 		})
 	}

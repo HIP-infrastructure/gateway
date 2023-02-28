@@ -18,7 +18,7 @@ import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 
 @Controller('projects')
 export class ProjectsController {
-	private readonly logger = new Logger('ProjectsController');
+	private readonly logger = new Logger('ProjectsController')
 
 	constructor(
 		private readonly projectsService: ProjectsService,
@@ -26,27 +26,43 @@ export class ProjectsController {
 	) {}
 
 	@Get()
-	findAll() {
+	findAll(@Req() req: Request) {
 		this.logger.debug(`findAll()`)
-		return this.projectsService.findAll()
+		return this.nextcloudService
+			.authenticate(req)
+			.then(() => this.projectsService.findAll())
 	}
 
 	@Get('forUser/:userId')
-	findUserProjects(@Param('userId') userId: string): Promise<Project[]> {
+	findUserProjects(
+		@Req() req: Request,
+		@Param('userId') userId: string
+	): Promise<Project[]> {
 		this.logger.debug(`findUserProjects(${userId})`)
-		return this.projectsService.findUserProjects(userId)
+		return this.nextcloudService
+			.authenticate(req)
+			.then(() => this.projectsService.findUserProjects(userId))
 	}
 
 	@Get(':projectName')
-	findOne(@Param('projectName') projectName: string): Promise<Project> {
+	findOne(
+		@Req() req: Request,
+		@Param('projectName') projectName: string
+	): Promise<Project> {
 		this.logger.debug(`findOne(${projectName})`)
-		return this.projectsService.findOne(projectName)
+		return this.nextcloudService
+			.authenticate(req)
+			.then(() => this.projectsService.findOne(projectName))
 	}
 
+	// TODO: @Roles(Role.Admin)
 	@Post()
-	create(@Body() createProjectDto: CreateProjectDto) {
+	create(@Req() req: Request, @Body() createProjectDto: CreateProjectDto) {
 		this.logger.debug(`create(${JSON.stringify(createProjectDto)})`)
-		return this.projectsService.create(createProjectDto)
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(userId => this.projectsService.userIsAdmin(userId))
+			.then(() => this.projectsService.create(createProjectDto))
 	}
 
 	// @Patch(':id')
@@ -55,35 +71,42 @@ export class ProjectsController {
 	// }
 
 	@Delete(':projectName')
-	remove(@Param('projectName') projectName: string, @Req() req: Request) {
+	remove(@Req() req: Request, @Param('projectName') projectName: string) {
 		this.logger.debug(`remove(${projectName})`)
-		return this.nextcloudService.uid(req).then(userId => {
-			return this.projectsService.remove(projectName, userId)
-		})
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(userId => this.projectsService.userIsProjectAdmin(projectName, userId))
+			.then(userId => this.projectsService.remove(projectName, userId))
 	}
 
 	@Post(':projectName/addUser/:username/')
 	addUser(
+		@Req() req: Request,
 		@Param('projectName') projectName: string,
-		@Param('username') username: string,
-		@Req() req: Request
+		@Param('username') username: string
 	) {
 		this.logger.debug(`addUser(${projectName}, ${username})`)
-		return this.nextcloudService.uid(req).then(() => {
-			return this.projectsService.addUserToProject(username, projectName)
-		})
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(userId => this.projectsService.userIsProjectAdmin(projectName, userId))
+			.then((adminId) => this.projectsService.addUserToProject(username, projectName))
 	}
 
 	@Get(':projectName/metadataTree')
 	metadataTree(
+		@Req() req: Request,
 		@Param('projectName') projectName: string,
 		@Query('path') path: string,
-		@Query('refreshApi') refreshApi: boolean,
-		@Req() req: Request
+		@Query('refreshApi') refreshApi: boolean
 	) {
-		return this.nextcloudService.uid(req).then(userId => {
+		return this.nextcloudService.authUserIdFromRequest(req).then(userId => {
 			this.logger.debug(`metadataTree(${projectName}, ${path}, ${userId})`)
-			return this.projectsService.metadataTree(projectName, path, userId, refreshApi)
+			return this.projectsService.metadataTree(
+				projectName,
+				path,
+				userId,
+				refreshApi
+			)
 		})
 	}
 }
