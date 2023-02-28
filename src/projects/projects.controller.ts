@@ -3,12 +3,13 @@ import {
 	Get,
 	Post,
 	Body,
-	Patch,
 	Param,
 	Delete,
 	Query,
 	Request as Req,
-	Logger
+	Logger,
+	HttpException,
+	HttpStatus
 } from '@nestjs/common'
 import { Request } from 'express'
 
@@ -57,12 +58,21 @@ export class ProjectsController {
 
 	// TODO: @Roles(Role.Admin)
 	@Post()
-	create(@Req() req: Request, @Body() createProjectDto: CreateProjectDto) {
+	async create(
+		@Req() req: Request,
+		@Body() createProjectDto: CreateProjectDto
+	) {
 		this.logger.debug(`create(${JSON.stringify(createProjectDto)})`)
-		return this.nextcloudService
-			.authUserIdFromRequest(req)
-			.then(userId => this.projectsService.userIsAdmin(userId))
-			.then(() => this.projectsService.create(createProjectDto))
+		const userId = await this.nextcloudService.authUserIdFromRequest(req)
+		const isAdmin = await this.projectsService.hasProjectsAdminRole(userId)
+
+		if (!isAdmin)
+			throw new HttpException(
+				`You must be an admin to create projects`,
+				HttpStatus.FORBIDDEN
+			)
+
+		return this.projectsService.create(createProjectDto)
 	}
 
 	// @Patch(':id')
@@ -75,7 +85,9 @@ export class ProjectsController {
 		this.logger.debug(`remove(${projectName})`)
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
-			.then(userId => this.projectsService.userIsProjectAdmin(projectName, userId))
+			.then(userId =>
+				this.projectsService.userIsProjectAdmin(projectName, userId)
+			)
 			.then(userId => this.projectsService.remove(projectName, userId))
 	}
 
@@ -88,8 +100,12 @@ export class ProjectsController {
 		this.logger.debug(`addUser(${projectName}, ${username})`)
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
-			.then(userId => this.projectsService.userIsProjectAdmin(projectName, userId))
-			.then((adminId) => this.projectsService.addUserToProject(username, projectName))
+			.then(userId =>
+				this.projectsService.userIsProjectAdmin(projectName, userId)
+			)
+			.then(adminId =>
+				this.projectsService.addUserToProject(username, projectName)
+			)
 	}
 
 	@Get(':projectName/metadataTree')

@@ -121,26 +121,20 @@ export class ProjectsService {
 		}
 	}
 
-	public async userIsAdmin(userId) {
+
+	public async hasProjectsAdminRole(userId) {
 		try {
 			await this.createAdminRoleGroup()
 			const group = await this.iamService.getGroupListsByRole(
 				PROJECTS_GROUP_ADMINS,
 				'member'
 			)
-			const isMember = group.users.map(u => u.username).includes(userId)
-			if (!isMember)
-				throw new HttpException(
-					`${userId} is not an admin.`,
-					HttpStatus.FORBIDDEN
-				)
 
-			return userId
+			return group.users.map(u => u.username).includes(userId)
 		} catch (error) {
 			this.logger.error(error)
 			throw error
 		}
-		//
 	}
 
 	public async userIsProjectAdmin(projectName, userId) {
