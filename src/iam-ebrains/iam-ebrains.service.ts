@@ -132,6 +132,14 @@ export class IamEbrainsService {
 		return data
 	}
 
+	public async getUser(username: string){
+		this.logger.debug(`getUser(${username})`)
+		const url = `${this.apiUrl}/identity/users/${username}`
+		const { data } = await this.request(url, 'get', {})
+
+		return data
+	}
+
 	public async getGroupListsByRole(
 		groupName: string,
 		role: Role
