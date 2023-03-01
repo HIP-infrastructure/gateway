@@ -104,8 +104,8 @@ export class ToolsService {
 	private readonly logger = new Logger('ToolsService')
 	private dataUser: string
 	private dataUserId
-	private elastic_client_ro: Client
-	private elastic_client_rw: Client
+	private elasticClientRO: Client
+	private elasticClientRW: Client
 	private readonly es_index_datasets =
 		process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
 	private readonly bidsToolsImage = `${process.env.GL_REGISTRY}/${process.env.BIDS_TOOLS_IMAGE}:${process.env.BIDS_TOOLS_VERSION}`
@@ -120,7 +120,7 @@ export class ToolsService {
 		if (uid) this.dataUserId = uid
 
 		// create a new client with read-only privileges to our elasticsearch node
-		this.elastic_client_ro = new Client({
+		this.elasticClientRO = new Client({
 			node: `${process.env.ELASTICSEARCH_URL}`,
 			auth: {
 				username: `${process.env.ELASTICSEARCH_USER_RO}`,
@@ -128,7 +128,7 @@ export class ToolsService {
 			}
 		})
 		// create a new client with read-write privileges to our elasticsearch node
-		this.elastic_client_rw = new Client({
+		this.elasticClientRW = new Client({
 			node: `${process.env.ELASTICSEARCH_URL}`,
 			auth: {
 				username: `${process.env.ELASTICSEARCH_USER_RW}`,
@@ -241,7 +241,7 @@ export class ToolsService {
 			refresh: true,
 			operations: body
 		}
-		const bulkResponse = await this.elastic_client_rw.bulk(bulk_params)
+		const bulkResponse = await this.elasticClientRW.bulk(bulk_params)
 		if (bulkResponse.errors) {
 			this.logger.error('Errors for (re)indexing datasets')
 			this.logger.error(JSON.stringify(bulkResponse, null, 4))
@@ -251,7 +251,7 @@ export class ToolsService {
 			}
 		}
 		// count indexed data
-		const count = await this.elastic_client_ro.count({
+		const count = await this.elasticClientRO.count({
 			index: this.es_index_datasets
 		})
 		this.logger.debug({ count })
@@ -1127,14 +1127,14 @@ export class ToolsService {
 	public async createBIDSDatasetsIndex() {
 		try {
 			// create index for datasets if not existing
-			const exists = await this.elastic_client_ro.indices.exists({
+			const exists = await this.elasticClientRO.indices.exists({
 				index: this.es_index_datasets
 			})
 
 			if (exists === false) {
 				try {
 					this.logger.debug('Creating index for datasets...')
-					const create = await this.elastic_client_rw.indices.create({
+					const create = await this.elasticClientRW.indices.create({
 						index: this.es_index_datasets
 						// mappings: { mappings }
 					})
@@ -1165,13 +1165,13 @@ export class ToolsService {
 	public async deleteBIDSDatasetsIndex() {
 		try {
 			// delete index for datasets only if it exists
-			const exists = await this.elastic_client_ro.indices.exists({
+			const exists = await this.elasticClientRO.indices.exists({
 				index: this.es_index_datasets
 			})
 
 			if (exists === true) {
 				try {
-					const del = await this.elastic_client_rw.indices.delete({
+					const del = await this.elasticClientRW.indices.delete({
 						index: this.es_index_datasets
 					})
 					this.logger.debug(`Index ${this.es_index_datasets} deleted`)
@@ -1300,7 +1300,7 @@ export class ToolsService {
 					index: dataset._index,
 					id: dataset._id
 				}
-				const deleteResponse = await this.elastic_client_rw.delete(datasetID)
+				const deleteResponse = await this.elasticClientRW.delete(datasetID)
 				if (deleteResponse.result !== 'deleted') {
 					this.logger.error(`Errors for deleting dataset ${dataset._id}!`)
 					this.logger.error(JSON.stringify(deleteResponse))
@@ -1473,7 +1473,7 @@ export class ToolsService {
 				query: queryObj
 			}
 			// perform and return the search query
-			const foundDatasets = await this.elastic_client_ro
+			const foundDatasets = await this.elasticClientRO
 				.search(query_params)
 				.then((result: estypes.SearchResponse) => {
 					// remove "Path" in dataset objects returned to the frontend
@@ -1532,7 +1532,7 @@ export class ToolsService {
 				searches: body
 			}
 			// perform and return the msearch query
-			return await this.elastic_client_ro
+			return await this.elasticClientRO
 				.msearch<BIDSDataset>(query_params)
 				.then((result: estypes.MsearchResponse) => {
 					return result.responses.map(
@@ -1564,7 +1564,7 @@ export class ToolsService {
 		}
 
 		// perform and return the search query
-		return this.elastic_client_ro
+		return this.elasticClientRO
 			.count(count_params)
 			.then(res => {
 				return res.count
