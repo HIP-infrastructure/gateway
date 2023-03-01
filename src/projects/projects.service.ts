@@ -40,29 +40,13 @@ function ghostFSAPICacheKeyForUser(userId: string) {
 @Injectable()
 export class ProjectsService {
 	private readonly logger = new Logger(ProjectsService.name)
-	private readonly ssh: any
-	private readonly authBackendUsername: string
-	private readonly authBackendPassword: string
-	private readonly authBackendUrl: string
-	private readonly authFSUrl: string
-	private readonly authDockerFsCert: string
 
 	constructor(
 		private readonly iamService: IamEbrainsService,
 		private readonly httpService: HttpService,
 		private readonly cacheService: CacheService,
 		private readonly configService: ConfigService
-	) {
-		this.authBackendUsername = this.configService.get(
-			'collab.authBackendUsername'
-		)
-		this.authBackendPassword = this.configService.get(
-			'collab.authBackendPassword'
-		)
-		this.authBackendUrl = this.configService.get('collab.authBackendUrl')
-		this.authFSUrl = this.configService.get('collab.authFSUrl')
-		this.authDockerFsCert = this.configService.get('collab.authDockerFsCert')
-	}
+	) { }
 
 	private async sshConnect() {
 		return new NodeSSH().connect({
@@ -103,7 +87,7 @@ export class ProjectsService {
 	}
 
 	// TODO
-	private async checkIfRootFolderExists() {}
+	private async checkIfRootFolderExists() { }
 
 	public importBIDSSubject() {
 		// TODO
@@ -357,54 +341,47 @@ export class ProjectsService {
 			const { data } = await firstValueFrom(
 				this.httpService.get(url).pipe(
 					catchError(async (error: any): Promise<any> => {
-						this.logger.error(error.code)
-						// console.log(JSON.stringify({ error }))
-
 						if (error.code === 'ECONNREFUSED') {
-							console.log('Success')
-
-							const projects = await this.findUserProjects(userId)
-							await this.spawnGhostFSAPIForUser(userId, projects)
+							await this.spawnGhostFSAPIForUser(userId)
 
 							return this.metadataTree(projectName, path, userId)
 						}
-
-						// throw new HttpException(error.response.data, error.response.status)
 					})
 				)
 			)
+
 			return data
 		} catch (error) {
 			this.logger.debug(`metadataTree: catch`)
 			this.logger.error(error)
 
 			// TODO: beware of the infernal loop
-
-			const projects = await this.findUserProjects(userId)
-			await this.spawnGhostFSAPIForUser(userId, projects)
+			await this.spawnGhostFSAPIForUser(userId)
 
 			return this.metadataTree(projectName, path, userId)
-			// throw new HttpException(error.response.data, error.response.status)
 		}
 	}
 
-	private async getGhostFSAPIForUser() {}
+	private async getGhostFSAPIForUser() { }
 
 	private async deleteGhostFSAPI(userId: string) {
 		this.logger.debug(`deleteGhostFSAPI: userId=${userId}`)
 		const cacheKey = ghostFSAPICacheKeyForUser(userId)
 		const api = await this.cacheService.get(cacheKey)
-		const { url, mount, dockerId } = JSON.parse(api)
-		this.logger.debug({ url, mount, dockerId })
-		const dockerParams = ['stop', dockerId.substring(0, 5)]
-		this.spawnable('docker', dockerParams)
-		return await this.cacheService.del(cacheKey)
+		if (api) {
+			const { url, mount, dockerId } = JSON.parse(api)
+			this.logger.debug({ url, mount, dockerId })
+			const dockerParams = ['stop', dockerId.substring(0, 5)]
+			this.spawnable('docker', dockerParams)
+			return await this.cacheService.del(cacheKey)
+		}
 	}
 
-	private async spawnGhostFSAPIForUser(userId: string, projects: Project[]) {
+	private async spawnGhostFSAPIForUser(userId: string) {
 		this.logger.debug(
-			`spawnGhostFSAPIForUser(${projects.map(p => p.name)}, ${userId})`
+			`spawnGhostFSAPIForUser(${userId})`
 		)
+		const projects = await this.findUserProjects(userId)
 		const cacheKey = ghostFSAPICacheKeyForUser(userId)
 		await this.cacheService.del(cacheKey)
 
@@ -424,14 +401,14 @@ export class ProjectsService {
 					.map(key => `${key}=${encodeURIComponent(data[key])}`)
 					.join('&')
 
-			const url = `${this.authBackendUrl}/token?${toParams({
+			const url = `${this.configService.get('collab.authBackendUrl')}/token?${toParams({
 				hipuser: userId,
 				gf
 			})}`
 			const config = {
 				auth: {
-					username: this.authBackendUsername,
-					password: this.authBackendPassword
+					username: this.configService.get('collab.authBackendUsername'),
+					password: this.configService.get('collab.authBackendPassword')
 				}
 			}
 
@@ -471,9 +448,9 @@ export class ProjectsService {
 				'--env',
 				`HIP_PASSWORD=${token}`,
 				'--env',
-				`NEXTCLOUD_DOMAIN=${this.authFSUrl}`,
+				`NEXTCLOUD_DOMAIN=${this.configService.get('collab.authFSUrl')}`,
 				'--env',
-				`DOCKERFS_CERT=${this.authDockerFsCert}`,
+				`DOCKERFS_CERT=${this.configService.get('collab.authDockerFsCert')}`,
 				'fs-api'
 			]
 			this.logger.debug(dockerParams.join(' '))
@@ -499,7 +476,7 @@ export class ProjectsService {
 						})
 					)
 
-					return new Promise(resolve => setTimeout(resolve, 30 * 1000))
+					return new Promise(resolve => setTimeout(resolve, 15 * 1000))
 				} else {
 					throw new Error(message)
 				}
