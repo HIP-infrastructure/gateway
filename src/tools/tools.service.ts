@@ -108,7 +108,7 @@ export class ToolsService {
 	private elastic_client_rw: Client
 	private readonly es_index_datasets =
 		process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
-	private readonly bidsToolsImage = `${process.env.BIDS_TOOLS_IMAGE}:${process.env.BIDS_TOOLS_VERSION}`
+	private readonly bidsToolsImage = `${process.env.GL_REGISTRY}/${process.env.BIDS_TOOLS_IMAGE}:${process.env.BIDS_TOOLS_VERSION}`
 
 	constructor(
 		private readonly httpService: HttpService,
