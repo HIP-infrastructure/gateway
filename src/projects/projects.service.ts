@@ -7,6 +7,7 @@ import { CacheService } from 'src/cache/cache.service'
 import { findFreePort } from 'src/common/utils/shared.utils'
 import { Group, IamEbrainsService } from 'src/iam-ebrains/iam-ebrains.service'
 import { CreateProjectDto } from './dto/create-project.dto'
+import { uuid } from 'uuidv4'
 
 const { NodeSSH } = require('node-ssh')
 interface FileMetadata {
@@ -31,7 +32,10 @@ const PROJECTS_ROOT_GROUP = 'HIP-Projects'
 // Gives members access to administrate HIP projects
 const PROJECTS_GROUP_ADMINS = 'HIP-Projects-admins'
 const CACHE_ROOT_KEY = 'projects'
-const CACHE_ROOT_FS_API_KEY = 'projects-fs-api'
+
+function ghostFSAPICacheKeyForUser(userId: string) {
+	return `projects-fs-api:${userId}`
+}
 
 @Injectable()
 export class ProjectsService {
@@ -93,8 +97,8 @@ export class ProjectsService {
 	}
 
 	private async invalidateProjectsCache(userId: string) {
-		await this.refreshApi(userId)
-		await this.cacheService.del(`${CACHE_ROOT_KEY}:all`) 
+		await this.deleteGhostFSAPI(userId)
+		await this.cacheService.del(`${CACHE_ROOT_KEY}:all`)
 		return this.cacheService.del(`${CACHE_ROOT_KEY}:${userId}`)
 	}
 
@@ -175,7 +179,6 @@ export class ProjectsService {
 			this.logger.error(error)
 			throw error
 		}
-		//
 	}
 
 	async create(createProjectDto: CreateProjectDto) {
@@ -314,6 +317,11 @@ export class ProjectsService {
 	async addUserToProject(userId: string, projectName: string) {
 		this.logger.debug(`addUserToProject(${userId}, ${projectName})`)
 		try {
+			await this.createUserFolder(userId)
+		} catch (error) {
+			this.logger.debug('userFolder exists')
+		}
+		try {
 			await this.iamService.addUserToGroup(userId, 'member', projectName)
 			const groupList = await this.iamService.getGroupListsByRole(
 				projectName,
@@ -337,13 +345,14 @@ export class ProjectsService {
 			`metadataTree: name=${projectName}, path=${path} userId=${userId} refresh=${refreshApi}`
 		)
 
-		if (refreshApi) await this.refreshApi(userId)
+		if (refreshApi) await this.deleteGhostFSAPI(userId)
 
 		try {
-			const cached = await this.cacheService.get(
-				`${CACHE_ROOT_FS_API_KEY}:${userId}`
-			)
-			const url = `${cached}/inspect/${projectName}`
+			const cacheKey = ghostFSAPICacheKeyForUser(userId)
+			const api = await this.cacheService.get(cacheKey)
+			const { url: apiUrl } = JSON.parse(api)
+
+			const url = `${apiUrl}/inspect/${projectName}`
 			this.logger.debug(url)
 			const { data } = await firstValueFrom(
 				this.httpService.get(url).pipe(
@@ -355,7 +364,6 @@ export class ProjectsService {
 							console.log('Success')
 
 							const projects = await this.findUserProjects(userId)
-							//await this.createUserFolder(userId)
 							await this.spawnGhostFSAPIForUser(userId, projects)
 
 							return this.metadataTree(projectName, path, userId)
@@ -367,7 +375,11 @@ export class ProjectsService {
 			)
 			return data
 		} catch (error) {
+			this.logger.debug(`metadataTree: catch`)
 			this.logger.error(error)
+
+			// TODO: beware of the infernal loop
+
 			const projects = await this.findUserProjects(userId)
 			await this.spawnGhostFSAPIForUser(userId, projects)
 
@@ -378,11 +390,22 @@ export class ProjectsService {
 
 	private async getGhostFSAPIForUser() {}
 
-	private async spawnGhostFSAPIForUser(hipuser: string, projects: Project[]) {
+	private async deleteGhostFSAPI(userId: string) {
+		this.logger.debug(`deleteGhostFSAPI: userId=${userId}`)
+		const cacheKey = ghostFSAPICacheKeyForUser(userId)
+		const api = await this.cacheService.get(cacheKey)
+		const { url, mount, dockerId } = JSON.parse(api)
+		this.logger.debug({ url, mount, dockerId })
+		const dockerParams = ['stop', dockerId.substring(0, 5)]
+		this.spawnable('docker', dockerParams)
+		return await this.cacheService.del(cacheKey)
+	}
+
+	private async spawnGhostFSAPIForUser(userId: string, projects: Project[]) {
 		this.logger.debug(
-			`spawnGhostFSAPIForUser(${projects.map(p => p.name)}, ${hipuser})`
+			`spawnGhostFSAPIForUser(${projects.map(p => p.name)}, ${userId})`
 		)
-		const cacheKey = `${CACHE_ROOT_FS_API_KEY}:${hipuser}`
+		const cacheKey = ghostFSAPICacheKeyForUser(userId)
 		await this.cacheService.del(cacheKey)
 
 		const port = await findFreePort()
@@ -394,13 +417,17 @@ export class ProjectsService {
 			}))
 		)
 
+		// get auth token for GhostFS access
 		try {
 			const toParams = data =>
 				Object.keys(data)
 					.map(key => `${key}=${encodeURIComponent(data[key])}`)
 					.join('&')
 
-			const url = `${this.authBackendUrl}/token?${toParams({ hipuser, gf })}`
+			const url = `${this.authBackendUrl}/token?${toParams({
+				hipuser: userId,
+				gf
+			})}`
 			const config = {
 				auth: {
 					username: this.authBackendUsername,
@@ -419,15 +446,14 @@ export class ProjectsService {
 				)
 			)
 
-			const container_name = `fs-${hipuser}-${Math.round(
-				Math.random() * 1000000
-			)}`
-			const localMountPoint = `${process.cwd()}/mnt/${hipuser}`
+			const container_name = uuid()
+			const localMountPoint = `${process.cwd()}/mnt/${container_name}`
+			this.logger.debug({ localMountPoint })
 			const dockerParams = [
 				'run',
 				'-d',
 				'--mount',
-				`type=bind,source=${localMountPoint},target=/home/${hipuser}/nextcloud,bind-propagation=rshared`,
+				`type=bind,source=${localMountPoint},target=/home/${userId}/nextcloud,bind-propagation=rshared`,
 				'-p',
 				`127.0.0.1:${port}:3000`,
 				'--device=/dev/fuse:/dev/fuse',
@@ -441,7 +467,7 @@ export class ProjectsService {
 				'--restart',
 				'on-failure:5',
 				'--env',
-				`HIP_USER=${hipuser}`,
+				`HIP_USER=${userId}`,
 				'--env',
 				`HIP_PASSWORD=${token}`,
 				'--env',
@@ -452,33 +478,38 @@ export class ProjectsService {
 			]
 			this.logger.debug(dockerParams.join(' '))
 
-			// const { code, message } = await this.spawnable('mkdir', [
-			// 	'-p',
-			// 	localMountPoint,
-			// 	'>/dev/null',
-			// 	'2>&1'
-			// ])
-			// if (code === 0) {
+			// create a mountpoint
+			// as we can only unmount it with sudo, create a new one for each container
+			const { code, message } = await this.spawnable('mkdir', [
+				'-p',
+				localMountPoint,
+				'>/dev/null',
+				'2>&1'
+			])
+
+			if (code === 0) {
 				const { code, message } = await this.spawnable('docker', dockerParams)
 				if (code === 0) {
-					await this.cacheService.set(cacheKey, `http://127.0.0.1:${port}`)
+					await this.cacheService.set(
+						cacheKey,
+						JSON.stringify({
+							url: `http://127.0.0.1:${port}`,
+							mount: localMountPoint,
+							dockerId: message
+						})
+					)
 
 					return new Promise(resolve => setTimeout(resolve, 30 * 1000))
 				} else {
 					throw new Error(message)
 				}
-			// } else {
-			// 	throw new Error(message)
-			// }
+			} else {
+				throw new Error(message)
+			}
 		} catch (error) {
 			this.logger.error(error)
 			throw new Error(error)
 		}
-	}
-
-	async refreshApi(userId: string) {
-		this.logger.debug(`refreshApi: userId=${userId}`)
-		return await this.cacheService.del(`fs-api-collab-${userId}`)
 	}
 
 	private spawnable = (
@@ -497,11 +528,13 @@ export class ProjectsService {
 
 				child.stderr.setEncoding('utf8')
 				child.stderr.on('data', data => {
-					message += data.toString()
+					this.logger.debug({ data })
+					// message += data.toString()
 				})
 
 				child.on('error', data => {
-					message += data.toString()
+					this.logger.debug({ data })
+					// message += data.toString()
 				})
 
 				child.on('close', code => {
