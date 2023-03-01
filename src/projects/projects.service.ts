@@ -512,6 +512,11 @@ export class ProjectsService {
 		}
 	}
 
+	async refreshApi(userId: string) {
+		this.logger.debug(`refreshApi: userId=${userId}`)
+		return await this.cacheService.del(`fs-api-collab-${userId}`)
+	}
+
 	private spawnable = (
 		command,
 		args
