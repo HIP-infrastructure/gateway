@@ -8,6 +8,7 @@ import { findFreePort } from 'src/common/utils/shared.utils'
 import { Group, IamEbrainsService } from 'src/iam-ebrains/iam-ebrains.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { v4 as uuidv4 } from 'uuid'
+import { ToolsService } from 'src/tools/tools.service'
 const { NodeSSH } = require('node-ssh')
 interface FileMetadata {
 	name: string
@@ -18,6 +19,12 @@ interface FileMetadata {
 	md5Hash: string
 	contentType: string
 	contentEncoding: string
+}
+
+export interface GhostFSAPI {
+	mount: string
+	url: string
+	dockerId: string
 }
 
 export interface Project extends Group {
@@ -77,25 +84,18 @@ export class ProjectsService {
 	}
 
 	private async invalidateProjectsCache(userId: string) {
-		await this.deleteGhostFSAPI(userId)
+		try {
+			await this.deleteGhostFSAPI(userId)
+		} catch (error) {
+			this.logger.debug(error)
+		}
 		await this.cacheService.del(`${CACHE_ROOT_KEY}:all`)
+
 		return this.cacheService.del(`${CACHE_ROOT_KEY}:${userId}`)
 	}
 
 	// TODO
 	private async checkIfRootFolderExists() {}
-
-	public importBIDSSubject() {
-		// TODO
-		// bidstools(source: { datasetpath, subjectid }, destination: { projectname })
-		// return OK / KO
-	}
-
-	public importDocument() {
-		// TODO
-		// bidstools(source: [{ path, file }], destination: { projectname, path})
-		// return OK / KO
-	}
 
 	private async createAdminRoleGroup() {
 		// this.cacheService.del(`${CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`)
@@ -168,6 +168,7 @@ export class ProjectsService {
 				.replace(/[^a-zA-Z0-9]+/g, '-')
 				.toLowerCase()}`
 
+			// create group on iam-ebrains
 			await this.iamService.createGroup(projectName, title, description)
 			await this.iamService.addUserToGroup(
 				adminId,
@@ -181,7 +182,7 @@ export class ProjectsService {
 				PROJECTS_ROOT_GROUP
 			)
 
-			// create group folder on collab
+			// create group folder on collab workspace
 			const ssh = await this.sshConnect()
 			const groupFolder = `${this.configService.get(
 				'collab.path'
@@ -198,20 +199,16 @@ export class ProjectsService {
 				})
 			ssh.dispose()
 
-			// create user folder if it doesn't exists
-			// GhostFS
+			this.createFSAPI(adminId).then(({ mount }) => {
+				setTimeout(() => {
+					this.toolsService.createProjectDataset(mount, title, description)
+				}, 5 * 1000)
+			})
+
 			await this.createUserFolder(adminId)
+			await this.cacheService.del(`${CACHE_ROOT_KEY}:all`)
 
-
-					// TODO
-		// bind mount
-		// bidstools.createProjectDataset - /projectfolder= title= description=
-		// - create folder structure
-		//		- README
-		//  	- /input/
-		// 		OK / KO
-
-			return this.invalidateProjectsCache(adminId)
+			return this.cacheService.del(`${CACHE_ROOT_KEY}:${adminId}`)
 		} catch (error) {
 			this.logger.debug(error)
 			throw error
@@ -324,17 +321,28 @@ export class ProjectsService {
 		}
 	}
 
-	public async metadataTree(
-		projectName: string,
-		path: string,
-		userId: string,
-		refreshApi: boolean = false
-	) {
-		this.logger.debug(
-			`metadataTree: name=${projectName}, path=${path} userId=${userId} refresh=${refreshApi}`
-		)
+	public importBIDSSubject() {
+		const sourceDatasetPath = ''
+		const participantId = ''
+		const targetPath = ''
 
-		if (refreshApi) await this.deleteGhostFSAPI(userId)
+		this.toolsService.importBIDSSubjectToProject(
+			sourceDatasetPath,
+			participantId,
+			targetPath
+		)
+	}
+
+	public importDocument() {
+		const sourcePath = ''
+		const targetPath = ''
+		this.toolsService.importDocumentToProject(sourcePath, targetPath)
+	}
+
+	public async metadataTree(projectName: string, path: string, userId: string) {
+		this.logger.debug(
+			`metadataTree: name=${projectName}, path=${path} userId=${userId} `
+		)
 
 		try {
 			const cacheKey = cacheKeyForGhostFSAPIUser(userId)
@@ -347,6 +355,7 @@ export class ProjectsService {
 				this.httpService.get(apiUrl).pipe(
 					catchError(async (error: any): Promise<any> => {
 						this.logger.error(error)
+						throw new Error(error)
 					})
 				)
 			)
@@ -355,7 +364,7 @@ export class ProjectsService {
 		} catch (error) {
 			this.logger.debug(`metadataTree: catch`)
 			this.logger.error(error)
-			return await this.spawnGhostFSAPIForUser(userId)
+			throw new Error(error)
 		}
 	}
 
@@ -368,19 +377,21 @@ export class ProjectsService {
 			this.logger.debug({ url, mount, dockerId })
 			const dockerParams = ['stop', dockerId]
 			await this.spawnable('docker', dockerParams)
-
-			return await this.cacheService.del(cacheKey)
 		}
+
+		return await this.cacheService.del(cacheKey)
 	}
 
-	private async spawnGhostFSAPIForUser(userId: string) {
+	public async createFSAPI(userId: string): Promise<GhostFSAPI> {
 		this.logger.debug(`spawnGhostFSAPIForUser(${userId})`)
 
 		const lockKey = cacheKeyLockForGhostFSAPIUser(userId)
 		const lockValue = await this.cacheService.get(lockKey)
 		const isSpawning = JSON.parse(lockValue)
 
-		if (isSpawning) return
+		if (isSpawning) {
+			this.deleteGhostFSAPI(userId)
+		}
 
 		await this.cacheService.set(lockKey, true)
 		const projects = await this.findUserProjects(userId)
@@ -469,25 +480,16 @@ export class ProjectsService {
 			if (code === 0) {
 				const { code, message } = await this.spawnable('docker', dockerParams)
 				if (code === 0) {
-					await this.cacheService.set(cacheKey, {
+					const ghostFSApi = {
 						url: `http://127.0.0.1:${port}`,
 						mount: localMountPoint,
 						dockerId: message.substring(0, 5)
-					})
+					}
+					await this.cacheService.set(cacheKey, ghostFSApi)
 
-					this.logger.debug({
-						url: `http://127.0.0.1:${port}`,
-						mount: localMountPoint,
-						dockerId: message.substring(0, 5)
-					})
+					this.logger.debug(ghostFSApi)
 
-					// Wait for the container to load
-					// TODO: Best to poll if we pursue that way
-					return new Promise(resolve =>
-						setTimeout(async () => {
-							return await this.cacheService.set(lockKey, false)
-						}, 15 * 1000)
-					)
+					return Promise.resolve(ghostFSApi)
 				} else {
 					await this.cacheService.set(lockKey, false)
 					throw new Error(message)
@@ -501,6 +503,10 @@ export class ProjectsService {
 			this.logger.error(error)
 			throw new Error(error)
 		}
+	}
+
+	async delay(t, v) {
+		return new Promise(resolve => setTimeout(resolve, t, v))
 	}
 
 	async refreshApi(userId: string) {
