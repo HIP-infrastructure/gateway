@@ -20,7 +20,6 @@ import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
 import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
-import { writeFileSync } from 'fs'
 import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
 // import { Dataset } from './entities/dataset.entity'
 
@@ -194,6 +193,26 @@ export class ToolsService {
 	// 		throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
 	// 	}
 	// }
+
+	public createProjectDataset(
+		path: string,
+		title: string,
+		description: string
+	) {
+		this.logger.debug(`createProjectDataset ${path} ${title}`)
+	}
+
+	public importBIDSSubjectToProject (sourceDatasetPath: string, participantId: string, targetPath: string) {
+		this.logger.debug(
+			`importBIDSSubjectToProject ${path} ${sourceDatasetPath} ${participantId} ${targetPath}`
+		)
+	}
+
+	public importDocumentToProject(sourcePath: string, targetPath: string) {
+		this.logger.debug(
+			`importDocumentToProject ${path} ${sourcePath} ${targetPath}`
+		)
+	}
 
 	/**
 	 * Generate a list of BIDSDataset objects (JSON content indexed to elasticsearch) given a list of dataset paths

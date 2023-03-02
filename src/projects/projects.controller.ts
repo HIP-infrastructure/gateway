@@ -108,6 +108,36 @@ export class ProjectsController {
 			)
 	}
 
+	@Post('/api')
+	createFSAPI(@Req() req: Request) {
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(async userId => {
+				this.logger.debug(`createFSAPI(${userId})`)
+				return await this.projectsService.createFSAPI(userId)
+			})
+	}
+
+	@Post(':projectName/subject')
+	importBIDSSubject(@Req() req: Request) {
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(async userId => {
+				this.logger.debug(`importBIDSSubject(${userId})`)
+				return this.projectsService.importBIDSSubject()
+			})
+	}
+
+	@Post(':projectName/document')
+	importDocument(@Req() req: Request) {
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(async userId => {
+				this.logger.debug(`importDocument(${userId})`)
+				return this.projectsService.importDocument()
+			})
+	}
+
 	@Get(':projectName/metadataTree')
 	metadataTree(
 		@Req() req: Request,
@@ -117,12 +147,7 @@ export class ProjectsController {
 	) {
 		return this.nextcloudService.authUserIdFromRequest(req).then(userId => {
 			this.logger.debug(`metadataTree(${projectName}, ${path}, ${userId})`)
-			return this.projectsService.metadataTree(
-				projectName,
-				path,
-				userId,
-				refreshApi
-			)
+			return this.projectsService.metadataTree(projectName, path, userId)
 		})
 	}
 }
