@@ -366,10 +366,15 @@ export class ToolsService {
 	/**
 	 * Generate a list of BIDSDataset objects (JSON content indexed to elasticsearch) given a list of dataset paths
 	 * @param owner user id
+	 * @param ownerGroups list of groups the user belongs to
 	 * @param paths list of dataset paths to generate JSON content indexed to elasticsearch
 	 * @returns list of BIDSDataset objects (JSON content indexed to elasticsearch)
 	 */
-	public async genBIDSDatasetsIndexedContent(owner: string, paths: string[]) {
+	public async genBIDSDatasetsIndexedContent(
+		owner: string,
+		ownerGroups: GroupFolder[],
+		paths: string[]
+	) {
 		try {
 			const bidsGetDatasetsDto = paths.map(path => {
 				const bidsGetDatasetDto = new BidsGetDatasetDto()
@@ -378,7 +383,8 @@ export class ToolsService {
 				return bidsGetDatasetDto
 			})
 			const bidsDatasets = await this.getDatasetsIndexedContent(
-				bidsGetDatasetsDto
+				bidsGetDatasetsDto,
+				ownerGroups
 			)
 			return bidsDatasets
 		} catch (e) {
@@ -428,21 +434,22 @@ export class ToolsService {
 	/**
 	 * Add new BIDS datasets in the user private space to the index
 	 * @param owner user id
+	 * @param ownerGroups list of groups the user belongs to
 	 * @param datasetRelPaths list of relative paths of the datasets to index
 	 * @returns list of BIDSDataset indexed
 	 */
 	public async addNewBIDSDatasetIndexedContents(
 		owner: string,
+		ownerGroups: GroupFolder[],
 		datasetRelPaths: string[]
 	) {
 		// generate content to index of each dataset not indexed
 		this.logger.debug('Generating content to index of each dataset not indexed')
 		const bidsDatasets = await this.genBIDSDatasetsIndexedContent(
 			owner,
+			ownerGroups,
 			datasetRelPaths
 		)
-		this.logger.debug('Getting groups of the owner')
-		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
 
 		// Generate initial dataset ID
 		this.logger.debug('Generating initial dataset ID')
@@ -450,7 +457,8 @@ export class ToolsService {
 		for (let index in bidsDatasets) {
 			bidsDatasets[index].Path = await this.filePath(
 				datasetRelPaths[index],
-				owner
+				owner,
+				ownerGroups
 			)
 			bidsDatasets[index].Owner = owner
 			bidsDatasets[index].Groups = ownerGroups
@@ -474,25 +482,28 @@ export class ToolsService {
 	/**
 	 * Add new BIDS datasets in a group folder to the index
 	 * @param owner user id
+	 * @param ownerGroups list of groups the user belongs to
 	 * @param datasetRelPaths list of relative paths of the datasets
 	 * @param datasetIds list of dataset ids
 	 * @returns list of BIDS dataset objects indexed
 	 */
 	public async addNewGroupBIDSDatasetIndexedContents(
 		owner: string,
+		ownerGroups: GroupFolder[],
 		datasetRelPaths: string[],
 		datasetIds: string[]
 	) {
 		// generate content to index of each dataset not indexed
 		const bidsDatasets = await this.genBIDSDatasetsIndexedContent(
 			owner,
+			ownerGroups,
 			datasetRelPaths
 		)
-		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
 		for (let index in bidsDatasets) {
 			bidsDatasets[index].Path = await this.filePath(
 				datasetRelPaths[index],
-				owner
+				owner,
+				ownerGroups
 			)
 			bidsDatasets[index].Owner = owner
 			bidsDatasets[index].Groups = ownerGroups
@@ -509,19 +520,22 @@ export class ToolsService {
 
 	public async updateBIDSDatasetIndexedContents(
 		owner: string,
+		ownerGroups: GroupFolder[],
 		datasetRelPaths: string[],
 		datasetIds: string[]
 	) {
 		// generate content to index of each dataset not indexed
 		const bidsDatasets = await this.genBIDSDatasetsIndexedContent(
 			owner,
+			ownerGroups,
 			datasetRelPaths
 		)
 
 		for (let index in bidsDatasets) {
 			bidsDatasets[index].Path = await this.filePath(
 				datasetRelPaths[index],
-				owner
+				owner,
+				ownerGroups
 			)
 			bidsDatasets[index].LastModificationDate = new Date()
 			bidsDatasets[index].id = datasetIds[index]
@@ -760,6 +774,7 @@ export class ToolsService {
 	 */
 	public async parseSearchDatasetsResultsForRefresh(
 		owner: string,
+		ownerGroups: GroupFolder[],
 		searchDatasetsResults: any[]
 	) {
 		// get list of found dataset paths
@@ -775,7 +790,8 @@ export class ToolsService {
 		for (let index in foundDatasetPaths) {
 			const dataset_desc_abspath = await this.filePath(
 				foundDatasetPaths[index] + '/' + DATASET_DESCRIPTION,
-				owner
+				owner,
+				ownerGroups
 			)
 			const dataset = await this.readJsonFile(dataset_desc_abspath)
 			foundDatasets.push(dataset)
@@ -784,7 +800,11 @@ export class ToolsService {
 		// find IDs of datasets existing in the index
 		let datasetPathsQuery: string[] = []
 		for (const index in foundDatasetPaths) {
-			const datasetPath = await this.filePath(foundDatasetPaths[index], owner)
+			const datasetPath = await this.filePath(
+				foundDatasetPaths[index],
+				owner,
+				ownerGroups
+			)
 			datasetPathsQuery.push(`Path:"${datasetPath}"`)
 		}
 		const searchResults = await this.multiSearchBidsDatasets(datasetPathsQuery)
@@ -995,6 +1015,7 @@ export class ToolsService {
 				this.logger.debug({ foundPrivateDatasetsNotIndexed })
 				addedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
 					owner,
+					groupFolders,
 					foundPrivateDatasetsNotIndexed
 				)
 			}
@@ -1013,6 +1034,7 @@ export class ToolsService {
 					addedGroupBidsDatasets =
 						await this.addNewGroupBIDSDatasetIndexedContents(
 							owner,
+							groupFolders,
 							groupDatasetPathsToBeAdded,
 							groupDatasetIDsToBeAdded
 						)
@@ -1064,6 +1086,7 @@ export class ToolsService {
 				})
 				renamedBidsDatasets = await this.updateBIDSDatasetIndexedContents(
 					owner,
+					groupFolders,
 					foundPrivateRenamedDatasets,
 					foundPrivateRenamedDatasetIDs
 				)
@@ -1168,6 +1191,7 @@ export class ToolsService {
 				this.logger.debug({ foundPrivateDatasetsDuplicated })
 				duplicatedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
 					owner,
+					groupFolders,
 					foundPrivateDatasetsDuplicated
 				)
 			}
@@ -1213,6 +1237,11 @@ export class ToolsService {
 			// get the list of datasets already indexed in the root of the user private space
 			// let searchIndexedResults = await this.searchBidsDatasets(owner)
 
+			// get list of group folders to later differentiate datasets contained in a group folder
+			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
+				owner
+			)
+
 			// extract lists of (1) all found dataset paths, (2) dataset IDs with corresponding path,
 			// (3) dataset IDs with corresponding name but with changed path
 			const {
@@ -1223,12 +1252,8 @@ export class ToolsService {
 				//				foundDuplicatedDatasetPaths,
 			} = await this.parseSearchDatasetsResultsForRefresh(
 				owner,
+				groupFolders,
 				searchDatasetsResults
-			)
-
-			// get list of group folders to later differentiate datasets contained in a group folder
-			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
-				owner
 			)
 
 			// 2. handle indexing of datasets not already indexed
@@ -1377,11 +1402,17 @@ export class ToolsService {
 			bidsGetDatasetDto.owner = owner
 			bidsGetDatasetDto.path = path
 
+			// get list of group folders to later differentiate datasets contained in a group folder
+			const ownerGroups = await this.nextcloudService.groupFoldersForUserId(
+				owner
+			)
+
 			// get abosolute path of the dataset
-			const dsPath = await this.filePath(path, owner)
+			const dsPath = await this.filePath(path, owner, ownerGroups)
 
 			const bidsDataset = await this.createDatasetIndexedContent(
-				bidsGetDatasetDto
+				bidsGetDatasetDto,
+				ownerGroups
 			)
 
 			// find if the dataset is already indexed
@@ -1424,7 +1455,7 @@ export class ToolsService {
 				}
 				bidsDataset.version = 1
 			}
-			bidsDataset.Path = await this.filePath(path, owner)
+			bidsDataset.Path = await this.filePath(path, owner, ownerGroups)
 
 			// create and send elasticsearch bulk to index the dataset
 			await this.sendElasticSearchDatasetsBulk([bidsDataset])
@@ -1441,13 +1472,22 @@ export class ToolsService {
 	/**
 	 * This function deletes a dataset from the index using elasticsearch delete API
 	 * @param owner user id
+	 * @param ownerGroups list of group folders associated to the user
 	 * @param path relative path to the dataset
 	 * @returns	deleted dataset
 	 */
-	public async deleteBIDSDataset(owner: string, path: string) {
+	public async deleteBIDSDataset(
+		owner: string,
+		path: string,
+		ownerGroups?: GroupFolder[]
+	) {
 		try {
+			if (ownerGroups === undefined) {
+				// get list of group folders to later differentiate datasets contained in a group folder
+				ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
+			}
 			// get abosolute path of the dataset
-			const dsPath = await this.filePath(path, owner)
+			const dsPath = await this.filePath(path, owner, ownerGroups)
 			// find the dataset index to be deleted
 			const datasetPathQuery = `Path:"${dsPath}"`
 			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
@@ -1494,8 +1534,10 @@ export class ToolsService {
 	 * @returns deleted datasets
 	 */
 	public async deleteBIDSDatasets(owner: string, paths: string[]) {
+		// get list of group folders to later differentiate datasets contained in a group folder
+		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
 		const deletedBidsDatasetsPromises = paths.map(path => {
-			return this.deleteBIDSDataset(owner, path)
+			return this.deleteBIDSDataset(owner, path, ownerGroups)
 		})
 
 		const deletedBidsDatasets = (
@@ -1843,8 +1885,13 @@ export class ToolsService {
 				JSON.stringify(createBidsDatasetDto)
 			)
 
+			// get list of group folders to later differentiate datasets contained in a group folder
+			const ownerGroups = await this.nextcloudService.groupFoldersForUserId(
+				owner
+			)
+
 			// Resolve absolute path of dataset's parent directory
-			const dsParentPath = await this.filePath(parent_path, owner)
+			const dsParentPath = await this.filePath(parent_path, owner, ownerGroups)
 
 			const cmd1 = [
 				'run',
@@ -1917,7 +1964,12 @@ export class ToolsService {
 				}
 			})
 
-			const dbPath = await this.filePath(path, owner)
+			// get list of group folders associated with the owner/user
+			const ownerGroups = await this.nextcloudService.groupFoldersForUserId(
+				owner
+			)
+
+			const dbPath = await this.filePath(path, owner, ownerGroups)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
@@ -1965,8 +2017,10 @@ export class ToolsService {
 		const { owner, dataset_path } = createSubject
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
+		// get list of group folders associated with the owner/user
+		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
 		// get absolute path of the dataset
-		const dbPath = await this.filePath(dataset_path, owner)
+		const dbPath = await this.filePath(dataset_path, owner, ownerGroups)
 		try {
 			// retrieve the index used for the dataset
 			const datasetPathQuery = `Path:"${dbPath}"`
@@ -1985,7 +2039,7 @@ export class ToolsService {
 
 			// FIXME: replace by all settled
 			const filePathes = createSubject.files.map(file =>
-				this.filePath(file.path, owner)
+				this.filePath(file.path, owner, ownerGroups)
 			)
 			const pathes = await Promise.all(filePathes)
 
@@ -2086,7 +2140,12 @@ export class ToolsService {
 				JSON.stringify(editSubjectClinicalDto)
 			)
 
-			const dbPath = await this.filePath(path, owner)
+			// get list of group folders associated with the owner/user
+			const ownerGroups = await this.nextcloudService.groupFoldersForUserId(
+				owner
+			)
+
+			const dbPath = await this.filePath(path, owner, ownerGroups)
 
 			const cmd1 = [
 				'run',
@@ -2184,6 +2243,10 @@ export class ToolsService {
 			console.log(
 				`datasetPath for writing Participants TSV file: ${datasetPath}`
 			)
+			// get list of group folders associated with the owner/user
+			const ownerGroups = await this.nextcloudService.groupFoldersForUserId(
+				owner
+			)
 			// convert array of Participant object to TSV formatted string by using the
 			// map function without any framework
 			let participantObjects = createBidsDatasetParticipantsTsvDto.Participants
@@ -2196,7 +2259,11 @@ export class ToolsService {
 			}
 			const headerRow = Array.from(keys)
 			// create a write stream for the TSV file
-			const absDatasetPath = await this.filePath(datasetPath, owner)
+			const absDatasetPath = await this.filePath(
+				datasetPath,
+				owner,
+				ownerGroups
+			)
 			const tsvFilepath = path.join(absDatasetPath, PARTICIPANTS_FILE)
 			const tsvStream = fs.createWriteStream(tsvFilepath)
 			// write the header row to the stream
@@ -2295,7 +2362,11 @@ export class ToolsService {
 	): Promise<DataError> {
 		try {
 			const userId = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
-			const filePath = await this.filePath(path, userId)
+			// get list of group folders associated with the owner/user
+			const userGroups = await this.nextcloudService.groupFoldersForUserId(
+				userId
+			)
+			const filePath = await this.filePath(path, userId, userGroups)
 
 			return new Promise((resolve, reject) => {
 				fs.readFile(filePath, 'utf8', function (err, data) {
@@ -2317,11 +2388,12 @@ export class ToolsService {
 	 * It takes a path and a set of headers, and returns the JSON-formatted content summary of the
 	 * BIDS dataset at that path, later used for dataset indexing.
 	 * @param {BidsGetDatasetDto} bidsGetDatasetDto - object storing the owner and path to the dataset you want to get
-	 * @param {any} headers - this is the headers that you need to pass to the webdav server.
+	 * @param {GroupFolder[]} ownerGroups - list of group folders associated with the owner
 	 * @returns - the file content
 	 */
 	private async createDatasetIndexedContent(
-		bidsGetDatasetDto: BidsGetDatasetDto
+		bidsGetDatasetDto: BidsGetDatasetDto,
+		ownerGroups: GroupFolder[]
 	): Promise<BIDSDataset> {
 		const { owner, path } = bidsGetDatasetDto
 		const uniquId = Math.round(Date.now() + Math.random())
@@ -2346,7 +2418,7 @@ export class ToolsService {
 			})
 
 			// Set paths and command to be run
-			const dsPath = await this.filePath(path, owner)
+			const dsPath = await this.filePath(path, owner, ownerGroups)
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dsPath}:/output`]
 			const cmd2 = [
@@ -2393,10 +2465,12 @@ export class ToolsService {
 	 * It takes a path and a set of headers, and returns the JSON-formatted content summary of the
 	 * BIDS dataset at that path, later used for dataset indexing.
 	 * @param {BidsGetDatasetDto} bidsGetDatasetDto - object storing the owner and path to the dataset you want to get
+	 * @param {GroupFolder[]} ownerGroups - list of group folders associated with the owner/user
 	 * @returns - the file content
 	 */
 	private async getDatasetsIndexedContent(
-		bidsGetDatasetsDto: BidsGetDatasetDto[]
+		bidsGetDatasetsDto: BidsGetDatasetDto[],
+		ownerGroups: GroupFolder[]
 	): Promise<BIDSDataset[]> {
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -2404,7 +2478,7 @@ export class ToolsService {
 		try {
 			// FIXME: replace by all settled
 			const filePathes = bidsGetDatasetsDto.map(dataset => {
-				return this.filePath(dataset.path, dataset.owner)
+				return this.filePath(dataset.path, dataset.owner, ownerGroups)
 			})
 			const pathes = await Promise.all(filePathes)
 
@@ -2489,7 +2563,11 @@ export class ToolsService {
 	private async getFileContent(path: string, cookie: any): Promise<string> {
 		try {
 			const userId = cookie.match(/nc_username=(.*;)/)[1].split(';')[0]
-			const filePath = await this.filePath(path, userId)
+			// get list of group folders associated with the owner/user
+			const userGroups = await this.nextcloudService.groupFoldersForUserId(
+				userId
+			)
+			const filePath = await this.filePath(path, userId, userGroups)
 
 			return new Promise((resolve, reject) => {
 				fs.readFile(filePath, 'utf8', function (err, data) {
@@ -2509,6 +2587,7 @@ export class ToolsService {
 	 * A private method that is used to get the file path, either user based or for a group
 	 * @param {string} path - the path to the file you want to get
 	 * @param {string} userId - the user id
+	 * @param {GroupFolder[]} userGroups - list of group folders a user belongs to
 	 * */
 	private async filePath(path: string, userId: string) {
 		this.logger.debug(`filePath ${path} and ${userId}`)
@@ -2517,11 +2596,8 @@ export class ToolsService {
 			path = path.replace(/^\//, '')
 			// Get the root path
 			let rootPath = path.split('/')[0]
-			// Get the id of the group folder
-			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
-				userId
-			)
-			const id = groupFolders.find(g => g.label === rootPath)?.id
+
+			const id = userGroups.find(g => g.label === rootPath)?.id
 			rootPath = rootPath + '/'
 			// Create the path depending on whether it's a group folder or not
 			const nextPath = id
