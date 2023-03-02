@@ -48,7 +48,8 @@ export class ProjectsService {
 		private readonly iamService: IamEbrainsService,
 		private readonly httpService: HttpService,
 		private readonly cacheService: CacheService,
-		private readonly configService: ConfigService
+		private readonly configService: ConfigService,
+		private readonly toolsService: ToolsService
 	) {}
 
 	private async sshConnect() {
