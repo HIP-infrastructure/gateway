@@ -201,7 +201,7 @@ export class ProjectsService {
 
 			this.createFSAPI(adminId).then(({ mount }) => {
 				setTimeout(() => {
-					this.toolsService.createProjectDataset(mount, title, description)
+					this.toolsService.createProjectDataset(mount, createProjectDto)
 				}, 5 * 1000)
 			})
 

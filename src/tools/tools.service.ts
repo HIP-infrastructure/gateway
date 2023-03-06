@@ -21,6 +21,7 @@ import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
 import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
 import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
+import { CreateProjectDto } from 'src/projects/dto/create-project.dto'
 // import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
@@ -196,10 +197,9 @@ export class ToolsService {
 
 	public createProjectDataset(
 		path: string,
-		title: string,
-		description: string
+		createProjectDto: CreateProjectDto,
 	) {
-		this.logger.debug(`createProjectDataset ${path} ${title}`)
+		this.logger.debug(`createProjectDataset ${path} ${createProjectDto}`)
 	}
 
 	public importBIDSSubjectToProject (sourceDatasetPath: string, participantId: string, targetPath: string) {
