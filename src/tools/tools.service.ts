@@ -194,12 +194,67 @@ export class ToolsService {
 	// 	}
 	// }
 
-	public createProjectDataset(
-		path: string,
-		title: string,
-		description: string
+	/**
+	 * This function is used to initialize a new Project in the HIP Collab space
+	 * @param {string} projectPath - the absolute path of the project
+	 * @param {string} projectTitle - the title of the project
+	 * @param {string} projectDescription - the description of the project
+	 * @param {CreateBidsDatasetDto} createBidsDatasetDto - the dto containing the information about the BIDS dataset of the project
+	 * @returns - the file content
+	 */
+	public async createProjectDataset(
+		projectPath: string,
+		projectTitle: string,
+		projectDescription: string,
+		createBidsDatasetDto: CreateBidsDatasetDto
 	) {
-		this.logger.debug(`createProjectDataset ${path} ${title}`)
+		this.logger.debug(`createProjectDataset ${projectPath} ${projectTitle}`)
+
+		const { owner } = createBidsDatasetDto
+		const uniquId = Math.round(Date.now() + Math.random())
+		const tmpDir = `/tmp/${uniquId}`
+
+		try {
+			// Create the json to be passed with the request
+			const createProjectDatasetDto = {
+				path: path,
+				title: projectTitle,
+				description: projectDescription,
+				createBidsDatasetDto: createBidsDatasetDto
+			}
+			fs.mkdirSync(tmpDir, true)
+			fs.writeFileSync(
+				`${tmpDir}/project.create.json`,
+				JSON.stringify(createProjectDatasetDto)
+			)
+
+			// Create the docker run command
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${path}:/output`]
+			const cmd2 = [
+				this.bidsToolsImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=project.create',
+				'--input_data=/input/project.create.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return createProjectDatasetDto
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
 	}
 
 	public importBIDSSubjectToProject (sourceDatasetPath: string, participantId: string, targetPath: string) {

@@ -163,7 +163,8 @@ export class ProjectsService {
 
 	async create(createProjectDto: CreateProjectDto) {
 		try {
-			const { title, description, adminId } = createProjectDto
+			const { title, description, adminId, createBidsDatasetDto } =
+				createProjectDto
 			const projectName = `HIP-${title
 				.replace(/[^a-zA-Z0-9]+/g, '-')
 				.toLowerCase()}`
@@ -201,7 +202,12 @@ export class ProjectsService {
 
 			this.createFSAPI(adminId).then(({ mount }) => {
 				setTimeout(() => {
-					this.toolsService.createProjectDataset(mount, title, description)
+					this.toolsService.createProjectDataset(
+						mount,
+						title,
+						description,
+						createBidsDatasetDto
+					)
 				}, 5 * 1000)
 			})
 
