@@ -163,7 +163,8 @@ export class ProjectsService {
 
 	async create(createProjectDto: CreateProjectDto) {
 		try {
-			const { title, description, adminId } = createProjectDto
+			const { title, description, adminId } =
+				createProjectDto
 			const projectName = `HIP-${title
 				.replace(/[^a-zA-Z0-9]+/g, '-')
 				.toLowerCase()}`
@@ -324,19 +325,24 @@ export class ProjectsService {
 	public importBIDSSubject() {
 		const sourceDatasetPath = ''
 		const participantId = ''
-		const targetPath = ''
+		const targetProjectPath = ''
 
 		this.toolsService.importBIDSSubjectToProject(
 			sourceDatasetPath,
 			participantId,
-			targetPath
+			targetProjectPath
 		)
 	}
 
 	public importDocument() {
-		const sourcePath = ''
-		const targetPath = ''
-		this.toolsService.importDocumentToProject(sourcePath, targetPath)
+		const sourceDocumentAbsPath = ''
+		const targetProjectAbsPath = ''
+		const targetDocumentRelPath = ''
+		this.toolsService.importDocumentToProject(
+			sourceDocumentAbsPath,
+			targetProjectAbsPath,
+			targetDocumentRelPath
+		)
 	}
 
 	public async metadataTree(projectName: string, path: string, userId: string) {

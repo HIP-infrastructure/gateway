@@ -137,81 +137,199 @@ export class ToolsService {
 		})
 	}
 
-	// public async getBIDSDatasets({ cookie }) {
-	// 	try {
-	// 		const s = await this.search(cookie, PARTICIPANTS_FILE)
-	// 		const searchResults = s?.entries
-	// 		const participantPromises = searchResults.map(r =>
-	// 			this.participantsWithPath(r.attributes.path, cookie)
-	// 		)
-	// 		const results = await Promise.allSettled(participantPromises)
-	// 		const participantSearchFiltered = results
-	// 			.map((p, i) => ({ p, i })) // keep indexes
-	// 			.filter(item => item.p.status === 'fulfilled')
-	// 			.filter(
-	// 				item => !/derivatives/.test(searchResults[item.i].attributes.path)
-	// 			)
-	// 			.map(item => ({
-	// 				participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
-	// 				searchResult: searchResults[item.i],
-	// 			}))
-	// 		const bidsDatasetsPromises = participantSearchFiltered.map(ps =>
-	// 			this.getDatasetContent(
-	// 				`${ps.searchResult.attributes.path.replace(
-	// 					PARTICIPANTS_FILE,
-	// 					''
-	// 				)}/${DATASET_DESCRIPTION}`,
-	// 				cookie
-	// 			)
-	// 		)
-	// 		const bidsDatasetsResults = await Promise.allSettled(bidsDatasetsPromises)
-	// 		const bidsDatasets: BIDSDataset[] = bidsDatasetsResults.reduce(
-	// 			(arr, item, i) => [
-	// 				...arr,
-	// 				item.status === 'fulfilled'
-	// 					? {
-	// 							...(item.value.data || item.value.error),
-	// 							id: participantSearchFiltered[
-	// 								i
-	// 							].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-	// 							path: participantSearchFiltered[i].searchResult.attributes.path
-	// 								.replace(PARTICIPANTS_FILE, '')
-	// 								.substring(1),
-	// 							resourceUrl:
-	// 								participantSearchFiltered[i].searchResult.resourceUrl.split(
-	// 									'&'
-	// 								)[0],
-	// 							participants: participantSearchFiltered[i].participants,
-	// 					  }
-	// 					: {},
-	// 			],
-	// 			[]
-	// 		)
-
-	// 		return bidsDatasets
-	// 	} catch (e) {
-	// 		this.logger.error(e)
-	// 		throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
-	// 	}
-	// }
-
-	public createProjectDataset(
-		path: string,
-		createProjectDto: CreateProjectDto,
+	/**
+	 * This function is used to initialize a new Project in the HIP Collab space
+	 * @param {string} projectPath - the absolute path of the project
+	 * @param {CreateProjectDto} createProjectDto - the dto containing the information about the Project and its BIDS dataset
+	 * @returns - the file content
+	 */
+	public async createProjectDataset(
+		projectPath: string,
+		createProjectDto: CreateProjectDto
 	) {
 		this.logger.debug(`createProjectDataset ${path} ${createProjectDto}`)
+
+		const uniquId = Math.round(Date.now() + Math.random())
+		const tmpDir = `/tmp/${uniquId}`
+
+		try {
+			// Create the json file with project path to be used by bids-tools command
+			const createProjectDatasetDto = {
+				path: projectPath,
+				...createProjectDto
+			}
+			fs.mkdirSync(tmpDir, true)
+			fs.writeFileSync(
+				`${tmpDir}/project.create.json`,
+				JSON.stringify(createProjectDatasetDto)
+			)
+
+			// Create the docker run command
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${path}:/output`]
+			const cmd2 = [
+				this.bidsToolsImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=project.create',
+				'--input_data=/input/project.create.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return createProjectDatasetDto
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
 	}
 
-	public importBIDSSubjectToProject (sourceDatasetPath: string, participantId: string, targetPath: string) {
+	/**
+	 * This function is used to import a subject folder of an existing BIDS dataset (in the Center space) into a project.
+	 * @param {string} sourceDatasetPath - the absolute path of the source BIDS dataset
+	 * @param {string} participantId - the participant id of the subject to import e.g. 'sub-01'
+	 * @param {string} targetProjectPath - the absolute path of the target project
+	 * @returns - the file content
+	 */
+	public async importBIDSSubjectToProject(
+		sourceDatasetPath: string,
+		participantId: string,
+		targetProjectPath: string
+	) {
 		this.logger.debug(
-			`importBIDSSubjectToProject ${path} ${sourceDatasetPath} ${participantId} ${targetPath}`
+			`importBIDSSubjectToProject ${path} ${sourceDatasetPath} ${participantId} ${targetProjectPath}`
 		)
+
+		try {
+			// Create unique tmp directory
+			const uniquId = Math.round(Date.now() + Math.random())
+			const tmpDir = `/tmp/${uniquId}`
+			fs.mkdirSync(tmpDir, true)
+
+			// Create the json to be passed with the request
+			const importBIDSSubjectToProjectDto = {
+				sourceDatasetPath: sourceDatasetPath,
+				participantId: participantId,
+				targetProjectPath: targetProjectPath
+			}
+			fs.writeFileSync(
+				`${tmpDir}/project.sub.import.json`,
+				JSON.stringify(importBIDSSubjectToProjectDto)
+			)
+
+			// Create the docker run command
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${sourceDatasetPath}:${sourceDatasetPath}`,
+				'-v',
+				`${targetProjectPath}:${targetProjectPath}`
+			]
+			const cmd2 = [
+				this.bidsToolsImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=project.sub.import',
+				'--input_data=/input/project.sub.import.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return importBIDSSubjectToProjectDto
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
 	}
 
-	public importDocumentToProject(sourcePath: string, targetPath: string) {
+	/** This function is used to import a document into a project.
+	 * @param {string} sourceDocumentAbsPath - the absolute path of the source document
+	 * @param {string} targetProjectAbsPath - the absolute path of the target project
+	 * @param {string} targetDocumentRelPath - the path of the target document relative to the project directory
+	 * @returns - the file content
+	 */
+	public async importDocumentToProject(
+		sourceDocumentAbsPath: string,
+		targetProjectAbsPath: string,
+		targetDocumentRelPath: string
+	) {
 		this.logger.debug(
-			`importDocumentToProject ${path} ${sourcePath} ${targetPath}`
+			`importDocumentToProject ${path} ${sourceDocumentAbsPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
 		)
+
+		try {
+			// Create unique tmp directory
+			const uniquId = Math.round(Date.now() + Math.random())
+			const tmpDir = `/tmp/${uniquId}`
+			fs.mkdirSync(tmpDir, true)
+
+			// Create the json to be passed with the request
+			const importDocumentToProjectDto = {
+				sourceDocumentAbsPath: sourceDocumentAbsPath,
+				targetProjectAbsPath: targetProjectAbsPath,
+				targetDocumentRelPath: targetDocumentRelPath
+			}
+			fs.writeFileSync(
+				`${tmpDir}/project.doc.import.json`,
+				JSON.stringify(importDocumentToProjectDto)
+			)
+
+			// Create the docker run command
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${sourceDocumentAbsPath}:${sourceDocumentAbsPath}`,
+				'-v',
+				`${targetProjectAbsPath}:${targetProjectAbsPath}`
+			]
+			const cmd2 = [
+				this.bidsToolsImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=project.doc.import',
+				'--input_data=/input/project.doc.import.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return importDocumentToProjectDto
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
 	}
 
 	/**
