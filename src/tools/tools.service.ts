@@ -21,6 +21,7 @@ import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
 import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
 import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
+import { CreateProjectDto } from 'src/projects/dto/create-project.dto'
 // import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
@@ -139,25 +140,21 @@ export class ToolsService {
 	/**
 	 * This function is used to initialize a new Project in the HIP Collab space
 	 * @param {string} projectPath - the absolute path of the project
-	 * @param {string} projectTitle - the title of the project
-	 * @param {string} projectDescription - the description of the project
-	 * @param {CreateBidsDatasetDto} createBidsDatasetDto - the dto containing the information about the BIDS dataset of the project
+	 * @param {CreateProjecttDto} createProjectDto - the dto containing the information about the Project and its BIDS dataset 
 	 * @returns - the file content
 	 */
 	public async createProjectDataset(
 		projectPath: string,
-		projectTitle: string,
-		projectDescription: string,
-		createBidsDatasetDto: CreateBidsDatasetDto
+		createProjectDto: CreateProjectDto,
 	) {
-		this.logger.debug(`createProjectDataset ${projectPath} ${projectTitle}`)
+		this.logger.debug(`createProjectDataset ${path} ${createProjectDto}`)
 
-		const { owner } = createBidsDatasetDto
+		// const { adminId } = createProjectDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
 		try {
-			// Create the json to be passed with the request
+			// FIXME: Create the json to be passed with the request
 			const createProjectDatasetDto = {
 				path: path,
 				title: projectTitle,
