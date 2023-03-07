@@ -257,10 +257,74 @@ export class ToolsService {
 		}
 	}
 
-	public importBIDSSubjectToProject (sourceDatasetPath: string, participantId: string, targetPath: string) {
+	/**
+	 * This function is used to import a subject folder of an existing BIDS dataset (in the Center space) into a project.
+	 * @param {string} sourceDatasetPath - the absolute path of the source BIDS dataset
+	 * @param {string} participantId - the participant id of the subject to import e.g. 'sub-01'
+	 * @param {string} targetProjectPath - the absolute path of the target project
+	 * @returns - the file content
+	 */
+	public async importBIDSSubjectToProject(
+		sourceDatasetPath: string,
+		participantId: string,
+		targetProjectPath: string
+	) {
 		this.logger.debug(
-			`importBIDSSubjectToProject ${path} ${sourceDatasetPath} ${participantId} ${targetPath}`
+			`importBIDSSubjectToProject ${path} ${sourceDatasetPath} ${participantId} ${targetProjectPath}`
 		)
+
+		try {
+			// Create unique tmp directory
+			const uniquId = Math.round(Date.now() + Math.random())
+			const tmpDir = `/tmp/${uniquId}`
+			fs.mkdirSync(tmpDir, true)
+
+			// Create the json to be passed with the request
+			const importBIDSSubjectToProjectDto = {
+				sourceDatasetPath: sourceDatasetPath,
+				participantId: participantId,
+				targetProjectPath: targetProjectPath
+			}
+			fs.writeFileSync(
+				`${tmpDir}/project.sub.import.json`,
+				JSON.stringify(importBIDSSubjectToProjectDto)
+			)
+
+			// Create the docker run command
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${sourceDatasetPath}:${sourceDatasetPath}`,
+				'-v',
+				`${targetProjectPath}:${targetProjectPath}`
+			]
+			const cmd2 = [
+				this.bidsToolsImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=project.sub.import',
+				'--input_data=/input/project.sub.import.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return importBIDSSubjectToProjectDto
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
 	}
 
 	public importDocumentToProject(sourcePath: string, targetPath: string) {

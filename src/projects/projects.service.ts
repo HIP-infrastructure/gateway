@@ -330,12 +330,12 @@ export class ProjectsService {
 	public importBIDSSubject() {
 		const sourceDatasetPath = ''
 		const participantId = ''
-		const targetPath = ''
+		const targetProjectPath = ''
 
 		this.toolsService.importBIDSSubjectToProject(
 			sourceDatasetPath,
 			participantId,
-			targetPath
+			targetProjectPath
 		)
 	}
 
