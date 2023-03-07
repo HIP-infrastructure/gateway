@@ -327,10 +327,73 @@ export class ToolsService {
 		}
 	}
 
-	public importDocumentToProject(sourcePath: string, targetPath: string) {
+	/** This function is used to import a document into a project.
+	 * @param {string} sourceDocumentAbsPath - the absolute path of the source document
+	 * @param {string} targetProjectAbsPath - the absolute path of the target project
+	 * @param {string} targetDocumentRelPath - the path of the target document relative to the project directory
+	 * @returns - the file content
+	 */
+	public async importDocumentToProject(
+		sourceDocumentAbsPath: string,
+		targetProjectAbsPath: string,
+		targetDocumentRelPath: string
+	) {
 		this.logger.debug(
-			`importDocumentToProject ${path} ${sourcePath} ${targetPath}`
+			`importDocumentToProject ${path} ${sourceDocumentAbsPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
 		)
+
+		try {
+			// Create unique tmp directory
+			const uniquId = Math.round(Date.now() + Math.random())
+			const tmpDir = `/tmp/${uniquId}`
+			fs.mkdirSync(tmpDir, true)
+
+			// Create the json to be passed with the request
+			const importDocumentToProjectDto = {
+				sourceDocumentAbsPath: sourceDocumentAbsPath,
+				targetProjectAbsPath: targetProjectAbsPath,
+				targetDocumentRelPath: targetDocumentRelPath
+			}
+			fs.writeFileSync(
+				`${tmpDir}/project.doc.import.json`,
+				JSON.stringify(importDocumentToProjectDto)
+			)
+
+			// Create the docker run command
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${sourceDocumentAbsPath}:${sourceDocumentAbsPath}`,
+				'-v',
+				`${targetProjectAbsPath}:${targetProjectAbsPath}`
+			]
+			const cmd2 = [
+				this.bidsToolsImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=project.doc.import',
+				'--input_data=/input/project.doc.import.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return importDocumentToProjectDto
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
 	}
 
 	/**

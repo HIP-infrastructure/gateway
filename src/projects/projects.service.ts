@@ -340,9 +340,14 @@ export class ProjectsService {
 	}
 
 	public importDocument() {
-		const sourcePath = ''
-		const targetPath = ''
-		this.toolsService.importDocumentToProject(sourcePath, targetPath)
+		const sourceDocumentAbsPath = ''
+		const targetProjectAbsPath = ''
+		const targetDocumentRelPath = ''
+		this.toolsService.importDocumentToProject(
+			sourceDocumentAbsPath,
+			targetProjectAbsPath,
+			targetDocumentRelPath
+		)
 	}
 
 	public async metadataTree(projectName: string, path: string, userId: string) {
