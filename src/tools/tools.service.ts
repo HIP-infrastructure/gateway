@@ -140,26 +140,23 @@ export class ToolsService {
 	/**
 	 * This function is used to initialize a new Project in the HIP Collab space
 	 * @param {string} projectPath - the absolute path of the project
-	 * @param {CreateProjecttDto} createProjectDto - the dto containing the information about the Project and its BIDS dataset 
+	 * @param {CreateProjectDto} createProjectDto - the dto containing the information about the Project and its BIDS dataset
 	 * @returns - the file content
 	 */
 	public async createProjectDataset(
 		projectPath: string,
-		createProjectDto: CreateProjectDto,
+		createProjectDto: CreateProjectDto
 	) {
 		this.logger.debug(`createProjectDataset ${path} ${createProjectDto}`)
 
-		// const { adminId } = createProjectDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
 		try {
-			// FIXME: Create the json to be passed with the request
+			// Create the json file with project path to be used by bids-tools command
 			const createProjectDatasetDto = {
-				path: path,
-				title: projectTitle,
-				description: projectDescription,
-				createBidsDatasetDto: createBidsDatasetDto
+				path: projectPath,
+				...createProjectDto
 			}
 			fs.mkdirSync(tmpDir, true)
 			fs.writeFileSync(
