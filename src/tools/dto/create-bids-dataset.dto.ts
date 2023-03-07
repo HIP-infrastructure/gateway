@@ -8,8 +8,8 @@ export class CreateBidsDatasetDto {
 		readonly License: string
 		readonly Authors: string[]
 		readonly Acknowledgements: string
-		readonly Funding: string
-		readonly ReferencesAndLinks: string
+		readonly Funding: string[]
+		readonly ReferencesAndLinks: string[]
 		readonly DatasetDOI: string
 	}
 }
