@@ -136,64 +136,6 @@ export class ToolsService {
 		})
 	}
 
-	// public async getBIDSDatasets({ cookie }) {
-	// 	try {
-	// 		const s = await this.search(cookie, PARTICIPANTS_FILE)
-	// 		const searchResults = s?.entries
-	// 		const participantPromises = searchResults.map(r =>
-	// 			this.participantsWithPath(r.attributes.path, cookie)
-	// 		)
-	// 		const results = await Promise.allSettled(participantPromises)
-	// 		const participantSearchFiltered = results
-	// 			.map((p, i) => ({ p, i })) // keep indexes
-	// 			.filter(item => item.p.status === 'fulfilled')
-	// 			.filter(
-	// 				item => !/derivatives/.test(searchResults[item.i].attributes.path)
-	// 			)
-	// 			.map(item => ({
-	// 				participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
-	// 				searchResult: searchResults[item.i],
-	// 			}))
-	// 		const bidsDatasetsPromises = participantSearchFiltered.map(ps =>
-	// 			this.getDatasetContent(
-	// 				`${ps.searchResult.attributes.path.replace(
-	// 					PARTICIPANTS_FILE,
-	// 					''
-	// 				)}/${DATASET_DESCRIPTION}`,
-	// 				cookie
-	// 			)
-	// 		)
-	// 		const bidsDatasetsResults = await Promise.allSettled(bidsDatasetsPromises)
-	// 		const bidsDatasets: BIDSDataset[] = bidsDatasetsResults.reduce(
-	// 			(arr, item, i) => [
-	// 				...arr,
-	// 				item.status === 'fulfilled'
-	// 					? {
-	// 							...(item.value.data || item.value.error),
-	// 							id: participantSearchFiltered[
-	// 								i
-	// 							].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-	// 							path: participantSearchFiltered[i].searchResult.attributes.path
-	// 								.replace(PARTICIPANTS_FILE, '')
-	// 								.substring(1),
-	// 							resourceUrl:
-	// 								participantSearchFiltered[i].searchResult.resourceUrl.split(
-	// 									'&'
-	// 								)[0],
-	// 							participants: participantSearchFiltered[i].participants,
-	// 					  }
-	// 					: {},
-	// 			],
-	// 			[]
-	// 		)
-
-	// 		return bidsDatasets
-	// 	} catch (e) {
-	// 		this.logger.error(e)
-	// 		throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
-	// 	}
-	// }
-
 	/**
 	 * This function is used to initialize a new Project in the HIP Collab space
 	 * @param {string} projectPath - the absolute path of the project
