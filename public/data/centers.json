@@ -83,6 +83,36 @@
 		}
 	},
 	{
+		"label": "CHM",
+		"id": "chm",
+		"pi": "Professor Carmen Barba",
+		"country": "Italy",
+		"city": "Florence",
+		"logo": "media/chm__logo.png",
+		"description": "Children's Hospital Meyer",
+		"website": "https://www.meyer.it/index.php/en/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/fondazionemeyer",
+			"youtube": "",
+			"facebook": "https://www.facebook.com/fondazione.meyer",
+			"instagram": "https://www.instagram.com/fondazionemeyer/"
+		}
+	},
+	{
+		"label": "CHUGA",
+		"id": "chuga",
+		"pi": "Philippe Kahane",
+		"country": "France",
+		"city": "Grenoble",
+		"logo": "media/chuga__logo.png",
+		"description": "Le CHU Grenoble Alpes",
+		"website": "https://www.chu-grenoble.fr/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/chu_grenoble",
+			"youtube": "https://www.youtube.com/user/CHUGrenoble"
+		}
+	},
+	{
 		"label": "CHU-LYON",
 		"id": "chu-lyon",
 		"pi": "Professor Alexis Arzimanoglou",
