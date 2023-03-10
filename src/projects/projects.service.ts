@@ -202,8 +202,8 @@ export class ProjectsService {
 
 			this.createFSAPI(adminId).then(({ mount }) => {
 				setTimeout(() => {
-					this.toolsService.createProjectDataset(mount, createProjectDto)
-				}, 5 * 1000)
+					this.toolsService.createProjectDataset(`${mount}/${projectName}`, createProjectDto)
+				}, 10 * 1000)
 			})
 
 			await this.createUserFolder(adminId)

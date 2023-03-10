@@ -147,7 +147,13 @@ export class ToolsService {
 		projectPath: string,
 		createProjectDto: CreateProjectDto
 	) {
-		this.logger.debug(`createProjectDataset ${path} ${createProjectDto}`)
+		this.logger.debug(
+			`createProjectDataset ${projectPath} ${JSON.stringify(
+				createProjectDto,
+				null,
+				2
+			)}`
+		)
 
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -165,7 +171,13 @@ export class ToolsService {
 			)
 
 			// Create the docker run command
-			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${path}:/output`]
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${projectPath}:/output`
+			]
 			const cmd2 = [
 				this.bidsToolsImage,
 				this.dataUser,
@@ -182,14 +194,14 @@ export class ToolsService {
 			if (code === 0) {
 				return createProjectDatasetDto
 			} else {
-				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+				throw new Error(message)
 			}
 		} catch (error) {
 			this.logger.error(error)
-			throw new HttpException(
-				error.message,
-				error.status || HttpStatus.INTERNAL_SERVER_ERROR
-			)
+			// throw new HttpException(
+			// 	error.message,
+			// 	error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			// )
 		}
 	}
 
@@ -206,7 +218,7 @@ export class ToolsService {
 		targetProjectPath: string
 	) {
 		this.logger.debug(
-			`importBIDSSubjectToProject ${path} ${sourceDatasetPath} ${participantId} ${targetProjectPath}`
+			`importBIDSSubjectToProject ${sourceDatasetPath} ${participantId} ${targetProjectPath}`
 		)
 
 		try {
@@ -275,7 +287,7 @@ export class ToolsService {
 		targetDocumentRelPath: string
 	) {
 		this.logger.debug(
-			`importDocumentToProject ${path} ${sourceDocumentAbsPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
+			`importDocumentToProject ${sourceDocumentAbsPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
 		)
 
 		try {
@@ -2236,11 +2248,13 @@ export class ToolsService {
 
 			child.stderr.setEncoding('utf8')
 			child.stderr.on('data', data => {
+				this.logger.error(data.toString())
 				//message += data.toString()
 			})
 
 			child.on('error', data => {
-				message += data.toString()
+				this.logger.error(data.toString())
+				// message += data.toString()
 			})
 
 			child.on('close', code => {
