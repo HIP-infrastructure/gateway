@@ -170,20 +170,25 @@ export class ToolsService {
 				JSON.stringify(createProjectDatasetDto)
 			)
 
+			// Create an empty output JSON file with correct ownership
+			const output_file = `${tmpDir}/project.dataset.info.json`
+			let empty_content = {}
+			fs.writeFileSync(output_file, JSON.stringify(empty_content))
+			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+				if (err) {
+					throw err
+				}
+			})
+
 			// Create the docker run command
-			const cmd1 = [
-				'run',
-				'-v',
-				`${tmpDir}:/input`,
-				'-v',
-				`${projectPath}:/output`
-			]
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${path}:${path}`]
 			const cmd2 = [
 				this.bidsToolsImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=project.create',
-				'--input_data=/input/project.create.json'
+				'--input_data=/input/project.create.json',
+				'--output_file=/input/project.dataset.info.json'
 			]
 			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
@@ -192,7 +197,7 @@ export class ToolsService {
 			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
-				return createProjectDatasetDto
+				return JSON.parse(fs.readFileSync(output_file, 'utf8'))
 			} else {
 				throw new Error(message)
 			}
@@ -238,6 +243,16 @@ export class ToolsService {
 				JSON.stringify(importBIDSSubjectToProjectDto)
 			)
 
+			// Create an empty output JSON file with correct ownership
+			const output_file = `${tmpDir}/project.dataset.info.json`
+			let empty_content = {}
+			fs.writeFileSync(output_file, JSON.stringify(empty_content))
+			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+				if (err) {
+					throw err
+				}
+			})
+
 			// Create the docker run command
 			const cmd1 = [
 				'run',
@@ -253,7 +268,8 @@ export class ToolsService {
 				this.dataUser,
 				this.dataUserId,
 				'--command=project.sub.import',
-				'--input_data=/input/project.sub.import.json'
+				'--input_data=/input/project.sub.import.json',
+				'--output_file=/input/project.dataset.info.json'
 			]
 			const command = [...cmd1, ...cmd2]
 			this.logger.debug(command.join(' '))
@@ -262,7 +278,7 @@ export class ToolsService {
 			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
-				return importBIDSSubjectToProjectDto
+				return JSON.parse(fs.readFileSync(output_file, 'utf8'))
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
