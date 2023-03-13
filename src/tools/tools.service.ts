@@ -181,7 +181,7 @@ export class ToolsService {
 			})
 
 			// Create the docker run command
-			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${path}:${path}`]
+			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${projectPath}:${projectPath}`]
 			const cmd2 = [
 				this.bidsToolsImage,
 				this.dataUser,
