@@ -9,6 +9,7 @@ import { Group, IamEbrainsService } from 'src/iam-ebrains/iam-ebrains.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { v4 as uuidv4 } from 'uuid'
 import { ToolsService } from 'src/tools/tools.service'
+import { ImportSubjectDto } from './dto/import-subject.dto'
 const { NodeSSH } = require('node-ssh')
 interface FileMetadata {
 	name: string
@@ -163,8 +164,7 @@ export class ProjectsService {
 
 	async create(createProjectDto: CreateProjectDto) {
 		try {
-			const { title, description, adminId } =
-				createProjectDto
+			const { title, description, adminId } = createProjectDto
 			const projectName = `HIP-${title
 				.replace(/[^a-zA-Z0-9]+/g, '-')
 				.toLowerCase()}`
@@ -202,7 +202,10 @@ export class ProjectsService {
 
 			this.createFSAPI(adminId).then(({ mount }) => {
 				setTimeout(() => {
-					this.toolsService.createProjectDataset(`${mount}/${projectName}`, createProjectDto)
+					this.toolsService.createProjectDataset(
+						`${mount}/${projectName}`,
+						createProjectDto
+					)
 				}, 10 * 1000)
 			})
 
@@ -322,16 +325,30 @@ export class ProjectsService {
 		}
 	}
 
-	public importBIDSSubject() {
-		const sourceDatasetPath = ''
-		const participantId = ''
-		const targetProjectPath = ''
+	public async importBIDSSubject(
+		userId: string,
+		importSubjectDto: ImportSubjectDto,
+		projectName: string
+	) {
+		const datasetId = importSubjectDto.datasetId
+		const participantId = importSubjectDto.subjectId
 
-		this.toolsService.importBIDSSubjectToProject(
-			sourceDatasetPath,
-			participantId,
-			targetProjectPath
-		)
+		try {
+			this.createFSAPI(userId).then(({ mount }) => {
+				setTimeout(() => {
+					this.toolsService.importBIDSSubjectToProject(
+						datasetId,
+						participantId,
+						`${mount}/${projectName}`
+					)
+				}, 10 * 1000)
+			})
+
+			return 'Success'
+		} catch (error) {
+			this.logger.error(error)
+			throw new Error('Could not import BIDS subject')
+		}
 	}
 
 	public importDocument() {
@@ -389,7 +406,7 @@ export class ProjectsService {
 	}
 
 	public async createFSAPI(userId: string): Promise<GhostFSAPI> {
-		this.logger.debug(`spawnGhostFSAPIForUser(${userId})`)
+		this.logger.debug(`createFSAPI(${userId})`)
 
 		const lockKey = cacheKeyLockForGhostFSAPIUser(userId)
 		const lockValue = await this.cacheService.get(lockKey)
