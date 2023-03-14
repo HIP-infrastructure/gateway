@@ -330,23 +330,34 @@ export class ProjectsService {
 		importSubjectDto: ImportSubjectDto,
 		projectName: string
 	) {
-		const datasetId = importSubjectDto.datasetId
-		const participantId = importSubjectDto.subjectId
-
+		this.logger.debug(
+			`importBIDSSubject(${userId}, ${JSON.stringify(
+				importSubjectDto
+			)} ${projectName})`
+		)
 		try {
+			const cacheKey = cacheKeyForGhostFSAPIUser(userId)
+			const apiCache = await this.cacheService.get(cacheKey)
+			const { mount } = apiCache
+			this.toolsService.importBIDSSubjectToProject(
+				userId,
+				importSubjectDto,
+				`${mount}/${projectName}`
+			)
+
+			return 'Success'
+		} catch (error) {
+			this.logger.error(error)
 			this.createFSAPI(userId).then(({ mount }) => {
 				setTimeout(() => {
 					this.toolsService.importBIDSSubjectToProject(
-						datasetId,
-						participantId,
+						userId,
+						importSubjectDto,
 						`${mount}/${projectName}`
 					)
 				}, 10 * 1000)
 			})
 
-			return 'Success'
-		} catch (error) {
-			this.logger.error(error)
 			throw new Error('Could not import BIDS subject')
 		}
 	}

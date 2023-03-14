@@ -1,5 +1,4 @@
 export class ImportSubjectDto {
-	readonly datasetId: string
+	readonly datasetPath: string
 	readonly subjectId: string
-	readonly projectName: string
 }

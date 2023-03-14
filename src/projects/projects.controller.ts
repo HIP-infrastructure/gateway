@@ -128,8 +128,11 @@ export class ProjectsController {
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
 			.then(async userId => {
-				this.logger.debug(`importBIDSSubject(${userId})`)
-				return this.projectsService.importBIDSSubject(userId, importSubjectDto, projectName)
+				return this.projectsService.importBIDSSubject(
+					userId,
+					importSubjectDto,
+					projectName
+				)
 			})
 	}
 

@@ -22,6 +22,7 @@ import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
 import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
 import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
 import { CreateProjectDto } from 'src/projects/dto/create-project.dto'
+import { ImportSubjectDto } from 'src/projects/dto/import-subject.dto'
 // import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
@@ -218,12 +219,12 @@ export class ToolsService {
 	 * @returns - the file content
 	 */
 	public async importBIDSSubjectToProject(
-		sourceDatasetPath: string,
-		participantId: string,
+		userId: string,
+		importSubjectDto: ImportSubjectDto,
 		targetProjectPath: string
 	) {
 		this.logger.debug(
-			`importBIDSSubjectToProject ${sourceDatasetPath} ${participantId} ${targetProjectPath}`
+			`importBIDSSubjectToProject ${JSON.stringify(importSubjectDto)} ${targetProjectPath}`
 		)
 
 		try {
@@ -232,10 +233,12 @@ export class ToolsService {
 			const tmpDir = `/tmp/${uniquId}`
 			fs.mkdirSync(tmpDir, true)
 
+			const sourceDatasetPath = "TODO: get the path of the dataset from the sourceDatasetRelativePath"
+
 			// Create the json to be passed with the request
 			const importBIDSSubjectToProjectDto = {
-				sourceDatasetPath: sourceDatasetPath,
-				participantId: participantId,
+				sourceDatasetPath: importSubjectDto.datasetPath,
+				participantId: importSubjectDto.subjectId,
 				targetProjectPath: targetProjectPath
 			}
 			fs.writeFileSync(
@@ -1513,6 +1516,7 @@ export class ToolsService {
 		owner: string,
 		foundDatasets: any[]
 	) {
+		this.logger.debug(`filterBidsDatasetsAccessibleByUser ${owner}`)
 		// get user group folder names
 		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
 		// filter only private datasets own by the user
@@ -2507,6 +2511,7 @@ export class ToolsService {
 	 * @param {string} userId - the user id
 	 * */
 	private async filePath(path: string, userId: string) {
+		this.logger.debug(`filePath ${path} and ${userId}`)
 		try {
 			// Remove the first slash
 			path = path.replace(/^\//, '')

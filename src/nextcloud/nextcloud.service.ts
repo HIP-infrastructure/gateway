@@ -140,7 +140,7 @@ export class NextcloudService {
 
 	// This takes a request object and returns the user id
 	public async authUserIdFromRequest(req: Request): Promise<string> {
-		this.logger.debug(`uid`)
+		this.logger.debug(`authUserIdFromRequest`)
 		try {
 			const { cookie, requesttoken }: any = req.headers
 			if (!cookie || !requesttoken) {
