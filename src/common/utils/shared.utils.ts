@@ -26,16 +26,3 @@ export const uniq = (type: 'server' | 'app' = 'server'): string => {
 
   return uniqueId
 }
-
-export const findFreePort = (): Promise<number> => {
-  return new Promise((resolve, reject) => {
-    const srv = net.createServer((sock) => {
-      sock.end('Hello world\n')
-    }).listen(0, () => {
-      const port = srv.address().port
-      srv.close(() => {
-        resolve(port)
-      })
-    })
-  })
-}

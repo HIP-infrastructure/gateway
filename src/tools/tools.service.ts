@@ -228,18 +228,18 @@ export class ToolsService {
 		)
 
 		try {
+			const sourceDatasetPath = await this.filePath(importSubjectDto.datasetPath, userId)
+
 			// Create unique tmp directory
 			const uniquId = Math.round(Date.now() + Math.random())
 			const tmpDir = `/tmp/${uniquId}`
 			fs.mkdirSync(tmpDir, true)
 
-			const sourceDatasetPath = "TODO: get the path of the dataset from the sourceDatasetRelativePath"
-
 			// Create the json to be passed with the request
 			const importBIDSSubjectToProjectDto = {
-				sourceDatasetPath: importSubjectDto.datasetPath,
+				sourceDatasetPath,
 				participantId: importSubjectDto.subjectId,
-				targetProjectPath: targetProjectPath
+				targetProjectPath
 			}
 			fs.writeFileSync(
 				`${tmpDir}/project.sub.import.json`,
