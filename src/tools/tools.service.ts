@@ -182,7 +182,13 @@ export class ToolsService {
 			})
 
 			// Create the docker run command
-			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${projectPath}:${projectPath}`]
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${projectPath}:${projectPath}`
+			]
 			const cmd2 = [
 				this.bidsToolsImage,
 				this.dataUser,
@@ -224,11 +230,20 @@ export class ToolsService {
 		targetProjectPath: string
 	) {
 		this.logger.debug(
-			`importBIDSSubjectToProject ${JSON.stringify(importSubjectDto)} ${targetProjectPath}`
+			`importBIDSSubjectToProject ${JSON.stringify(
+				importSubjectDto
+			)} ${targetProjectPath}`
 		)
 
 		try {
-			const sourceDatasetPath = await this.filePath(importSubjectDto.datasetPath, userId)
+			const userGroups = await this.nextcloudService.groupFoldersForUserId(
+				userId
+			)
+			const sourceDatasetPath = await this.filePath(
+				importSubjectDto.datasetPath,
+				userId,
+				userGroups
+			)
 
 			// Create unique tmp directory
 			const uniquId = Math.round(Date.now() + Math.random())
@@ -2510,18 +2525,19 @@ export class ToolsService {
 	 * @param {string} path - the path to the file you want to get
 	 * @param {string} userId - the user id
 	 * */
-	private async filePath(path: string, userId: string) {
+	private async filePath(
+		path: string,
+		userId: string,
+		userGroups: GroupFolder[]
+	) {
 		this.logger.debug(`filePath ${path} and ${userId}`)
 		try {
 			// Remove the first slash
 			path = path.replace(/^\//, '')
 			// Get the root path
 			let rootPath = path.split('/')[0]
-			// Get the id of the group folder
-			const groupFolders = await this.nextcloudService.groupFoldersForUserId(
-				userId
-			)
-			const id = groupFolders.find(g => g.label === rootPath)?.id
+
+			const id = userGroups.find(g => g.label === rootPath)?.id
 			rootPath = rootPath + '/'
 			// Create the path depending on whether it's a group folder or not
 			const nextPath = id
