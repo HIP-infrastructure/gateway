@@ -20,8 +20,9 @@ import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { BidsGetDatasetDto } from './dto/get-bids-dataset.dto'
 import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
-import { writeFileSync } from 'fs'
 import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
+import { CreateProjectDto } from 'src/projects/dto/create-project.dto'
+import { ImportSubjectDto } from 'src/projects/dto/import-subject.dto'
 // import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
@@ -137,63 +138,245 @@ export class ToolsService {
 		})
 	}
 
-	// public async getBIDSDatasets({ cookie }) {
-	// 	try {
-	// 		const s = await this.search(cookie, PARTICIPANTS_FILE)
-	// 		const searchResults = s?.entries
-	// 		const participantPromises = searchResults.map(r =>
-	// 			this.participantsWithPath(r.attributes.path, cookie)
-	// 		)
-	// 		const results = await Promise.allSettled(participantPromises)
-	// 		const participantSearchFiltered = results
-	// 			.map((p, i) => ({ p, i })) // keep indexes
-	// 			.filter(item => item.p.status === 'fulfilled')
-	// 			.filter(
-	// 				item => !/derivatives/.test(searchResults[item.i].attributes.path)
-	// 			)
-	// 			.map(item => ({
-	// 				participants: (item.p as PromiseFulfilledResult<Participant[]>).value,
-	// 				searchResult: searchResults[item.i],
-	// 			}))
-	// 		const bidsDatasetsPromises = participantSearchFiltered.map(ps =>
-	// 			this.getDatasetContent(
-	// 				`${ps.searchResult.attributes.path.replace(
-	// 					PARTICIPANTS_FILE,
-	// 					''
-	// 				)}/${DATASET_DESCRIPTION}`,
-	// 				cookie
-	// 			)
-	// 		)
-	// 		const bidsDatasetsResults = await Promise.allSettled(bidsDatasetsPromises)
-	// 		const bidsDatasets: BIDSDataset[] = bidsDatasetsResults.reduce(
-	// 			(arr, item, i) => [
-	// 				...arr,
-	// 				item.status === 'fulfilled'
-	// 					? {
-	// 							...(item.value.data || item.value.error),
-	// 							id: participantSearchFiltered[
-	// 								i
-	// 							].searchResult.attributes.path.replace(PARTICIPANTS_FILE, ''),
-	// 							path: participantSearchFiltered[i].searchResult.attributes.path
-	// 								.replace(PARTICIPANTS_FILE, '')
-	// 								.substring(1),
-	// 							resourceUrl:
-	// 								participantSearchFiltered[i].searchResult.resourceUrl.split(
-	// 									'&'
-	// 								)[0],
-	// 							participants: participantSearchFiltered[i].participants,
-	// 					  }
-	// 					: {},
-	// 			],
-	// 			[]
-	// 		)
+	/**
+	 * This function is used to initialize a new Project in the HIP Collab space
+	 * @param {string} projectPath - the absolute path of the project
+	 * @param {CreateProjectDto} createProjectDto - the dto containing the information about the Project and its BIDS dataset
+	 * @returns - the file content
+	 */
+	public async createProjectDataset(
+		projectPath: string,
+		createProjectDto: CreateProjectDto
+	) {
+		this.logger.debug(
+			`createProjectDataset ${projectPath} ${JSON.stringify(
+				createProjectDto,
+				null,
+				2
+			)}`
+		)
 
-	// 		return bidsDatasets
-	// 	} catch (e) {
-	// 		this.logger.error(e)
-	// 		throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
-	// 	}
-	// }
+		const uniquId = Math.round(Date.now() + Math.random())
+		const tmpDir = `/tmp/${uniquId}`
+
+		try {
+			// Create the json file with project path to be used by bids-tools command
+			const createProjectDatasetDto = {
+				path: projectPath,
+				...createProjectDto
+			}
+			fs.mkdirSync(tmpDir, true)
+			fs.writeFileSync(
+				`${tmpDir}/project.create.json`,
+				JSON.stringify(createProjectDatasetDto)
+			)
+
+			// Create an empty output JSON file with correct ownership
+			const output_file = `${tmpDir}/project.dataset.info.json`
+			let empty_content = {}
+			fs.writeFileSync(output_file, JSON.stringify(empty_content))
+			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+				if (err) {
+					throw err
+				}
+			})
+
+			// Create the docker run command
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${projectPath}:${projectPath}`
+			]
+			const cmd2 = [
+				this.bidsToolsImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=project.create',
+				'--input_data=/input/project.create.json',
+				'--output_file=/input/project.dataset.info.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return JSON.parse(fs.readFileSync(output_file, 'utf8'))
+			} else {
+				throw new Error(message)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			// throw new HttpException(
+			// 	error.message,
+			// 	error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			// )
+		}
+	}
+
+	/**
+	 * This function is used to import a subject folder of an existing BIDS dataset (in the Center space) into a project.
+	 * @param {string} sourceDatasetPath - the absolute path of the source BIDS dataset
+	 * @param {string} participantId - the participant id of the subject to import e.g. 'sub-01'
+	 * @param {string} targetProjectPath - the absolute path of the target project
+	 * @returns - the file content
+	 */
+	public async importBIDSSubjectToProject(
+		userId: string,
+		importSubjectDto: ImportSubjectDto,
+		targetProjectPath: string
+	) {
+		this.logger.debug(
+			`importBIDSSubjectToProject ${JSON.stringify(
+				importSubjectDto
+			)} ${targetProjectPath}`
+		)
+
+		try {
+			const userGroups = await this.nextcloudService.groupFoldersForUserId(
+				userId
+			)
+			const sourceDatasetPath = await this.filePath(
+				importSubjectDto.datasetPath,
+				userId,
+				userGroups
+			)
+
+			// Create unique tmp directory
+			const uniquId = Math.round(Date.now() + Math.random())
+			const tmpDir = `/tmp/${uniquId}`
+			fs.mkdirSync(tmpDir, true)
+
+			// Create the json to be passed with the request
+			const importBIDSSubjectToProjectDto = {
+				sourceDatasetPath,
+				participantId: importSubjectDto.subjectId,
+				targetProjectPath
+			}
+			fs.writeFileSync(
+				`${tmpDir}/project.sub.import.json`,
+				JSON.stringify(importBIDSSubjectToProjectDto)
+			)
+
+			// Create an empty output JSON file with correct ownership
+			const output_file = `${tmpDir}/project.dataset.info.json`
+			let empty_content = {}
+			fs.writeFileSync(output_file, JSON.stringify(empty_content))
+			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+				if (err) {
+					throw err
+				}
+			})
+
+			// Create the docker run command
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${sourceDatasetPath}:${sourceDatasetPath}`,
+				'-v',
+				`${targetProjectPath}:${targetProjectPath}`
+			]
+			const cmd2 = [
+				this.bidsToolsImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=project.sub.import',
+				'--input_data=/input/project.sub.import.json',
+				'--output_file=/input/project.dataset.info.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return JSON.parse(fs.readFileSync(output_file, 'utf8'))
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
+	}
+
+	/** This function is used to import a document into a project.
+	 * @param {string} sourceDocumentAbsPath - the absolute path of the source document
+	 * @param {string} targetProjectAbsPath - the absolute path of the target project
+	 * @param {string} targetDocumentRelPath - the path of the target document relative to the project directory
+	 * @returns - the file content
+	 */
+	public async importDocumentToProject(
+		sourceDocumentAbsPath: string,
+		targetProjectAbsPath: string,
+		targetDocumentRelPath: string
+	) {
+		this.logger.debug(
+			`importDocumentToProject ${sourceDocumentAbsPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
+		)
+
+		try {
+			// Create unique tmp directory
+			const uniquId = Math.round(Date.now() + Math.random())
+			const tmpDir = `/tmp/${uniquId}`
+			fs.mkdirSync(tmpDir, true)
+
+			// Create the json to be passed with the request
+			const importDocumentToProjectDto = {
+				sourceDocumentAbsPath: sourceDocumentAbsPath,
+				targetProjectAbsPath: targetProjectAbsPath,
+				targetDocumentRelPath: targetDocumentRelPath
+			}
+			fs.writeFileSync(
+				`${tmpDir}/project.doc.import.json`,
+				JSON.stringify(importDocumentToProjectDto)
+			)
+
+			// Create the docker run command
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${sourceDocumentAbsPath}:${sourceDocumentAbsPath}`,
+				'-v',
+				`${targetProjectAbsPath}:${targetProjectAbsPath}`
+			]
+			const cmd2 = [
+				this.bidsToolsImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=project.doc.import',
+				'--input_data=/input/project.doc.import.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return importDocumentToProjectDto
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
+	}
 
 	/**
 	 * Generate a list of BIDSDataset objects (JSON content indexed to elasticsearch) given a list of dataset paths
@@ -1390,6 +1573,7 @@ export class ToolsService {
 		owner: string,
 		foundDatasets: any[]
 	) {
+		this.logger.debug(`filterBidsDatasetsAccessibleByUser ${owner}`)
 		// get user group folder names
 		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
 		// filter only private datasets own by the user
@@ -2166,11 +2350,13 @@ export class ToolsService {
 
 			child.stderr.setEncoding('utf8')
 			child.stderr.on('data', data => {
+				this.logger.error(data.toString())
 				//message += data.toString()
 			})
 
 			child.on('error', data => {
-				message += data.toString()
+				this.logger.error(data.toString())
+				// message += data.toString()
 			})
 
 			child.on('close', code => {

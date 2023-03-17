@@ -46,8 +46,8 @@ export class IamEbrainsService {
 		private readonly cacheService: CacheService,
 		private readonly configService: ConfigService
 	) {
-		this.apiUrl = this.configService.get<string>('ebrains.apiUrl')
-		this.clientId = this.configService.get<string>('ebrains.clientId')
+		this.apiUrl = this.configService.get<string>('iam.apiUrl')
+		this.clientId = this.configService.get<string>('iam.clientId')
 	}
 
 	private async getAuthToken() {
@@ -66,9 +66,9 @@ export class IamEbrainsService {
 				scope:
 					'openid email roles team profile group clb.wiki.read clb.wiki.write',
 				client_id: this.clientId,
-				client_secret: this.configService.get<string>('ebrains.clientSecret')
+				client_secret: this.configService.get<string>('iam.clientSecret')
 			}
-			const url = this.configService.get<string>('ebrains.clientUrl')
+			const url = this.configService.get<string>('iam.clientUrl')
 
 			const {
 				data: { access_token }
@@ -76,17 +76,24 @@ export class IamEbrainsService {
 				this.httpService.post<AuthTokenResponse>(url, body, { headers }).pipe(
 					catchError((error: any) => {
 						this.logger.error(error)
-						throw new HttpException(error.response.data, error.response.status)
+						throw new HttpException(
+							error.response.data.description,
+							error.response.data.code
+						)
 					})
 				)
 			)
 
-			await this.cacheService.set(`iam_ebrains_token`, access_token, 3600 * 24 * 5)
+			await this.cacheService.set(
+				`iam_ebrains_token`,
+				access_token,
+				3600 * 24 * 5
+			)
 
 			return access_token
 		} catch (error) {
 			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
+			throw error
 		}
 	}
 
@@ -98,100 +105,76 @@ export class IamEbrainsService {
 		const token = await this.getAuthToken()
 		const headers = { Authorization: `Bearer ${token}` }
 
+		const catcher = catchError((error: any) => {
+			this.logger.error(error)
+			throw new HttpException(
+				error.response.data.description,
+				error.response.data.code
+			)
+		})
+
 		if (method === 'delete' || method === 'get') {
 			return await firstValueFrom(
-				this.httpService[method](url, { headers }).pipe(
-					catchError((error: any) => {
-						this.logger.error(error)
-						throw new HttpException(error.response.data, error.response.status)
-					})
-				)
+				this.httpService[method](url, { headers }).pipe(catcher)
 			)
 		}
 
 		return await firstValueFrom(
-			this.httpService[method](url, body ?? {}, { headers }).pipe(
-				catchError((error: any) => {
-					this.logger.error(error)
-					throw new HttpException(error.response.data, error.response.status)
-				})
-			)
+			this.httpService[method](url, body ?? {}, { headers }).pipe(catcher)
 		)
 	}
 
 	private async getGroupInfo(groupName: string): Promise<Group> {
-		this.logger.debug(`getGroup(${groupName})`)
+		this.logger.debug(`getGroupInfo(${groupName})`)
+		const url = `${this.apiUrl}/identity/groups/${groupName}`
+		const { data } = await this.request(url, 'get', {})
 
-		try {
-			const url = `${this.apiUrl}/identity/groups/${groupName}`
-			const { data } = await this.request(url, 'get', {})
-
-			return data
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
-		}
+		return data
 	}
 
-	private async getGroupListsByRole(
+	public async getUser(username: string){
+		this.logger.debug(`getUser(${username})`)
+		const url = `${this.apiUrl}/identity/users/${username}`
+		const { data } = await this.request(url, 'get', {})
+
+		return data
+	}
+
+	public async getGroupListsByRole(
 		groupName: string,
 		role: Role
 	): Promise<GroupLists> {
 		this.logger.debug(`getGroupListsByRole(${groupName}, ${role})`)
+		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}`
+		const { data } = await this.request(url, 'get', {})
 
-		try {
-			const url = `${this.apiUrl}/identity/groups/${groupName}/${role}`
-			const { data } = await this.request(url, 'get', {})
-
-			return data
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
-		}
+		return data
 	}
 
 	public async getUserGroups(userName: string, role?: Role): Promise<Group[]> {
 		this.logger.debug(`getUserGroups(${userName})`)
+		const baseUrl = `${this.apiUrl}/identity/groups?username=${userName}`
+		const url = role ? `${baseUrl}&role=${role}` : baseUrl
+		const { data } = await this.request(url, 'get', {})
 
-		try {
-			const baseUrl = `${this.apiUrl}/identity/groups?username=${userName}`
-			const url = role ? `${baseUrl}&role=${role}` : baseUrl
-			const { data } = await this.request(url, 'get', {})
-
-			return data
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
-		}
+		return data
 	}
 
 	public async createGroup(name: string, title: string, description: string) {
 		this.logger.debug(`createGroup(${name})`)
+		const url = `${this.apiUrl}/identity/groups`
+		const body = { name, title, description }
+		const { status } = await this.request(url, 'post', body)
 
-		try {
-			const url = `${this.apiUrl}/identity/groups`
-			const body = { name, title, description }
-			const { status } = await this.request(url, 'post', body)
-
-			return { data: 'Success', status }
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
-		}
+		return { data: 'Success', status }
 	}
 
 	public async deleteGroup(name: string) {
 		this.logger.debug(`deleteGroup(${name})`)
+		const url = `${this.apiUrl}/identity/groups/${name}`
+		const { status } = await this.request(url, 'delete')
 
-		try {
-			const url = `${this.apiUrl}/identity/groups/${name}`
-			const { status } = await this.request(url, 'delete')
-
-			return { data: 'Success', status }
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
-		}
+		return { data: 'Success', status }
 	}
 
 	public async assignGroupToGroup(
@@ -202,30 +185,19 @@ export class IamEbrainsService {
 		this.logger.debug(
 			`assignGroupToGroup(${groupName1}, ${role}, ${groupName2})`
 		)
+		const url = `${this.apiUrl}/identity/groups/${groupName2}/${role}/groups/${groupName1}`
+		const { status } = await this.request(url, 'put')
 
-		try {
-			const url = `${this.apiUrl}/identity/groups/${groupName2}/${role}/groups/${groupName1}`
-			const { status } = await this.request(url, 'put')
-
-			return { data: 'Success', status }
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
-		}
+		return { data: 'Success', status }
 	}
 
 	public async addUserToGroup(userName: string, role: Role, groupName: string) {
 		this.logger.debug(`addUserToGroup(${userName}, ${role}, ${groupName})`)
 
-		try {
-			const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
-			const { status } = await this.request(url, 'put', {})
+		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
+		const { status } = await this.request(url, 'put', {})
 
-			return { data: 'Success', status }
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
-		}
+		return { data: 'Success', status }
 	}
 
 	public async removeUserFromGroup(
@@ -234,23 +206,15 @@ export class IamEbrainsService {
 		userName: string
 	) {
 		this.logger.debug(`removeUserFromGroup(${groupName}, ${role}, ${userName})`)
+		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
+		const { status } = await this.request(url, 'delete', {})
 
-		try {
-			const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
-			const { status } = await this.request(url, 'delete', {})
-
-			return { data: 'Success', status }
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
-		}
+		return { data: 'Success', status }
 	}
 
 	public async getGroup(
 		groupName: string
 	): Promise<Group & { members: GroupLists; administrators: GroupLists }> {
-		this.logger.debug(`getGroup(${groupName})`)
-
 		try {
 			const group = await this.getGroupInfo(groupName)
 			const groupList = await this.getGroupListsByRole(groupName, 'member')
@@ -269,7 +233,7 @@ export class IamEbrainsService {
 			}
 		} catch (error) {
 			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
+			throw new HttpException(error.response.description, error.response.code)
 		}
 	}
 }

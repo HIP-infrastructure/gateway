@@ -1,14 +1,23 @@
 import { HttpService } from '@nestjs/axios'
-import { HttpException, Injectable, Logger } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { spawn } from 'child_process'
-import { catchError, firstValueFrom } from 'rxjs'
 import { CacheService } from 'src/cache/cache.service'
 import { Group, IamEbrainsService } from 'src/iam-ebrains/iam-ebrains.service'
-import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { CreateProjectDto } from './dto/create-project.dto'
+import { ToolsService } from 'src/tools/tools.service'
+import { ImportSubjectDto } from './dto/import-subject.dto'
+import * as jetpack from 'fs-jetpack'
 
-const { NodeSSH } = require('node-ssh')
+interface FileMetadata {
+	name: string
+	size: number
+	fullPath: string
+	created: string
+	updated: string
+	md5Hash: string
+	contentType: string
+	contentEncoding: string
+}
 
 export interface Project extends Group {
 	members?: string[]
@@ -16,91 +25,181 @@ export interface Project extends Group {
 }
 
 // FIXME: CHECKIF GROUP EXISTS
-const ROOT_PROJECT_GROUP_NAME = 'HIP-Projects'
+// Holds all HIP projects as sub groups
+const PROJECTS_ROOT_GROUP = 'HIP-Projects'
+// Gives members access to administrate HIP projects
+const PROJECTS_GROUP_ADMINS = 'HIP-Projects-admins'
+const CACHE_ROOT_KEY = 'projects'
 
 @Injectable()
 export class ProjectsService {
 	private readonly logger = new Logger(ProjectsService.name)
-	private readonly ssh: any
-	private readonly authBackendUsername: string
-	private readonly authBackendPassword: string
-	private readonly authBackendUrl: string
-	private readonly authFSUrl: string
-	private readonly authDockerFsCert: string
 
 	constructor(
 		private readonly iamService: IamEbrainsService,
 		private readonly httpService: HttpService,
 		private readonly cacheService: CacheService,
-		private readonly configService: ConfigService
-	) {
-		this.ssh = new NodeSSH()
-		this.authBackendUsername = this.configService.get(
-			'collab.authBackendUsername'
-		)
-		this.authBackendPassword = this.configService.get(
-			'collab.authBackendPassword'
-		)
-		this.authBackendUrl = this.configService.get('collab.authBackendUrl')
-		this.authFSUrl = this.configService.get('collab.authFSUrl')
-		this.authDockerFsCert = this.configService.get('collab.authDockerFsCert')
+		private readonly configService: ConfigService,
+		private readonly toolsService: ToolsService
+	) {}
+
+	private async invalidateProjectsCache(userId: string) {
+		try {
+			await this.cacheService.del(`${CACHE_ROOT_KEY}:all`)
+
+			return this.cacheService.del(`${CACHE_ROOT_KEY}:${userId}`)
+		} catch (error) {
+			this.logger.debug(error)
+		}
+	}
+
+	private async createUserFolder(userId: string) {
+		this.logger.debug(`createUserFolder: userId=${userId}`)
+		const userFolder = `${this.configService.get(
+			'collab.mountPoint'
+		)}/${userId}`
+
+		jetpack
+			.dir(userFolder, { empty: true })
+			.dir(`${userFolder}/files`, { empty: true })
+		const content = jetpack.inspectTree(userFolder)
+
+		return content
+	}
+
+	// TODO
+	private async checkIfRootFolderExists() {}
+
+	private async createAdminRoleGroup() {
+		// this.cacheService.del(`${CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`)
+		try {
+			if (this.cacheService.get(`${CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`))
+				return
+
+			this.logger.debug(`createAdminRoleGroup`)
+			await this.iamService.createGroup(
+				PROJECTS_GROUP_ADMINS,
+				PROJECTS_GROUP_ADMINS,
+				'Gives members access to administrate HIP projects'
+			)
+			const admins = this.configService.get('iam.platformAdmins')
+			await Promise.all(
+				admins.map(adminId =>
+					this.iamService.addUserToGroup(
+						adminId,
+						'administrator',
+						PROJECTS_GROUP_ADMINS
+					)
+				)
+			)
+			this.cacheService.set(`${CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`, true)
+		} catch (error) {
+			this.logger.error(error)
+			throw error
+		}
+	}
+
+	public async hasProjectsAdminRole(userId) {
+		try {
+			await this.createAdminRoleGroup()
+			const group = await this.iamService.getGroupListsByRole(
+				PROJECTS_GROUP_ADMINS,
+				'member'
+			)
+
+			return group.users.map(u => u.username).includes(userId)
+		} catch (error) {
+			this.logger.error(error)
+			throw error
+		}
+	}
+
+	public async userIsProjectAdmin(projectName, userId) {
+		try {
+			const group = await this.iamService.getGroupListsByRole(
+				projectName,
+				'administrator'
+			)
+			const isAdmin = group.users.map(u => u.username).includes(userId)
+			if (!isAdmin)
+				throw new HttpException(
+					`${userId} is not an admin.`,
+					HttpStatus.FORBIDDEN
+				)
+
+			return userId
+		} catch (error) {
+			this.logger.error(error)
+			throw error
+		}
 	}
 
 	async create(createProjectDto: CreateProjectDto) {
+		this.logger.debug(
+			`create createProjectDto=${JSON.stringify(createProjectDto)}`
+		)
+
 		try {
 			const { title, description, adminId } = createProjectDto
-			const projectName = `HIP-${title.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}`
+			const projectName = `HIP-${title
+				.replace(/[^a-zA-Z0-9]+/g, '-')
+				.toLowerCase()}`
 
+			// create group on iam-ebrains
 			await this.iamService.createGroup(projectName, title, description)
-			await this.iamService.addUserToGroup(adminId, 'administrator', projectName)
 			await this.iamService.addUserToGroup(adminId, 'member', projectName)
+			await this.iamService.addUserToGroup(
+				adminId,
+				'administrator',
+				projectName
+			)
 			await this.iamService.assignGroupToGroup(
 				projectName,
 				'member',
-				ROOT_PROJECT_GROUP_NAME
+				PROJECTS_ROOT_GROUP
 			)
 
-			this.ssh
-				.connect({
-					host: process.env.COLLAB_SSH_HOST,
-					username: process.env.COLLAB_SSH_USER,
-					privateKey: process.env.COLLAB_SSH_PRIVATE_KEY
-				})
-				.then(() => {
-					this.ssh
-						.execCommand(`mkdir -p ${process.env.COLLAB_FILESYSTEM}/${projectName}`)
-						.then(result => {
-							this.logger.debug(`STDOUT: ${result.stdout}`)
-							this.logger.debug(`STDERR: ${result.stderr}`)
-						})
-				})
+			// create group folder on collab workspace
+			const projectPath = `${this.configService.get(
+				'collab.mountPoint'
+			)}/__groupfolders/${projectName}`
+			jetpack.dir(projectPath)
 
-			await this.cacheService.del(`userProjects:${adminId}`)
+			await this.createUserFolder(adminId)
+			return await this.toolsService.createProjectDataset(
+				projectPath,
+				createProjectDto
+			)
 		} catch (error) {
-			console.error(error)
-			throw new HttpException(error.response.description, error.response.status)
+			this.logger.debug(error)
+			throw error
 		}
 	}
 
 	async findAll(): Promise<Project[]> {
+		const cached = await this.cacheService.get(`${CACHE_ROOT_KEY}:all`)
+		if (cached) {
+			this.logger.debug(`${CACHE_ROOT_KEY}:all - cached`)
+			return cached
+		}
 		try {
-			const rootProject = await this.iamService.getGroup(
-				ROOT_PROJECT_GROUP_NAME
-			)
+			const rootProject = await this.iamService.getGroup(PROJECTS_ROOT_GROUP)
 
-			return rootProject.members.groups
+			const groups = rootProject.members.groups
+			this.cacheService.set(`${CACHE_ROOT_KEY}:all`, groups, 3600)
+
+			return groups
 		} catch (error) {
 			throw new Error('Could not get projects')
 		}
 	}
 
 	async findUserProjects(userId: string): Promise<Project[]> {
-		this.logger.debug(`findUserProjects(${userId})`)
-		// const cached = await this.cacheService.get(`userProjects:${userId}`)
-		// if (cached) {
-		// 	this.logger.debug(`findUserProjects(${userId}) - cached`)
-		// 	return cached
-		// }
+		const cached = await this.cacheService.get(`${CACHE_ROOT_KEY}:${userId}`)
+		if (cached) {
+			this.logger.debug(`${CACHE_ROOT_KEY}:${userId} - cached`)
+			return cached
+		}
 		try {
 			const projects = await this.findAll()
 			const userGroups = await this.iamService.getUserGroups(userId)
@@ -115,7 +214,7 @@ export class ProjectsService {
 					acceptMembershipRequest: p.acceptMembershipRequest
 				}))
 
-			// this.cacheService.set(`userProjects:${userId}`, userProjects, 3600)
+			this.cacheService.set(`${CACHE_ROOT_KEY}:${userId}`, userProjects, 3600)
 
 			return userProjects
 		} catch (error) {
@@ -144,192 +243,103 @@ export class ProjectsService {
 	// 	return `This action updates a #${projectName} project`
 	// }
 
-	remove(projectName: string, adminId: string) {
+	async remove(projectName: string, adminId: string) {
 		try {
-			return this.iamService
-				.deleteGroup(projectName)
-				.then(() => this.cacheService.del(`userProjects:${adminId}`))
+			const groupList = await this.iamService.getGroupListsByRole(
+				projectName,
+				'member'
+			)
+			return this.iamService.deleteGroup(projectName).then(() => {
+				const users = groupList.users.map(u => u.username)
+				return Promise.all(
+					[...users, adminId].map(uid => this.invalidateProjectsCache(uid))
+				)
+			})
 		} catch (error) {
 			this.logger.error(error)
 			throw new Error('Could not delete project')
 		}
 	}
 
-	async addUserToProject(username: string, projectName: string) {
-		this.logger.debug(`addUserToProject(${username}, ${projectName})`)
-
+	async addUserToProject(userId: string, projectName: string) {
+		this.logger.debug(`addUserToProject(${userId}, ${projectName})`)
 		try {
-			return await this.iamService.addUserToGroup(
-				username,
-				'member',
-				projectName
+			await this.createUserFolder(userId)
+		} catch (error) {
+			this.logger.debug('userFolder exists')
+		}
+		try {
+			await this.iamService.addUserToGroup(userId, 'member', projectName)
+			const groupList = await this.iamService.getGroupListsByRole(
+				projectName,
+				'member'
 			)
+			const users = groupList.users.map(u => u.username)
+
+			return users
 		} catch (error) {
 			this.logger.error(error)
 			throw new Error('Could not add user to project')
 		}
 	}
 
-	async mountProjectFolders(
-		hipuser: string,
-		projects: Project[],
-		port: number
+	public async importBIDSSubject(
+		userId: string,
+		importSubjectDto: ImportSubjectDto,
+		projectName: string
 	) {
 		this.logger.debug(
-			`mountProjectFolder(${projects.map(p => p.name)}, ${port})`
+			`importBIDSSubject(${userId}, ${JSON.stringify(
+				importSubjectDto
+			)} ${projectName})`
 		)
-
-		const gf = JSON.stringify(
-			projects.map(project => ({
-				id: project.name,
-				label: project.name,
-				path: `__groupfolders/${project.name}`
-			}))
-		)
-
 		try {
-			const toParams = data =>
-				Object.keys(data)
-					.map(key => `${key}=${encodeURIComponent(data[key])}`)
-					.join('&')
-
-			const url = `${this.authBackendUrl}/token?${toParams({ hipuser, gf })}`
-			const config = {
-				auth: {
-					username: this.authBackendUsername,
-					password: this.authBackendPassword
-				}
-			}
-
-			const {
-				data: { token }
-			} = await firstValueFrom(
-				this.httpService.get(url, config).pipe(
-					catchError((error: any) => {
-						this.logger.error(error)
-						throw new HttpException(error.response.data, error.response.status)
-					})
-				)
+			const projectPath = `${this.configService.get(
+				'collab.mountPoint'
+			)}/__groupfolders/${projectName}/inputs/bids-dataset`
+			this.toolsService.importBIDSSubjectToProject(
+				userId,
+				importSubjectDto,
+				projectPath
 			)
 
-			const container_name = `fs-${hipuser}-${Math.round(
-				Math.random() * 1000000
-			)}`
-			const dockerParams = [
-				'run',
-				'-d',
-				// "--mount", f"type=bind,source={os.getcwd()}/mnt/{args.hip_user},target=/home/{args.hip_user}/nextcloud,bind-propagation=rshared", \
-				'-p',
-				`127.0.0.1:${port}:3000`,
-				'--device=/dev/fuse:/dev/fuse',
-				'--cap-add=SYS_ADMIN',
-				'--security-opt',
-				'apparmor=unconfined',
-				'--name',
-				container_name,
-				'--hostname',
-				container_name,
-				'--restart',
-				'on-failure:5',
-				'--env',
-				`HIP_USER=${hipuser}`,
-				'--env',
-				`HIP_PASSWORD=${token}`,
-				'--env',
-				`NEXTCLOUD_DOMAIN=${this.authFSUrl}`,
-				'--env',
-				`DOCKERFS_CERT=${this.authDockerFsCert}`,
-				'fs-api'
-			]
-			this.logger.debug(dockerParams.join(' '))
-
-			return this.spawnable('docker', dockerParams)
+			return 'Success'
 		} catch (error) {
 			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
+			throw new Error('Could not import BIDS subject')
 		}
 	}
 
-	async files(name: string, path: string, userId: string) {
-		this.logger.debug(`files: name=${name}, path=${path} userId=${userId}`)
-		// await this.cacheService.del(`collab-project-${userId}`);
-		// return
-
-		try {
-			const userApiUrlKey = `fs-api-collab-${userId}`
-			let baseUrl
-			const cached = await this.cacheService.get(userApiUrlKey)
-
-			if (cached) {
-				baseUrl = cached
-			} else {
-				const projects = await this.findUserProjects(userId)
-				//
-				// #get a random free port
-				// s=socket.socket()
-				// s.bind(("", 0))
-				// port=s.getsockname()[1]
-				// s.close()
-				const port = Math.round(Math.random() * 1000 + 3000)
-				const { code } = await this.mountProjectFolders(userId, projects, port)
-
-				if (code === 0) {
-					baseUrl = `http://127.0.0.1:${port}`
-
-					await this.cacheService.set(userApiUrlKey, baseUrl)
-					this.logger.debug(baseUrl)
-				}
-			}
-
-			this.logger.debug(baseUrl)
-
-			const url = `${baseUrl}/inspect/${name}`
-			const { data } = await firstValueFrom(
-				this.httpService.get(url).pipe(
-					catchError((error: any) => {
-						this.logger.error(error)
-						throw new HttpException(error.response.data, error.response.status)
-					})
-				)
-			)
-
-			return data
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
-		}
+	public importDocument() {
+		const sourceDocumentAbsPath = ''
+		const targetProjectAbsPath = ''
+		const targetDocumentRelPath = ''
+		// this.toolsService.importDocumentToProject(
+		// 	sourceDocumentAbsPath,
+		// 	targetProjectAbsPath,
+		// 	targetDocumentRelPath
+		// )
 	}
 
-	private spawnable = (
-		command,
-		args
-	): Promise<{ code: number; message?: string }> => {
+	public async metadataTree(
+		userId: string,
+		projectName: string,
+		path: string = '/'
+	) {
+		this.logger.debug(
+			`metadataTree: name=${projectName}, path=${path} userId=${userId} `
+		)
+
 		try {
-			const child = spawn(command, args)
-			let message = ''
+			const projectPath = `${process.env.COLLAB_MOUNT}/__groupfolders/${projectName}`
+			const rootPath = `${projectPath}/${path}`
+			const content = jetpack.inspectTree(rootPath)
 
-			return new Promise(resolve => {
-				child.stdout.setEncoding('utf8')
-				child.stdout.on('data', data => {
-					message += data.toString()
-				})
-
-				child.stderr.setEncoding('utf8')
-				child.stderr.on('data', data => {
-					//message += data.toString()
-				})
-
-				child.on('error', data => {
-					message += data.toString()
-				})
-
-				child.on('close', code => {
-					resolve({ code, message })
-				})
-			})
+			return content
 		} catch (error) {
+			this.logger.debug(`metadataTree: catch`)
 			this.logger.error(error)
-			throw new HttpException(error.response.data, error.response.status)
+			throw new Error(error)
 		}
 	}
 }

@@ -3,40 +3,76 @@ import {
 	Get,
 	Post,
 	Body,
-	Patch,
 	Param,
 	Delete,
 	Query,
-	Request as Req
+	Request as Req,
+	Logger,
+	HttpException,
+	HttpStatus
 } from '@nestjs/common'
 import { Request } from 'express'
 
 import { Project, ProjectsService } from './projects.service'
 import { CreateProjectDto } from './dto/create-project.dto'
-import { UpdateProjectDto } from './dto/update-project.dto'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
+import { ImportSubjectDto } from './dto/import-subject.dto'
 
 @Controller('projects')
 export class ProjectsController {
+	private readonly logger = new Logger('ProjectsController')
+
 	constructor(
 		private readonly projectsService: ProjectsService,
 		private readonly nextcloudService: NextcloudService
 	) {}
 
 	@Get()
-	findAll(@Query('userId') userId?: string): Promise<Project[]> {
-		if (userId) return this.projectsService.findUserProjects(userId)
+	findAll(@Req() req: Request) {
+		this.logger.debug(`findAll()`)
+		return this.nextcloudService
+			.authenticate(req)
+			.then(() => this.projectsService.findAll())
+	}
 
-		return this.projectsService.findAll()
+	@Get('forUser/:userId')
+	findUserProjects(
+		@Req() req: Request,
+		@Param('userId') userId: string
+	): Promise<Project[]> {
+		this.logger.debug(`findUserProjects(${userId})`)
+		return this.nextcloudService
+			.authenticate(req)
+			.then(() => this.projectsService.findUserProjects(userId))
 	}
 
 	@Get(':projectName')
-	findOne(@Param('projectName') projectName: string): Promise<Project> {
-		return this.projectsService.findOne(projectName)
+	findOne(
+		@Req() req: Request,
+		@Param('projectName') projectName: string
+	): Promise<Project> {
+		this.logger.debug(`findOne(${projectName})`)
+		return this.nextcloudService
+			.authenticate(req)
+			.then(() => this.projectsService.findOne(projectName))
 	}
 
+	// TODO: @Roles(Role.Admin)
 	@Post()
-	create(@Body() createProjectDto: CreateProjectDto) {
+	async create(
+		@Req() req: Request,
+		@Body() createProjectDto: CreateProjectDto
+	) {
+		this.logger.debug(`create(${JSON.stringify(createProjectDto)})`)
+		const userId = await this.nextcloudService.authUserIdFromRequest(req)
+		const isAdmin = await this.projectsService.hasProjectsAdminRole(userId)
+
+		if (!isAdmin)
+			throw new HttpException(
+				`You must be an admin to create projects`,
+				HttpStatus.FORBIDDEN
+			)
+
 		return this.projectsService.create(createProjectDto)
 	}
 
@@ -46,32 +82,78 @@ export class ProjectsController {
 	// }
 
 	@Delete(':projectName')
-	remove(@Param('projectName') projectName: string, @Req() req: Request) {
-		return this.nextcloudService.uid(req).then(userId => {
-			return this.projectsService.remove(projectName, userId)
-		})
+	remove(@Req() req: Request, @Param('projectName') projectName: string) {
+		this.logger.debug(`remove(${projectName})`)
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(userId =>
+				this.projectsService.userIsProjectAdmin(projectName, userId)
+			)
+			.then(userId => this.projectsService.remove(projectName, userId))
 	}
 
 	@Post(':projectName/addUser/:username/')
 	addUser(
+		@Req() req: Request,
 		@Param('projectName') projectName: string,
-		@Param('username') username: string,
-		@Req() req: Request
+		@Param('username') username: string
 	) {
-		console.log(`addUser(${projectName}, ${username})`)
-		return this.nextcloudService.uid(req).then(() => {
-			return this.projectsService.addUserToProject(username, projectName)
-		})
+		this.logger.debug(`addUser(${projectName}, ${username})`)
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(userId =>
+				this.projectsService.userIsProjectAdmin(projectName, userId)
+			)
+			.then(adminId =>
+				this.projectsService.addUserToProject(username, projectName)
+			)
 	}
 
-	@Get(':projectName/files')
-	files(
+	// @Post('/api')
+	// createFSAPI(@Req() req: Request) {
+	// 	return this.nextcloudService
+	// 		.authUserIdFromRequest(req)
+	// 		.then(async userId => {
+	// 			this.logger.debug(`createFSAPI(${userId})`)
+	// 			return await this.projectsService.createFSAPI(userId)
+	// 		})
+	// }
+
+	@Post(':projectName/subject')
+	importBIDSSubject(
+		@Req() req: Request,
+		@Param('projectName') projectName: string,
+		@Body() importSubjectDto: ImportSubjectDto
+	) {
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(async userId => {
+				return this.projectsService.importBIDSSubject(
+					userId,
+					importSubjectDto,
+					projectName
+				)
+			})
+	}
+
+	@Post(':projectName/document')
+	importDocument(@Req() req: Request) {
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(async userId => {
+				this.logger.debug(`importDocument(${userId})`)
+				return this.projectsService.importDocument()
+			})
+	}
+
+	@Get(':projectName/metadataTree')
+	metadataTree(
+		@Req() req: Request,
 		@Param('projectName') projectName: string,
 		@Query('path') path: string,
-		@Req() req: Request
 	) {
-		return this.nextcloudService.uid(req).then(userId => {
-			return this.projectsService.files(projectName, path, userId)
+		return this.nextcloudService.authUserIdFromRequest(req).then(userId => {
+			return this.projectsService.metadataTree(userId, projectName, path)
 		})
 	}
 }
