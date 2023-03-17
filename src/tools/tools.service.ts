@@ -252,9 +252,9 @@ export class ToolsService {
 
 			// Create the json to be passed with the request
 			const importBIDSSubjectToProjectDto = {
-				sourceDatasetPath,
+				sourceDatasetPath: sourceDatasetPath,
 				participantId: importSubjectDto.subjectId,
-				targetProjectPath
+				targetDatasetPath: `${targetProjectPath}/inputs/bids-dataset`
 			}
 			fs.writeFileSync(
 				`${tmpDir}/project.sub.import.json`,
