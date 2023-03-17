@@ -146,18 +146,18 @@ export class ProjectsService {
 				.toLowerCase()}`
 
 			// create group on iam-ebrains
-			await this.iamService.createGroup(projectName, title, description)
-			await this.iamService.addUserToGroup(adminId, 'member', projectName)
-			await this.iamService.addUserToGroup(
-				adminId,
-				'administrator',
-				projectName
-			)
-			await this.iamService.assignGroupToGroup(
-				projectName,
-				'member',
-				PROJECTS_ROOT_GROUP
-			)
+			// await this.iamService.createGroup(projectName, title, description)
+			// await this.iamService.addUserToGroup(adminId, 'member', projectName)
+			// await this.iamService.addUserToGroup(
+			// 	adminId,
+			// 	'administrator',
+			// 	projectName
+			// )
+			// await this.iamService.assignGroupToGroup(
+			// 	projectName,
+			// 	'member',
+			// 	PROJECTS_ROOT_GROUP
+			// )
 
 			// create group folder on collab workspace
 			const projectPath = `${this.configService.get(
@@ -244,13 +244,17 @@ export class ProjectsService {
 	// }
 
 	async remove(projectName: string, adminId: string) {
+		this.logger.debug(`remove(${projectName}, ${adminId})`)
 		try {
 			const groupList = await this.iamService.getGroupListsByRole(
 				projectName,
 				'member'
-			)
+			)	
+			this.logger.debug(`groupList=${JSON.stringify(groupList)}`)
 			return this.iamService.deleteGroup(projectName).then(() => {
 				const users = groupList.users.map(u => u.username)
+				this.logger.debug(`users=${JSON.stringify(users)}`)
+
 				return Promise.all(
 					[...users, adminId].map(uid => this.invalidateProjectsCache(uid))
 				)
@@ -296,7 +300,7 @@ export class ProjectsService {
 		try {
 			const projectPath = `${this.configService.get(
 				'collab.mountPoint'
-			)}/__groupfolders/${projectName}/inputs/bids-dataset`
+			)}/__groupfolders/${projectName}`
 			this.toolsService.importBIDSSubjectToProject(
 				userId,
 				importSubjectDto,
@@ -333,11 +337,10 @@ export class ProjectsService {
 		try {
 			const projectPath = `${process.env.COLLAB_MOUNT}/__groupfolders/${projectName}`
 			const rootPath = `${projectPath}/${path}`
-			const content = jetpack.inspectTree(rootPath)
+			const content = jetpack.inspectTree(rootPath, { relativePath: true })
 
 			return content
 		} catch (error) {
-			this.logger.debug(`metadataTree: catch`)
 			this.logger.error(error)
 			throw new Error(error)
 		}
