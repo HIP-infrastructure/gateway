@@ -31,19 +31,8 @@ export class ProjectsController {
 	findAll(@Req() req: Request) {
 		this.logger.debug(`findAll()`)
 		return this.nextcloudService
-			.authenticate(req)
-			.then(() => this.projectsService.findAll())
-	}
-
-	@Get('forUser/:userId')
-	findUserProjects(
-		@Req() req: Request,
-		@Param('userId') userId: string
-	): Promise<Project[]> {
-		this.logger.debug(`findUserProjects(${userId})`)
-		return this.nextcloudService
-			.authenticate(req)
-			.then(() => this.projectsService.findUserProjects(userId))
+		.authUserIdFromRequest(req)
+			.then((userId) => this.projectsService.findAll(userId))
 	}
 
 	@Get(':projectName')
@@ -92,20 +81,37 @@ export class ProjectsController {
 			.then(userId => this.projectsService.remove(projectName, userId))
 	}
 
-	@Post(':projectName/addUser/:username/')
+	@Post(':projectName/users/:userId')
 	addUser(
 		@Req() req: Request,
 		@Param('projectName') projectName: string,
-		@Param('username') username: string
+		@Param('userId') userId: string
 	) {
-		this.logger.debug(`addUser(${projectName}, ${username})`)
+		this.logger.debug(`addUser(${projectName}, ${userId})`)
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
 			.then(userId =>
 				this.projectsService.userIsProjectAdmin(projectName, userId)
 			)
 			.then(adminId =>
-				this.projectsService.addUserToProject(username, projectName)
+				this.projectsService.addUserToProject(userId, projectName)
+			)
+	}
+
+	@Delete(':projectName/users/:userId/')
+	removeUser(
+		@Req() req: Request,
+		@Param('projectName') projectName: string,
+		@Param('userId') userId: string
+	) {
+		this.logger.debug(`removeUser(${projectName}, ${userId})`)
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(userId =>
+				this.projectsService.userIsProjectAdmin(projectName, userId)
+			)
+			.then(adminId =>
+				this.projectsService.removeUserFromProject(userId, projectName)
 			)
 	}
 
