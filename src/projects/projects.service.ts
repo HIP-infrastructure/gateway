@@ -25,12 +25,9 @@ export interface Project extends Group {
 	admins?: string[]
 }
 
-// FIXME: CHECKIF GROUP EXISTS
-// Holds all HIP projects as sub groups
-const PROJECTS_ROOT_GROUP = 'HIP-Projects'
-// Gives members access to administrate HIP projects
-const PROJECTS_GROUP_ADMINS = 'HIP-Projects-admins'
-const PROJECTS_CACHE_ROOT_KEY = 'projects'
+const PROJECTS_GROUP = 'HIP-Projects' // Holds all HIP projects as sub groups
+const PROJECTS_ADMINS_GROUP = 'HIP-Projects-admins' // Holds members allowed to create HIP projects
+const CACHE_KEY_PROJECTS = 'projects'
 
 @Injectable()
 export class ProjectsService {
@@ -42,18 +39,96 @@ export class ProjectsService {
 		private readonly cacheService: CacheService,
 		private readonly configService: ConfigService,
 		private readonly toolsService: ToolsService
-	) {}
+	) { }
 
-	private async invalidateProjectsCache(userId: string) {
+	private async getProjectsCacheFor(userId: string): Promise<Project[]> {
+		this.logger.debug(`getProjectsCacheFor(${userId})`)
+		return this.cacheService.get(`${CACHE_KEY_PROJECTS}:${userId}`)
+	}
+
+	private async setProjectsCacheFor(userId: string, projects: Project[]) {
+		this.logger.debug(`setProjectsCacheFor(${userId})`)
+		return this.cacheService.set(`${CACHE_KEY_PROJECTS}:${userId}`, projects)
+	}
+
+	private async refreshProjectsCacheFor(userId: string): Promise<Project[]> {
+		const projects = await this.findAll(userId, true)
+		await this.setProjectsCacheFor(userId, projects)
+
+		return projects
+	}
+
+	private async refreshProjectsCache(projectName: string) {
+		const groupList = await this.iamService.getGroupListsByRole(
+			projectName,
+			'member'
+		)
+		const users = groupList.users.map(u => u.username)
+		return Promise.all(users.map(u => this.refreshProjectsCacheFor(u)))
+	}
+
+
+	/* It creates a group called `HIP-Projects` and adds the platform admins to it. 
+	This group is used to hold all HIP projects as sub groups. */
+	private async createProjectsGroup() {
+		this.logger.debug(`createProjectsGroup`)
+		if (this.cacheService.get(`${CACHE_KEY_PROJECTS}:${PROJECTS_GROUP}`))
+			return
+
+		await this.iamService.createGroup(
+			PROJECTS_GROUP,
+			PROJECTS_GROUP,
+			'Holds all HIP projects as sub groups'
+		)
+		const admins = this.configService.get('iam.platformAdmins')
+		await Promise.all(
+			admins.map(adminId =>
+				this.iamService.addUserToGroup(
+					adminId,
+					'administrator',
+					PROJECTS_GROUP
+				)
+			)
+		)
+
+		this.cacheService.set(`${CACHE_KEY_PROJECTS}:${PROJECTS_GROUP}`, true)
+	}
+
+
+	/* It creates a group called `HIP-Projects-admins` and adds the platform admins to it. 
+	 * This group is used to give users access to administrate HIP projects, i.e. create new projects,
+	 * by adding them to the group `HIP-Projects-admins` as member.
+	*/
+	private async createAdminGroup() {
+		this.logger.debug(`createAdminGroup`)
 		try {
-			await this.cacheService.del(`${PROJECTS_CACHE_ROOT_KEY}:all`)
+			if (this.cacheService.get(`${CACHE_KEY_PROJECTS}:${PROJECTS_ADMINS_GROUP}`))
+				return
 
-			return this.cacheService.del(`${PROJECTS_CACHE_ROOT_KEY}:${userId}`)
+			await this.iamService.createGroup(
+				PROJECTS_ADMINS_GROUP,
+				PROJECTS_ADMINS_GROUP,
+				'Gives members access to administrate HIP projects'
+			)
+			const admins = this.configService.get('iam.platformAdmins')
+			await Promise.all(
+				admins.map(adminId =>
+					this.iamService.addUserToGroup(
+						adminId,
+						'administrator',
+						PROJECTS_ADMINS_GROUP
+					)
+				)
+			)
+			this.cacheService.set(`${CACHE_KEY_PROJECTS}:${PROJECTS_ADMINS_GROUP}`, true)
 		} catch (error) {
-			this.logger.debug(error)
+			this.logger.error(error)
+			throw error
 		}
 	}
 
+
+	/* It creates a folder for the user in the collab workspace. */
 	private async createUserFolder(userId: string) {
 		this.logger.debug(`createUserFolder: userId=${userId}`)
 		const userFolder = `${this.configService.get(
@@ -68,47 +143,18 @@ export class ProjectsService {
 		return content
 	}
 
-	// TODO
-	private async checkIfRootFolderExists() {}
-
-	private async createAdminRoleGroup() {
-		// this.cacheService.del(`${CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`)
+	public async isProjectsAdmin(userId) {
 		try {
-			if (this.cacheService.get(`${PROJECTS_CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`))
-				return
+			await this.createAdminGroup()
 
-			this.logger.debug(`createAdminRoleGroup`)
-			await this.iamService.createGroup(
-				PROJECTS_GROUP_ADMINS,
-				PROJECTS_GROUP_ADMINS,
-				'Gives members access to administrate HIP projects'
-			)
-			const admins = this.configService.get('iam.platformAdmins')
-			await Promise.all(
-				admins.map(adminId =>
-					this.iamService.addUserToGroup(
-						adminId,
-						'administrator',
-						PROJECTS_GROUP_ADMINS
-					)
-				)
-			)
-			this.cacheService.set(`${PROJECTS_CACHE_ROOT_KEY}:${PROJECTS_GROUP_ADMINS}`, true)
-		} catch (error) {
-			this.logger.error(error)
-			throw error
-		}
-	}
-
-	public async hasProjectsAdminRole(userId) {
-		try {
-			await this.createAdminRoleGroup()
 			const group = await this.iamService.getGroupListsByRole(
-				PROJECTS_GROUP_ADMINS,
+				PROJECTS_ADMINS_GROUP,
 				'member'
 			)
 
 			return group.users.map(u => u.username).includes(userId)
+
+
 		} catch (error) {
 			this.logger.error(error)
 			throw error
@@ -135,12 +181,65 @@ export class ProjectsService {
 		}
 	}
 
+	async findAll(userId: string, forceCache = false): Promise<Project[]> {
+		this.logger.debug(`findAll: userId=${userId} forceCache=${forceCache}`)
+
+		if (!forceCache) {
+			const cached = await this.getProjectsCacheFor(userId)
+			if (cached) {
+				this.logger.debug(`- cached`)
+				return cached
+			}
+		}
+
+		try {
+			const rootProject = await this.iamService.getGroup(PROJECTS_GROUP)
+			const groups = rootProject.members.groups
+			const userGroups = await this.iamService.getUserGroups(userId)
+			const projects = groups
+				.map(p => ({
+					isMember: userGroups.map(g => g.name).includes(p.name),
+					name: p.name,
+					title: p.title,
+					description: p.description,
+					acceptMembershipRequest: p.acceptMembershipRequest
+				}))
+
+			this.setProjectsCacheFor(userId, projects)
+
+			return projects
+		} catch (error) {
+			throw new Error('Could not get projects')
+		}
+	}
+
+	async findOne(projectName: string): Promise<Project & { dataset: BIDSDataset }> {
+		try {
+			const group = await this.iamService.getGroup(projectName)
+			const dataset = await this.cacheService.get(`${CACHE_KEY_PROJECTS}:${projectName}:dataset`)
+
+			return {
+				name: group.name,
+				title: group.title,
+				description: group.description,
+				acceptMembershipRequest: group.acceptMembershipRequest,
+				members: group.members.users.map(u => u.username),
+				admins: group.administrators.users.map(u => u.username),
+				dataset
+			}
+		} catch (error) {
+			throw new Error('Could not get project')
+		}
+	}
+
 	async create(createProjectDto: CreateProjectDto) {
 		this.logger.debug(
 			`create createProjectDto=${JSON.stringify(createProjectDto)}`
 		)
 
 		try {
+			await this.createProjectsGroup()
+
 			const { title, description, adminId } = createProjectDto
 			const projectName = `HIP-${title
 				.replace(/[^a-zA-Z0-9]+/g, '-')
@@ -157,7 +256,7 @@ export class ProjectsService {
 			await this.iamService.assignGroupToGroup(
 				projectName,
 				'member',
-				PROJECTS_ROOT_GROUP
+				PROJECTS_GROUP
 			)
 
 			// create group folder on collab workspace
@@ -166,66 +265,25 @@ export class ProjectsService {
 			)}/__groupfolders/${projectName}`
 			jetpack.dir(projectPath)
 
+			// create user folder on collab workspace if it doen't exist
 			await this.createUserFolder(adminId)
+
+			// create project structure
 			this.toolsService.createProjectDataset(
 				projectPath,
 				createProjectDto
 			).then(dataset => {
 				this.logger.debug(`create dataset=${JSON.stringify(dataset)}`)
-				this.cacheService.set(`${PROJECTS_CACHE_ROOT_KEY}:${projectName}:dataset`, dataset)
+
+				// TODO: record dataset in a database
+				this.cacheService.set(`${CACHE_KEY_PROJECTS}:${projectName}:dataset`, dataset)
 			})
 
-			return "Success"
+			return this.refreshProjectsCacheFor(adminId)
 
 		} catch (error) {
 			this.logger.debug(error)
 			throw error
-		}
-	}
-
-	async findAll(userId: string): Promise<Project[]> {
-		// const cached = await this.cacheService.get(`${PROJECTS_CACHE_ROOT_KEY}:${userId}`)
-		// if (cached) {
-		// 	this.logger.debug(`${PROJECTS_CACHE_ROOT_KEY}:${userId} - cached`)
-		// 	return cached
-		// }
-		try {
-			const rootProject = await this.iamService.getGroup(PROJECTS_ROOT_GROUP)
-			const groups = rootProject.members.groups
-			const userGroups = await this.iamService.getUserGroups(userId)
-			const userGroupNames = userGroups.map(g => g.name)
-			const projects = groups
-				.map(p => ({
-					isMember: userGroups.map(g => g.name).includes(p.name),
-					name: p.name,
-					title: p.title,
-					description: p.description,
-					acceptMembershipRequest: p.acceptMembershipRequest
-				}))
-			// this.cacheService.set(`${PROJECTS_CACHE_ROOT_KEY}:${userId}`, groups, 3600)
-
-			return projects
-		} catch (error) {
-			throw new Error('Could not get projects')
-		}
-	}
-
-	async findOne(projectName: string): Promise<Project & {dataset: BIDSDataset}> {
-		try {
-			const group = await this.iamService.getGroup(projectName)
-			const dataset = await this.cacheService.get(`${PROJECTS_CACHE_ROOT_KEY}:${projectName}:dataset`)
-
-			return {
-				name: group.name,
-				title: group.title,
-				description: group.description,
-				acceptMembershipRequest: group.acceptMembershipRequest,
-				members: group.members.users.map(u => u.username),
-				admins: group.administrators.users.map(u => u.username),
-				dataset
-			}
-		} catch (error) {
-			throw new Error('Could not get project')
 		}
 	}
 
@@ -239,15 +297,12 @@ export class ProjectsService {
 			const groupList = await this.iamService.getGroupListsByRole(
 				projectName,
 				'member'
-			)	
-			this.logger.debug(`groupList=${JSON.stringify(groupList)}`)
-			return this.iamService.deleteGroup(projectName).then(() => {
-				const users = groupList.users.map(u => u.username)
-				this.logger.debug(`users=${JSON.stringify(users)}`)
+			)
 
-				return Promise.all(
-					[...users, adminId].map(uid => this.invalidateProjectsCache(uid))
-				)
+			return this.iamService.deleteGroup(projectName).then(async () => {
+				await this.refreshProjectsCache(projectName)
+
+				return this.findAll(adminId)
 			})
 		} catch (error) {
 			this.logger.error(error)
@@ -264,6 +319,7 @@ export class ProjectsService {
 		}
 		try {
 			await this.iamService.addUserToGroup(userId, 'member', projectName)
+			await this.refreshProjectsCache(projectName)
 
 			return this.findOne(projectName)
 		} catch (error) {
@@ -274,9 +330,10 @@ export class ProjectsService {
 
 	async removeUserFromProject(userId: string, projectName: string) {
 		this.logger.debug(`removeUserFromProject(${userId}, ${projectName})`)
-		
+
 		try {
 			await this.iamService.removeUserFromGroup(userId, 'member', projectName)
+			await this.refreshProjectsCache(projectName)
 
 			return this.findOne(projectName)
 		} catch (error) {
@@ -304,7 +361,7 @@ export class ProjectsService {
 				importSubjectDto,
 				projectPath
 			)
-			this.cacheService.set(`${PROJECTS_CACHE_ROOT_KEY}:${projectName}:dataset`, dataset)
+			this.cacheService.set(`${CACHE_KEY_PROJECTS}:${projectName}:dataset`, dataset)
 
 			return 'Success'
 		} catch (error) {

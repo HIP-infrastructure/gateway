@@ -54,7 +54,7 @@ export class ProjectsController {
 	) {
 		this.logger.debug(`create(${JSON.stringify(createProjectDto)})`)
 		const userId = await this.nextcloudService.authUserIdFromRequest(req)
-		const isAdmin = await this.projectsService.hasProjectsAdminRole(userId)
+		const isAdmin = await this.projectsService.isProjectsAdmin(userId)
 
 		if (!isAdmin)
 			throw new HttpException(

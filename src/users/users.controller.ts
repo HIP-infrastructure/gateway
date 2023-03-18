@@ -46,7 +46,7 @@ export class UsersController {
 		}
 
 		const user = await this.nextcloudService.user(userId)
-		const hasProjectsAdminRole = await this.projectsService.hasProjectsAdminRole(
+		const hasProjectsAdminRole = await this.projectsService.isProjectsAdmin(
 			userId
 		)
 
