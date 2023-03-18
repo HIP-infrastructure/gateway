@@ -201,11 +201,11 @@ export class IamEbrainsService {
 	}
 
 	public async removeUserFromGroup(
-		groupName: string,
+		userName: string,
 		role: Role,
-		userName: string
+		groupName: string,
 	) {
-		this.logger.debug(`removeUserFromGroup(${groupName}, ${role}, ${userName})`)
+		this.logger.debug(`removeUserFromGroup(${userName}, ${role}, ${groupName})`)
 		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
 		const { status } = await this.request(url, 'delete', {})
 
