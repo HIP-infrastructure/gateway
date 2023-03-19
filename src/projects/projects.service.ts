@@ -6,6 +6,7 @@ import { CacheService } from 'src/cache/cache.service'
 import { Group, IamEbrainsService } from 'src/iam-ebrains/iam-ebrains.service'
 import { BIDSDataset, ToolsService } from 'src/tools/tools.service'
 import { CreateProjectDto } from './dto/create-project.dto'
+import { ImportDocumentDto } from './dto/import-document.dto'
 import { ImportSubjectDto } from './dto/import-subject.dto'
 
 interface FileMetadata {
@@ -393,7 +394,7 @@ export class ProjectsService {
 		try {
 			const projectPath = `${process.env.COLLAB_MOUNT}/__groupfolders/${projectName}`
 			const rootPath = `${projectPath}/${path}`
-			const content = jetpack.inspectTree(rootPath, { relativePath: true })
+			const content = jetpack.inspectTree(rootPath, { relativePath: true, times: true })
 
 			return content
 		} catch (error) {

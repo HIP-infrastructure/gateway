@@ -17,6 +17,7 @@ import { Project, ProjectsService } from './projects.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { ImportSubjectDto } from './dto/import-subject.dto'
+import { ImportDocumentDto } from './dto/import-document.dto'
 
 @Controller('projects')
 export class ProjectsController {
@@ -143,12 +144,17 @@ export class ProjectsController {
 	}
 
 	@Post(':projectName/document')
-	importDocument(@Req() req: Request) {
+	importDocument(@Req() req: Request, @Param('projectName') projectName: string,
+	@Body() importDocumentDto: ImportDocumentDto) {
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
 			.then(async userId => {
 				this.logger.debug(`importDocument(${userId})`)
-				return this.projectsService.importDocument()
+				return this.projectsService.importDocument(
+					userId,
+					importDocumentDto,
+					projectName
+				)
 			})
 	}
 
