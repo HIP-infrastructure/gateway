@@ -316,15 +316,25 @@ export class ToolsService {
 	 * @returns - the file content
 	 */
 	public async importDocumentToProject(
-		sourceDocumentAbsPath: string,
+		userId: string,
+		sourceDocumentPath: string,
 		targetProjectAbsPath: string,
 		targetDocumentRelPath: string
 	) {
 		this.logger.debug(
-			`importDocumentToProject ${sourceDocumentAbsPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
+			`importDocumentToProject ${sourceDocumentPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
 		)
 
 		try {
+			const userGroups = await this.nextcloudService.groupFoldersForUserId(
+				userId
+			)
+			const sourceDocumentAbsPath = await this.filePath(
+				sourceDocumentPath,
+				userId,
+				userGroups
+			)
+
 			// Create unique tmp directory
 			const uniquId = Math.round(Date.now() + Math.random())
 			const tmpDir = `/tmp/${uniquId}`
