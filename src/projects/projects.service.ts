@@ -371,15 +371,17 @@ export class ProjectsService {
 		}
 	}
 
-	public importDocument() {
-		const sourceDocumentAbsPath = ''
-		const targetProjectAbsPath = ''
-		const targetDocumentRelPath = ''
-		// this.toolsService.importDocumentToProject(
-		// 	sourceDocumentAbsPath,
-		// 	targetProjectAbsPath,
-		// 	targetDocumentRelPath
-		// )
+	public async importDocument(userId: string, importDocumentDto: ImportDocumentDto, projectName: string) {
+		const projectPath = `${process.env.COLLAB_MOUNT}/__groupfolders/${projectName}`
+		const targetFileNameBits = importDocumentDto.sourceFilePath.split('/')
+		const targetFileName = targetFileNameBits[targetFileNameBits.length - 1]
+
+		return this.toolsService.importDocumentToProject(
+			userId,
+			importDocumentDto.sourceFilePath,
+			projectPath,
+			`${importDocumentDto.targetDirPath}/${targetFileName}`
+		)
 	}
 
 	public async metadataTree(
