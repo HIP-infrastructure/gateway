@@ -49,7 +49,7 @@ export class ProjectsService {
 
 	private async setProjectsCacheFor(userId: string, projects: Project[]) {
 		this.logger.debug(`setProjectsCacheFor(${userId})`)
-		return this.cacheService.set(`${CACHE_KEY_PROJECTS}:${userId}`, projects)
+		return this.cacheService.set(`${CACHE_KEY_PROJECTS}:${userId}`, projects, 60*60)
 	}
 
 	private async refreshProjectsCacheFor(userId: string): Promise<Project[]> {
@@ -193,9 +193,27 @@ export class ProjectsService {
 			}
 		}
 
+		const rootProject = await this.iamService.getGroup(PROJECTS_GROUP)
+		const groups = rootProject.members.groups
+
 		try {
-			const rootProject = await this.iamService.getGroup(PROJECTS_GROUP)
-			const groups = rootProject.members.groups
+			// This might be heavy
+			const fullgroups = await Promise.all(groups.map(g => this.iamService.getGroup(g.name)))
+			const userGroups = await this.iamService.getUserGroups(userId)
+			const projects = fullgroups
+				.map(p => ({
+					isMember: userGroups.map(g => g.name).includes(p.name),
+					name: p.name,
+					title: p.title,
+					description: p.description,
+					acceptMembershipRequest: p.acceptMembershipRequest,
+					members: p.members.users.map(u => u.username),
+					admins: p.administrators.users.map(u => u.username),
+				}))
+			this.setProjectsCacheFor(userId, projects)
+
+			return projects
+		} catch (error) {
 			const userGroups = await this.iamService.getUserGroups(userId)
 			const projects = groups
 				.map(p => ({
@@ -203,14 +221,11 @@ export class ProjectsService {
 					name: p.name,
 					title: p.title,
 					description: p.description,
-					acceptMembershipRequest: p.acceptMembershipRequest
+					acceptMembershipRequest: p.acceptMembershipRequest,
 				}))
-
 			this.setProjectsCacheFor(userId, projects)
 
 			return projects
-		} catch (error) {
-			throw new Error('Could not get projects')
 		}
 	}
 
@@ -295,11 +310,6 @@ export class ProjectsService {
 	async remove(projectName: string, adminId: string) {
 		this.logger.debug(`remove(${projectName}, ${adminId})`)
 		try {
-			const groupList = await this.iamService.getGroupListsByRole(
-				projectName,
-				'member'
-			)
-
 			return this.iamService.deleteGroup(projectName).then(async () => {
 				await this.refreshProjectsCache(projectName)
 
