@@ -1728,7 +1728,7 @@ export class ToolsService {
 			// perform and return the search query
 			const { foundDatasets, total } = await this.elasticClientRO
 				.search(query_params)
-				.then((result: estypes.SearchResponse) => {
+				.then((result: estypes.SearchResponse<BIDSDataset>) => {
 					// remove "Path" in dataset objects returned to the frontend
 					if (filterPaths && result.hits.hits && result.hits.hits.length > 0) {
 						result.hits.hits.forEach((ds, index: number) => {
@@ -1740,7 +1740,10 @@ export class ToolsService {
 							}
 						})
 					}
-					return { foundDatasets: result.hits.hits, total: result.hits.total }
+					return {
+						foundDatasets: result.hits.hits,
+						total: result.hits.total['value']
+					}
 				})
 			return { datasets: foundDatasets, total: total }
 			// // filter only datasets accessible by the user if owner is not 'all'
