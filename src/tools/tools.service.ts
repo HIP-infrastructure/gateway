@@ -1153,9 +1153,12 @@ export class ToolsService {
 			page: undefined,
 			nbOfResults: undefined
 		}
-		const searchIndexedResults = await this.searchBidsDatasets(searchQueryOpts)
+		const searchIndexedResults: {
+			datasets: estypes.SearchHit<BIDSDataset>[]
+			total: number | estypes.SearchTotalHits
+		} = await this.searchBidsDatasets(searchQueryOpts)
 		// extract absolute path of each dataset
-		const foundIndexedDatasetPaths = searchIndexedResults.map(
+		const foundIndexedDatasetPaths = searchIndexedResults.datasets.map(
 			dataset => dataset._source.Path
 		)
 		if (foundIndexedDatasetPaths.length > 0) {
@@ -1452,8 +1455,11 @@ export class ToolsService {
 				page: undefined,
 				nbOfResults: undefined
 			}
-			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
-			if (searchResults.length > 0) {
+			const searchResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = await this.searchBidsDatasets(datasetPathQueryOpts)
+			if (searchResults.datasets.length > 0) {
 				const currentDataset = searchResults[0]
 				this.logger.debug('Update a currently indexed dataset')
 				bidsDataset.Owner = currentDataset._source.Owner
@@ -1525,8 +1531,11 @@ export class ToolsService {
 				page: undefined,
 				nbOfResults: undefined
 			}
-			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
-			if (searchResults.length > 0) {
+			const searchResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = await this.searchBidsDatasets(datasetPathQueryOpts)
+			if (searchResults.datasets.length > 0) {
 				const dataset = searchResults[0]
 				// delete the document with id related to the dataset
 				const datasetID = {
@@ -1701,6 +1710,14 @@ export class ToolsService {
 					}
 				})
 			}
+			// add owner filter only if owner is not 'all'
+			if (owner !== 'all') {
+				queryObj['bool']['must'].push({
+					term: {
+						Owner: owner
+					}
+				})
+			}
 			// define search query in JSON format expected by elasticsearch
 			const query_params: estypes.SearchRequest = {
 				index: `${this.es_index_datasets}`,
@@ -1709,7 +1726,7 @@ export class ToolsService {
 				query: queryObj
 			}
 			// perform and return the search query
-			const foundDatasets = await this.elasticClientRO
+			const { foundDatasets, total } = await this.elasticClientRO
 				.search(query_params)
 				.then((result: estypes.SearchResponse) => {
 					// remove "Path" in dataset objects returned to the frontend
@@ -1723,17 +1740,21 @@ export class ToolsService {
 							}
 						})
 					}
-					return result.hits.hits
+					return { foundDatasets: result.hits.hits, total: result.hits.total }
 				})
-			// filter only datasets accessible by the user if owner is not 'all'
-			if (owner !== 'all') {
-				return await this.filterBidsDatasetsAccessibleByUser(
-					owner,
-					foundDatasets
-				)
-			} else {
-				return foundDatasets
-			}
+			return { datasets: foundDatasets, total: total }
+			// // filter only datasets accessible by the user if owner is not 'all'
+			// if (owner !== 'all') {
+			// 	return {
+			// 		datasets: await this.filterBidsDatasetsAccessibleByUser(
+			// 			owner,
+			// 			foundDatasets
+			// 		),
+			// 		total: total
+			// 	}
+			// } else {
+			// 	return { foundDatasets: foundDatasets, total: total }
+			// }
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
@@ -1840,7 +1861,10 @@ export class ToolsService {
 			// get number of datasets indexed in elasticsearch
 			const nbOfDatasets = await this.getDatasetsCount()
 
-			let searchIndexedResults = []
+			let searchIndexedResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = { datasets: [], total: 0 }
 			let datasetIDs = []
 			if (nbOfDatasets > 0) {
 				// get a list of dataset ids (<=> folder name) already indexed
@@ -1856,7 +1880,7 @@ export class ToolsService {
 				}
 				searchIndexedResults = await this.searchBidsDatasets(searchAllQueryOpts)
 				// extract ids of indexed datasets
-				datasetIDs = searchIndexedResults.map(dataset => dataset._id)
+				datasetIDs = searchIndexedResults.datasets.map(dataset => dataset._id)
 			}
 
 			// generate a first if using either the provided initial value or
@@ -2059,8 +2083,11 @@ export class ToolsService {
 				page: undefined,
 				nbOfResults: undefined
 			}
-			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
-			const datasetID = searchResults[0].id
+			const searchResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = await this.searchBidsDatasets(datasetPathQueryOpts)
+			const datasetID = searchResults.datasets[0]._id
 
 			// FIXME: replace by all settled
 			const filePathes = createSubject.files.map(file =>

@@ -1,3 +1,4 @@
+import { estypes } from '@elastic/elasticsearch'
 import {
 	Body,
 	Controller,
@@ -22,7 +23,7 @@ import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
 import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
-import { ToolsService } from './tools.service'
+import { BIDSDataset, ToolsService } from './tools.service'
 
 @Controller('tools')
 export class ToolsController {
@@ -135,20 +136,27 @@ export class ToolsController {
 				cookie,
 				requesttoken,
 			}) */
-			const searchResults = await this.toolsService.searchBidsDatasets(
-				searchQueryOpts
-			)
+			const searchResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = await this.toolsService.searchBidsDatasets(searchQueryOpts)
 
-			const foundDatasets = searchResults.map(dataset => ({
+			const foundDatasets = searchResults.datasets.map(dataset => ({
 				// query metadata fields returned by elastic
 				id: dataset._id,
 				...dataset._source
 			}))
 
 			if (foundDatasets.length > 0) {
-				return foundDatasets
+				return {
+					datasets: foundDatasets,
+					total: searchResults.total
+				}
 			} else {
-				return []
+				return {
+					datasets: [],
+					total: 0
+				}
 			}
 		})
 	}
