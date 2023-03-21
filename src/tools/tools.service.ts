@@ -1262,6 +1262,18 @@ export class ToolsService {
 			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchDatasetsResults = s?.entries
 
+			// return empty lists if no dataset found
+			if (searchDatasetsResults.length === 0) {
+				this.logger.warn(
+					'SKIP: Refresh BIDS Datasets Index because no dataset found!'
+				)
+				return {
+					addedDatasets: [],
+					renamedDatasets: [],
+					deletedDatasets: []
+				}
+			}
+
 			// get the list of datasets already indexed in the root of the user private space
 			// let searchIndexedResults = await this.searchBidsDatasets(owner)
 
