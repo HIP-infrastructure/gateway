@@ -132,7 +132,7 @@ export class IamEbrainsService {
 		return data
 	}
 
-	public async getUser(username: string){
+	public async getUser(username: string) {
 		this.logger.debug(`getUser(${username})`)
 		const url = `${this.apiUrl}/identity/users/${username}`
 		const { data } = await this.request(url, 'get', {})
@@ -162,8 +162,12 @@ export class IamEbrainsService {
 
 	public async createGroup(name: string, title: string, description: string) {
 		this.logger.debug(`createGroup(${name})`)
+
+		// sanitize name
+		const projectName = `${title.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}`
+
 		const url = `${this.apiUrl}/identity/groups`
-		const body = { name, title, description }
+		const body = { name: projectName, title, description }
 		const { status } = await this.request(url, 'post', body)
 
 		return { data: 'Success', status }
@@ -203,7 +207,7 @@ export class IamEbrainsService {
 	public async removeUserFromGroup(
 		userName: string,
 		role: Role,
-		groupName: string,
+		groupName: string
 	) {
 		this.logger.debug(`removeUserFromGroup(${userName}, ${role}, ${groupName})`)
 		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
@@ -215,25 +219,20 @@ export class IamEbrainsService {
 	public async getGroup(
 		groupName: string
 	): Promise<Group & { members: GroupLists; administrators: GroupLists }> {
-		try {
-			const group = await this.getGroupInfo(groupName)
-			const groupList = await this.getGroupListsByRole(groupName, 'member')
-			const groupListAdmin = await this.getGroupListsByRole(
-				groupName,
-				'administrator'
-			)
-			const admin = new RegExp(this.clientId, 'i')
-			return {
-				...group,
-				members: groupList,
-				administrators: {
-					...groupListAdmin,
-					users: groupListAdmin.users.filter(u => !admin.test(u.username))
-				}
+		const group = await this.getGroupInfo(groupName)
+		const groupList = await this.getGroupListsByRole(groupName, 'member')
+		const groupListAdmin = await this.getGroupListsByRole(
+			groupName,
+			'administrator'
+		)
+		const admin = new RegExp(this.clientId, 'i')
+		return {
+			...group,
+			members: groupList,
+			administrators: {
+				...groupListAdmin,
+				users: groupListAdmin.users.filter(u => !admin.test(u.username))
 			}
-		} catch (error) {
-			this.logger.error(error)
-			throw new HttpException(error.response.description, error.response.code)
 		}
 	}
 }
