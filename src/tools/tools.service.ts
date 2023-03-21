@@ -1530,9 +1530,9 @@ export class ToolsService {
 				ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
 			}
 			// get abosolute path of the dataset
-			const dsPath = await this.filePath(path, owner, ownerGroups)
+			// const dsPath = await this.filePath(path, owner, ownerGroups)
 			// find the dataset index to be deleted
-			const datasetPathQuery = `Path:"${dsPath}"`
+			const datasetPathQuery = `Path:"${path}"`
 			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
 				textQuery: datasetPathQuery,
@@ -1548,7 +1548,7 @@ export class ToolsService {
 				total: number | estypes.SearchTotalHits
 			} = await this.searchBidsDatasets(datasetPathQueryOpts)
 			if (searchResults.datasets.length > 0) {
-				const dataset = searchResults[0]
+				const dataset = searchResults.datasets[0]
 				// delete the document with id related to the dataset
 				const datasetID = {
 					index: dataset._index,
