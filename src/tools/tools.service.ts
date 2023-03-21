@@ -1657,23 +1657,6 @@ export class ToolsService {
 										}
 									},
 									{
-										bool: {
-											must_not: [
-												{
-													exists: {
-														field: 'AgeMin'
-													}
-												}
-											]
-										}
-									}
-								]
-							}
-						},
-						{
-							bool: {
-								should: [
-									{
 										range: {
 											AgeMax: { lte: ageRange[1] }
 										}
@@ -1681,6 +1664,11 @@ export class ToolsService {
 									{
 										bool: {
 											must_not: [
+												{
+													exists: {
+														field: 'AgeMin'
+													}
+												},
 												{
 													exists: {
 														field: 'AgeMax'
