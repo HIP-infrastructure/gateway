@@ -30,6 +30,11 @@ const PROJECTS_GROUP = 'HIP-Projects' // Holds all HIP projects as sub groups
 const PROJECTS_ADMINS_GROUP = 'HIP-Projects-admins' // Holds members allowed to create HIP projects
 const CACHE_KEY_PROJECTS = 'projects'
 
+const wait = async (amount: number) =>
+	setTimeout(() => {
+		return Promise.resolve()
+	}, amount * 1000)
+
 @Injectable()
 export class ProjectsService {
 	private readonly logger = new Logger(ProjectsService.name)
@@ -194,36 +199,39 @@ export class ProjectsService {
 		try {
 			const rootProject = await this.iamService.getGroup(PROJECTS_GROUP)
 			const groups = rootProject.members.groups
+
+			// const userGroups = await this.iamService.getUserGroups(userId)
+			// const projects = groups.map(p => ({
+			// 	isMember: userGroups.map(g => g.name).includes(p.name),
+			// 	name: p.name,
+			// 	title: p.title,
+			// 	description: p.description,
+			// 	acceptMembershipRequest: p.acceptMembershipRequest
+			// }))
+
+			// FIXME: This might be heavy for IAM-INT
+			const fullgroups = await Promise.all(
+				groups.map(g => this.iamService.getGroup(g.name))
+			)
 			const userGroups = await this.iamService.getUserGroups(userId)
-			const projects = groups.map(p => ({
+			// this.logger.debug(`- userGroups: ${JSON.stringify(userGroups)}`)
+
+			const projects = fullgroups.map(p => ({
 				isMember: userGroups.map(g => g.name).includes(p.name),
 				name: p.name,
 				title: p.title,
 				description: p.description,
-				acceptMembershipRequest: p.acceptMembershipRequest
+				acceptMembershipRequest: p.acceptMembershipRequest,
+				members: p.members.users.map(u => u.username),
+				admins: p.administrators.users.map(u => u.username)
 			}))
-			
-			// This might be heavy
-			// const fullgroups = await Promise.all(groups.map(g => this.iamService.getGroup(g.name)))
-			// const userGroups = await this.iamService.getUserGroups(userId)
-			// this.logger.debug(`- userGroups: ${JSON.stringify(userGroups)}`)
-
-			// const projects = fullgroups
-			// 	.map(p => ({
-			// 		isMember: userGroups.map(g => g.name).includes(p.name),
-			// 		name: p.name,
-			// 		title: p.title,
-			// 		description: p.description,
-			// 		acceptMembershipRequest: p.acceptMembershipRequest,
-			// 		members: p.members.users.map(u => u.username),
-			// 		admins: p.administrators.users.map(u => u.username),
-			// 	}))
 
 			this.setProjectsCacheFor(userId, projects)
 
 			return projects
 		} catch (error) {
-			throw new Error('Could not get projects')
+			this.logger.error(error)
+			throw error
 		}
 	}
 
@@ -319,8 +327,8 @@ export class ProjectsService {
 				return this.findAll(adminId)
 			})
 		} catch (error) {
-			this.logger.error(error)
-			throw new Error('Could not delete project')
+			this.logger.debug(error)
+			throw error
 		}
 	}
 
@@ -337,8 +345,8 @@ export class ProjectsService {
 
 			return this.findOne(projectName)
 		} catch (error) {
-			this.logger.error(error)
-			throw new Error('Could not add user to project')
+			this.logger.debug(error)
+			throw error
 		}
 	}
 
@@ -351,8 +359,8 @@ export class ProjectsService {
 
 			return this.findOne(projectName)
 		} catch (error) {
-			this.logger.error(error)
-			throw new Error('Could not add user to project')
+			this.logger.debug(error)
+			throw error
 		}
 	}
 
@@ -382,8 +390,8 @@ export class ProjectsService {
 
 			return 'Success'
 		} catch (error) {
-			this.logger.error(error)
-			throw new Error('Could not import BIDS subject')
+			this.logger.debug(error)
+			throw error
 		}
 	}
 
@@ -392,16 +400,21 @@ export class ProjectsService {
 		importDocumentDto: ImportDocumentDto,
 		projectName: string
 	) {
-		const projectPath = `${process.env.COLLAB_MOUNT}/__groupfolders/${projectName}`
-		const targetFileNameBits = importDocumentDto.sourceFilePath.split('/')
-		const targetFileName = targetFileNameBits[targetFileNameBits.length - 1]
+		try {
+			const projectPath = `${process.env.COLLAB_MOUNT}/__groupfolders/${projectName}`
+			const targetFileNameBits = importDocumentDto.sourceFilePath.split('/')
+			const targetFileName = targetFileNameBits[targetFileNameBits.length - 1]
 
-		return this.toolsService.importDocumentToProject(
-			userId,
-			importDocumentDto.sourceFilePath,
-			projectPath,
-			`${importDocumentDto.targetDirPath}/${targetFileName}`
-		)
+			return this.toolsService.importDocumentToProject(
+				userId,
+				importDocumentDto.sourceFilePath,
+				projectPath,
+				`${importDocumentDto.targetDirPath}/${targetFileName}`
+			)
+		} catch (error) {
+			this.logger.debug(error)
+			throw error
+		}
 	}
 
 	public async metadataTree(
@@ -429,8 +442,8 @@ export class ProjectsService {
 
 			return content
 		} catch (error) {
-			this.logger.error(error)
-			throw new Error(error)
+			this.logger.debug(error)
+			throw error
 		}
 	}
 }
