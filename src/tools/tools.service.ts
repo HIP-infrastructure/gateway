@@ -1717,8 +1717,14 @@ export class ToolsService {
 				!datatypes.includes('')
 			) {
 				queryObj['bool']['must'].push({
-					terms: {
-						DataTypes: datatypes
+					terms_set: {
+						DataTypes: {
+							terms: datatypes,
+							minimum_should_match_script: {
+								source: 'params.num_terms'
+							},
+							boost: 1
+						}
 					}
 				})
 			}
