@@ -420,7 +420,7 @@ export class ProjectsService {
 	public async metadataTree(
 		userId: string,
 		projectName: string,
-		path: string = '/'
+		path?: string
 	) {
 		this.logger.debug(
 			`metadataTree: name=${projectName}, path=${path} userId=${userId} `
@@ -428,17 +428,11 @@ export class ProjectsService {
 
 		try {
 			const projectPath = `${process.env.COLLAB_MOUNT}/__groupfolders/${projectName}`
-			const rootPath = `${projectPath}/${path}`
+			const rootPath = `${projectPath}/${path ? path: ''}`
 			const content = jetpack.inspectTree(rootPath, {
 				relativePath: true,
 				times: true
 			})
-
-			this.logger.debug(
-				`projectPath=${projectPath}, ${rootPath}, content=${JSON.stringify(
-					content
-				)}`
-			)
 
 			return content
 		} catch (error) {
