@@ -830,7 +830,7 @@ export class ToolsService {
 				owner,
 				ownerGroups
 			)
-			datasetPathsQuery.push(`Path:"${datasetPath}"`)
+			datasetPathsQuery.push(`(Path:"${datasetPath}") AND (Owner:"${owner})"`)
 		}
 		const searchResults = await this.multiSearchBidsDatasets(datasetPathsQuery)
 		let foundDatasetIDs: string[] = []
