@@ -872,7 +872,7 @@ export class ToolsService {
 		// find IDs of datasets with name existing in the index in the case of
 		// (1) a dataset with changed path and (2) a dataset copy
 		let foundRenamedDatasetsQuery = foundDatasets.map(
-			(d: BIDSDataset) => `"${d.Name}"`
+			(d: BIDSDataset) => `(Name:"${d.Name}") AND (Owner:"${owner}")`
 		)
 		const searchRenamedResults = await this.multiSearchBidsDatasets(
 			foundRenamedDatasetsQuery
