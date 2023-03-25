@@ -88,6 +88,8 @@ export class ProjectsService {
 	}
 
 	public async isProjectsAdmin(userId) {
+		this.logger.debug(`isProjectsAdmin: userId=${userId}`)
+
 		try {
 			const group = await this.iamService.getGroupListsByRole(
 				PROJECTS_ADMINS_GROUP,
@@ -187,18 +189,33 @@ export class ProjectsService {
 
 		try {
 			const { title, description, adminId } = createProjectDto
-			const projectName = `HIP-${title
-				.replace(/[^a-zA-Z0-9]+/g, '-')
-				.toLowerCase()}`
+
+			// create group on iam-ebrains
+			const { data: name } = await this.iamService.createGroup(title, title, description)
+			await this.iamService.addUserToGroup(adminId, 'member', name)
+			await this.iamService.addUserToGroup(
+				adminId,
+				'administrator',
+				name
+			)
+			await this.iamService.assignGroupToGroup(
+				name,
+				'member',
+				PROJECTS_GROUP
+			)
+
+			// create user folder on collab workspace if it doesn't exist
+			try {
+				await this.createUserFolder(adminId)
+			} catch (error) {
+				console.log(error)
+			}
 
 			// create group folder on collab workspace
 			const projectPath = `${this.configService.get(
 				'collab.mountPoint'
-			)}/__groupfolders/${projectName}`
-			// jetpack.dir(projectPath)
-
-			// create user folder on collab workspace if it doesn't exist
-			await this.createUserFolder(adminId)
+			)}/__groupfolders/${name}`
+			jetpack.dir(projectPath)
 
 			// create project structure
 			this.toolsService
@@ -208,24 +225,10 @@ export class ProjectsService {
 
 					// TODO: record dataset in a database
 					this.cacheService.set(
-						`${CACHE_KEY_PROJECTS}:${projectName}:dataset`,
+						`${CACHE_KEY_PROJECTS}:${name}:dataset`,
 						dataset
 					)
 				})
-
-			// create group on iam-ebrains
-			await this.iamService.createGroup(projectName, title, description)
-			await this.iamService.addUserToGroup(adminId, 'member', projectName)
-			await this.iamService.addUserToGroup(
-				adminId,
-				'administrator',
-				projectName
-			)
-			await this.iamService.assignGroupToGroup(
-				projectName,
-				'member',
-				PROJECTS_GROUP
-			)
 
 			return this.refreshProjectsCacheFor(adminId)
 		} catch (error) {
@@ -242,7 +245,7 @@ export class ProjectsService {
 		this.logger.debug(`remove(${projectName}, ${adminId})`)
 		try {
 			return this.iamService.deleteGroup(projectName).then(async () => {
-				await this.refreshProjectsCache(projectName)
+				await this.refreshProjectsCacheFor(adminId)
 
 				return this.findAll(adminId)
 			})
@@ -351,10 +354,12 @@ export class ProjectsService {
 		try {
 			const projectPath = `${process.env.COLLAB_MOUNT}/__groupfolders/${projectName}`
 			const rootPath = `${projectPath}/${path ? path : ''}`
+			this.logger.debug(`rootPath=${rootPath}`)
 			const content = jetpack.inspectTree(rootPath, {
 				relativePath: true,
 				times: true
 			})
+			this.logger.debug(`content=${JSON.stringify(content)}`)
 
 			return content
 		} catch (error) {
