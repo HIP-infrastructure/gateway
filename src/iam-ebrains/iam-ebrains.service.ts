@@ -114,7 +114,8 @@ export class IamEbrainsService {
 			)
 		})
 
-		this.logger.debug({ url, method })
+		// this.logger.debug({ url, method })
+		// body && this.logger.debug({ body})
 
 		if (method === 'delete' || method === 'get') {
 			return await firstValueFrom(
@@ -173,7 +174,7 @@ export class IamEbrainsService {
 		const body = { name: projectName, title, description }
 		const { status } = await this.request(url, 'post', body)
 
-		return { data: 'Success', status }
+		return { data: projectName, status }
 	}
 
 	public async deleteGroup(name: string) {
