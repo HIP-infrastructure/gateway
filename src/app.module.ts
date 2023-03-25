@@ -8,6 +8,7 @@ import postgresConfig from './config/db.postgres.config';
 import redisConfig from './config/db.redis.config';
 import ebrains from './config/api.iam-ebrains.config';
 import collab from './config/collab.config';
+import instance from './config/instance.config';
 import { FilesModule } from './files/files.module';
 import { GroupsModule } from './groups/groups.module';
 import { NextcloudModule } from './nextcloud/nextcloud.module';
@@ -22,7 +23,7 @@ import { IamEbrainsModule } from './iam-ebrains/iam-ebrains.module';
 		ConfigModule.forRoot({
 			isGlobal: true,
 			envFilePath: ['.env'],
-			load: [collab, ebrains, postgresConfig, redisConfig],
+			load: [collab, ebrains, postgresConfig, redisConfig, instance],
 		}),
 		FilesModule,
 		RemoteAppModule,
