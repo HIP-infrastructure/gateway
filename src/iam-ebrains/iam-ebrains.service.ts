@@ -107,11 +107,14 @@ export class IamEbrainsService {
 
 		const catcher = catchError((error: any) => {
 			this.logger.error(error)
+
 			throw new HttpException(
 				error.response.data.description,
 				error.response.data.code
 			)
 		})
+
+		this.logger.debug({ url, method })
 
 		if (method === 'delete' || method === 'get') {
 			return await firstValueFrom(

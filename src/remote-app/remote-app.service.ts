@@ -233,6 +233,7 @@ export class RemoteAppService {
 								type: ContainerAction.DESTROY,
 								nextContext: {
 									...remoteContext,
+									// nextAction: undefined,
 									error: undefined
 								}
 							})

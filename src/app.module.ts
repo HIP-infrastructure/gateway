@@ -17,6 +17,13 @@ import { ToolsModule } from './tools/tools.module';
 import { UsersModule } from './users/users.module';
 import { ProjectsModule } from './projects/projects.module';
 import { IamEbrainsModule } from './iam-ebrains/iam-ebrains.module';
+import { WarmupService } from './warmup/warmup.service';
+import { ProjectsService } from './projects/projects.service'
+import { HttpModule } from '@nestjs/axios'
+import { CacheService } from './cache/cache.service'
+import { ToolsService } from './tools/tools.service'
+import { NextcloudService } from './nextcloud/nextcloud.service'
+import { IamEbrainsService } from './iam-ebrains/iam-ebrains.service'
 
 @Module({
 	imports: [
@@ -52,7 +59,9 @@ import { IamEbrainsModule } from './iam-ebrains/iam-ebrains.module';
 		NextcloudModule,
 		ProjectsModule,
 		IamEbrainsModule,
+		HttpModule
 	],
 	controllers: [AppController],
+	providers: [CacheService, IamEbrainsService, NextcloudService, ConfigService, ToolsService, ProjectsService, WarmupService],
 })
 export class AppModule { }
