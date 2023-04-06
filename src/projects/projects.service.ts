@@ -8,7 +8,8 @@ import { BIDSDataset, ToolsService } from 'src/tools/tools.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { ImportDocumentDto } from './dto/import-document.dto'
 import { ImportSubjectDto } from './dto/import-subject.dto'
-
+const fsPromises = require("fs").promises
+const userIdLib = require('userid')
 interface FileMetadata {
 	name: string
 	size: number
@@ -33,6 +34,7 @@ const CACHE_KEY_PROJECTS = 'projects'
 @Injectable()
 export class ProjectsService {
 	private readonly logger = new Logger(ProjectsService.name)
+	private dataUserId: number
 
 	constructor(
 		private readonly iamService: IamEbrainsService,
@@ -40,7 +42,11 @@ export class ProjectsService {
 		private readonly cacheService: CacheService,
 		private readonly configService: ConfigService,
 		private readonly toolsService: ToolsService
-	) { }
+	) {
+		const uid = this.configService.get<string>('instance.dataUser')
+		const id = parseInt(userIdLib.uid(uid), 10)
+		this.dataUserId = id
+	}
 
 	private async getProjectsCacheFor(userId: string): Promise<Project[]> {
 		this.logger.debug(`getProjectsCacheFor(${userId})@${this.configService.get<string>('instance.hostname')}`)
@@ -72,6 +78,15 @@ export class ProjectsService {
 		return Promise.all(users.map(u => this.refreshProjectsCacheFor(u)))
 	}
 
+
+/* The `chown` function changes the ownership of a file or directory specified by the `path` parameter
+to the user and group specified by `this.dataUserId`. This is used in the `createUserFolder`
+function to change the ownership of the user's folder in the collab workspace to the data user. */
+	private async chown(path: string) {
+		this.logger.debug(`${path} ownership changed to ${this.dataUserId}`)
+		return fsPromises.chown(path, this.dataUserId, this.dataUserId)
+	}
+
 	/* It creates a folder for the user in the collab workspace. */
 	private async createUserFolder(userId: string) {
 		this.logger.debug(`createUserFolder: userId=${userId}`)
@@ -82,9 +97,9 @@ export class ProjectsService {
 		jetpack
 			.dir(userFolder, { empty: true })
 			.dir(`${userFolder}/files`, { empty: true })
-		const content = jetpack.inspectTree(userFolder)
+		await this.chown(userFolder)
 
-		return content
+		return jetpack.inspectTree(userFolder)
 	}
 
 	public async isProjectsAdmin(userId) {
@@ -216,6 +231,7 @@ export class ProjectsService {
 				'collab.mountPoint'
 			)}/__groupfolders/${name}`
 			jetpack.dir(projectPath)
+			await this.chown(projectPath)
 
 			// create project structure
 			this.toolsService
