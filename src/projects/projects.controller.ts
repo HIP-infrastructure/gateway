@@ -43,8 +43,8 @@ export class ProjectsController {
 	): Promise<Project> {
 		this.logger.debug(`findOne(${projectName})`)
 		return this.nextcloudService
-			.authenticate(req)
-			.then(() => this.projectsService.findOne(projectName))
+		.authUserIdFromRequest(req)
+			.then((userId) => this.projectsService.findOne(projectName, userId))
 	}
 
 	// TODO: @Roles(Role.Admin)
