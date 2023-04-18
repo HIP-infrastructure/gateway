@@ -136,9 +136,9 @@
 						"type": "text",
 						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					},
-					"handedness": { "type": "long" },
+					"handedness": { "type": "text" },
 					"number_of_scans_before": { "type": "long" },
-					"participant_id": {
+					"participant_id": { 
 						"type": "text",
 						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					},
