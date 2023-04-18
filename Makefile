@@ -36,7 +36,7 @@ deploy.dev: deploy.dev.stop
 	sudo npm run start:dev
 
 deploy.dev.stop:
-	for pid in $(ps -fu www-data  | grep gateway | awk '{ print $2 }'); do sudo kill -9 $pid; done 
+	for pid in $(ps -fu root  | grep gateway | awk '{ print $2 }'); do sudo kill -9 $pid; done 
 
 #help:	@ List available tasks on this project
 help:
