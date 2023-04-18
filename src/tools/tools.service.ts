@@ -1471,9 +1471,8 @@ export class ToolsService {
 				datasets: estypes.SearchHit<BIDSDataset>[]
 				total: number | estypes.SearchTotalHits
 			} = await this.searchBidsDatasets(datasetPathQueryOpts)
-			if (searchResults.datasets.length > 0) {
-				const currentDataset = searchResults[0]
-				this.logger.debug('Update a currently indexed dataset')
+			if (searchResults?.datasets.length > 0) {
+				const currentDataset = searchResults.datasets[0]
 				bidsDataset.Owner = currentDataset._source.Owner
 				bidsDataset.Groups = currentDataset._source.Groups
 				bidsDataset.CreationDate = currentDataset._source.CreationDate
