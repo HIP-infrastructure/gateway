@@ -1,6 +1,6 @@
 # Human Intracerebral EEG Platform - Gateway
 ## Overview
-The HIP is a platform for processing and sharing HUMAN intracerebral EEG data  
+The HIP is a platform for processing and sharing Human intracerebral EEG data  
 [More...](https://www.humanbrainproject.eu/en/medicine/human-intracerebral-eeg-platform/)
 
 This service is part of the HIP infrastructure and runs a gateway between all different services. It also communicate directly with the [HIP Frontend](https://github.com/HIP-infrastructure/hip).  
