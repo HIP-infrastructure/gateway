@@ -229,13 +229,13 @@ export class IamEbrainsService {
 			groupName,
 			'administrator'
 		)
-		const admin = new RegExp(this.clientId, 'i')
+
 		return {
 			...group,
 			members: groupList,
 			administrators: {
 				...groupListAdmin,
-				users: groupListAdmin.users.filter(u => !admin.test(u.username))
+				users: groupListAdmin.users.filter(u => !/service-account/.test(u.username))
 			}
 		}
 	}
