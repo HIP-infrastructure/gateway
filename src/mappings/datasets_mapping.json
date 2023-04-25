@@ -39,12 +39,21 @@
 			"DatasetType": {
 				"type": "text",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			"ECGChannelCount": {
+				"type": "text"
 			},
-			"ECGChannelCount": { "type": "long" },
-			"ECOGChannelCount": { "type": "long" },
-			"EEGChannelCount": { "type": "long" },
-			"EventsFileCount": { "type": "long" },
-			"FileCount": { "type": "long" },
+			"ECOGChannelCount": {
+				"type": "text"
+			},
+			"EEGChannelCount": {
+				"type": "text"
+			},
+			"EventsFileCount": {
+				"type": "long"
+			},
+			"FileCount": {
+				"type": "long"
+			},
 			"Formats": {
 				"type": "text",
 				"index_options": "positions",
@@ -70,7 +79,9 @@
 			},
 			"Groups": {
 				"properties": {
-					"id": { "type": "long" },
+					"id": {
+						"type": "text"
+					},
 					"label": {
 						"type": "text",
 						"index_options": "positions",
@@ -97,8 +108,9 @@
 				"type": "text",
 				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			"MiscChannelCount": {
+				"type": "text"
 			},
-			"MiscChannelCount": { "type": "long" },
 			"Modalities": {
 				"type": "text",
 				"index_options": "positions",
@@ -117,9 +129,11 @@
 				"type": "nested",
 				"include_in_root": true,
 				"properties": {
-					"Subject_ready": { "type": "boolean" },
 					"age": { "type": "long" },
 					"age_at_first_scan_years": { "type": "long" },
+					"Subject_ready": {
+						"type": "text"
+					},
 					"dominant_hand": {
 						"type": "text",
 						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
@@ -137,8 +151,10 @@
 						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					},
 					"handedness": { "type": "text" },
-					"number_of_scans_before": { "type": "long" },
 					"participant_id": { 
+					"number_of_scans_before": {
+						"type": "text"
+					},
 						"type": "text",
 						"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 					},
@@ -179,10 +195,14 @@
 			"ReferencesAndLinks": {
 				"type": "text",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			"SEEGChannelCount": {
+				"type": "text"
+			},
+			"SamplingFrequency": {
+				"type": "text"
+			},
 			},
 			"RunsCount": { "type": "long" },
-			"SEEGChannelCount": { "type": "long" },
-			"SamplingFrequency": { "type": "long" },
 			"SessionsCount": { "type": "long" },
 			"Size": {
 				"type": "text",
@@ -197,8 +217,9 @@
 				"type": "text",
 				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+			"TriggerChannelCount": {
+				"type": "text"
 			},
-			"TriggerChannelCount": { "type": "long" },
 			"User": {
 				"type": "text",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
@@ -212,7 +233,9 @@
 				"index_options": "positions",
 				"fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
 			},
-			"version": { "type": "long" }
+			"version": {
+				"type": "text"
+			}
 		}
 	}
 }
