@@ -27,7 +27,7 @@ export interface Project extends Group {
 	admins?: string[]
 }
 
-const PROJECTS_GROUP = 'HIP-Projects' // Holds all HIP projects as sub groups
+const PROJECTS_GROUP = `HIP-Projects-${process.env.COLLAB_SUFFIX}` // Holds all HIP projects as sub groups
 const PROJECTS_ADMINS_GROUP = 'HIP-Projects-admins' // Holds members allowed to create HIP projects
 const CACHE_KEY_PROJECTS = 'projects'
 
