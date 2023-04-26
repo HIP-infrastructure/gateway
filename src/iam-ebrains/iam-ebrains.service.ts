@@ -168,7 +168,7 @@ export class IamEbrainsService {
 		this.logger.debug(`createGroup(${name})`)
 
 		// sanitize name
-		const projectName = `${title.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}`
+		const projectName = `${name.replace(/[^a-zA-Z0-9]+/g, '-')}`
 
 		const url = `${this.apiUrl}/identity/groups`
 		const body = { name: projectName, title, description }
