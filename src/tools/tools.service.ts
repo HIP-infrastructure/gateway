@@ -1239,7 +1239,7 @@ export class ToolsService {
 			?.replace(/mnt\/nextcloud-dp\/nextcloud\/data\/.*?\/files\//, '')
 			.replace(
 				/\/mnt\/nextcloud-dp\/nextcloud\/data\/__groupfolders\/.*?\//,
-				'/groupfolder/'
+				'/GROUP_FOLDER/'
 			)
 	}
 
@@ -2254,13 +2254,13 @@ export class ToolsService {
 	public deleteSubject() {}
 
 	/**
-	 * TODO: To be completed
-	 * @param path
-	 * @param param1
-	 * @returns
+	 * Get the list of participants in a BIDS dataset from the participants.tsv file
+	 * @param path to the database with a trailing slash (e.g. /dataset)
+	 * @param cookie
+	 * @returns Participant[]
 	 */
 	public async participants(path: string, { cookie }: any) {
-		const nextPath = `${path}${PARTICIPANTS_FILE}`
+		const nextPath = `${path}/${PARTICIPANTS_FILE}`
 
 		return this.participantsWithPath(nextPath, cookie)
 	}
@@ -2666,7 +2666,7 @@ export class ToolsService {
 		userId: string,
 		userGroups: GroupFolder[]
 	) {
-		this.logger.debug(`filePath ${path} and ${userId}`)
+		this.logger.debug(`filePath ${path} and ${userId}, userGroups: ${userGroups}`)
 		try {
 			// Remove the first slash
 			path = path.replace(/^\//, '')
