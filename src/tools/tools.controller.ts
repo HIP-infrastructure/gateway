@@ -36,18 +36,16 @@ export class ToolsController {
 
 	@Get('/bids/datasets/create_index')
 	createBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
-		this.nextcloudService.authenticate(req).then(async () => {
-			this.toolsService.createBIDSDatasetsIndex()
-		})
-		return res.status(HttpStatus.OK).send()
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.createBIDSDatasetsIndex()
+		}) 
 	}
 
 	@Get('/bids/datasets/delete_index')
 	deleteBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
-		this.nextcloudService.authenticate(req).then(async () => {
-			this.toolsService.deleteBIDSDatasetsIndex()
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.deleteBIDSDatasetsIndex()
 		})
-		return res.status(HttpStatus.OK).send()
 	}
 
 	@Get('/bids/dataset/index')
@@ -58,10 +56,9 @@ export class ToolsController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.nextcloudService.authenticate(req).then(async () => {
-			this.toolsService.indexBIDSDataset(owner, path, id)
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.indexBIDSDataset(owner, path, id)
 		})
-		return res.status(HttpStatus.OK).send()
 	}
 
 	@Get('/bids/dataset/delete')
@@ -71,10 +68,9 @@ export class ToolsController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.nextcloudService.authenticate(req).then(async () => {
-			this.toolsService.deleteBIDSDataset(owner, path)
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.deleteBIDSDataset(owner, path)
 		})
-		return res.status(HttpStatus.OK).send()
 	}
 
 	@UsePipes(ValidationPipe)
@@ -84,14 +80,14 @@ export class ToolsController {
 		@Req() req: Request,
 		@Res() res: Response
 	) {
-		this.nextcloudService.authenticate(req).then(async () => {
+		return this.nextcloudService.authenticate(req).then(async () => {
 			const { cookie, requesttoken } = req.headers
-			this.toolsService.refreshBIDSDatasetsIndex(owner, {
+			return this.toolsService.refreshBIDSDatasetsIndex(owner, {
 				cookie,
 				requesttoken
 			})
 		})
-		return res.status(HttpStatus.OK).send()
+		// return res.status(HttpStatus.OK).send()
 	}
 
 	@UsePipes(ValidationPipe)
