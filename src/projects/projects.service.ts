@@ -357,13 +357,14 @@ function to change the ownership of the user's folder in the collab workspace to
 		projectName: string
 	) {
 		try {
+			this.logger.debug(`importDocument(${userId}, ${JSON.stringify(importDocumentDto)})`)
+
 			const projectPath = `${process.env.COLLAB_MOUNT}/__groupfolders/${projectName}`
 			const targetFileNameBits = importDocumentDto.sourceFilePath.split('/')
 			const targetFileName = targetFileNameBits[targetFileNameBits.length - 1]
-
 			await this.toolsService.importDocumentToProject(
 				userId,
-				importDocumentDto.sourceFilePath,
+				importDocumentDto.sourceFilePath.replace('/GROUP_FOLDER', ''),
 				projectPath,
 				`${importDocumentDto.targetDirPath}/${targetFileName}`
 			)
