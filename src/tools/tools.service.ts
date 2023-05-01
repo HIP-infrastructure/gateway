@@ -2668,8 +2668,8 @@ export class ToolsService {
 	) {
 		this.logger.debug(`filePath ${path} and ${userId}, userGroups: ${userGroups}`)
 		try {
-			// Remove the first slash
-			path = path.replace(/^\//, '')
+			// Remove the first slash and GROUP_FOLDER if it exists
+			path = path.replace('/GROUP_FOLDER', '').replace(/^\//, '')
 			// Get the root path
 			let rootPath = path.split('/')[0]
 
