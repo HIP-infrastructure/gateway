@@ -15,6 +15,8 @@ const LOG_LEVEL = process.env.LOG_LEVEL
 	? parseInt(process.env.LOG_LEVEL)
 	: DEFAULT_LEVEL
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+
 const config = new DocumentBuilder()
 	.setTitle('HIP Gateway API')
 	.setDescription('The HIP API description')
@@ -33,7 +35,7 @@ async function bootstrap() {
 	app.useStaticAssets(publicFolder)
 	app.useGlobalPipes(new ValidationPipe({
 		transform: true,
-	}));
+	}))
 
 	const document = SwaggerModule.createDocument(app, config)
 	SwaggerModule.setup('api', app, document)
