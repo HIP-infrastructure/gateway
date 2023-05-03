@@ -27,14 +27,16 @@ r.package:
 	tar -czvf release.tar.gz -C dist .
 
 #deploy.dev: @ Deploys the application to the development environment
-deploy.dev:
+deploy.dev: deploy.dev.stop
 	# TODO: prevent the build if no .env
 	cp ../.env .env
+	sudo chmod 777 .
 	sudo chown -R www-data: dist
-	sudo -u www-data -E npm run start:dev
+	npm install
+	sudo npm run start:dev
 
 deploy.dev.stop:
-	for pid in $(ps -fu www-data  | grep gateway | awk '{ print $2 }'); do sudo kill -9 $pid; done 
+	for pid in $(ps -fu root  | grep gateway | awk '{ print $2 }'); do sudo kill -9 $pid; done 
 
 #help:	@ List available tasks on this project
 help:

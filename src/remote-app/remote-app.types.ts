@@ -1,4 +1,5 @@
 import { StateMachine, AnyEventObject, Interpreter } from 'xstate'
+import { BackendId as BackendId, WorkspaceType as WorkspaceType } from './remote-app.controller';
 
 export type ContainerStateMachine = StateMachine<
 	any,
@@ -14,25 +15,31 @@ export type ContainerStateMachine = StateMachine<
 export interface ContainerContext {
 	id: string
 	name: string
-	user: string
+	userId: string
 	url: string
 	state: ContainerState
 	nextAction?: ContainerAction
 	error: Error | null
 	type: ContainerType
 	parentId?: string
+	groupIds?: string[]
+	workspace: WorkspaceType
+	dataSource: {
+		fsUrl: string
+		authUrl: string
+		groupFolders: {
+			label: string
+			id: number | string
+			path: string
+		}[]
+	}
+	computeSource: {
+		backendId: BackendId
+	}
 }
 
-export interface WebdavOptions {
-	nc: string
-	app: string
-	ab: string
-	groupFolders?: {
-		label: string
-		id: number
-		path: string
-	}[]
-}
+export type ResponseContext = Omit<ContainerContext, 
+"nextAction" | "dataSource" | "computeSource" >;
 
 export enum ContainerState {
 	UNINITIALIZED = 'uninitialized',

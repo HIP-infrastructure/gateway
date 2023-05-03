@@ -1,1 +1,2 @@
-export class Group {}
+export class Group {
+}

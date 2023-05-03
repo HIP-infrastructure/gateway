@@ -1,12 +1,17 @@
 # Human Intracerebral EEG Platform - Gateway
 ## Overview
-The HIP is a platform for processing and sharing HUMAN intracerebral EEG data  
+The HIP is a platform for processing and sharing Human intracerebral EEG data  
 [More...](https://www.humanbrainproject.eu/en/medicine/human-intracerebral-eeg-platform/)
 
 This service is part of the HIP infrastructure and runs a gateway between all different services. It also communicate directly with the [HIP Frontend](https://github.com/HIP-infrastructure/hip).  
 
 The main frontend deployment service is [Nextcloud docker](https://github.com/HIP-infrastructure/nextcloud-docker).
-While the backend service for remote apps is the [App in Browser](https://github.com/HIP-infrastructure/app-in-browser)  
+While the backend service for remote apps is the [App in Browser](https://github.com/HIP-infrastructure/app-in-browser)
+
+
+## Requirements
+- npm 9.2.0
+- node v16.16.0
 
 ## Development - Getting Started
 

@@ -1,9 +1,13 @@
 import { HttpService } from '@nestjs/axios'
-import { Injectable, Logger, BadRequestException } from '@nestjs/common'
+import {
+	Injectable,
+	Logger,
+	BadRequestException,
+	HttpException,
+} from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 const fs = require('fs')
-const path = require('path')
 
 interface ISearch {
 	name: string
@@ -51,7 +55,7 @@ export class FilesService {
 	constructor(
 		private readonly httpService: HttpService,
 		private readonly nextcloudService: NextcloudService
-	) {}
+	) { }
 
 	private logger = new Logger('Files Service')
 
@@ -74,17 +78,8 @@ export class FilesService {
 
 	public async files(userId: string, path: string) {
 		try {
-			let relativePath
-			if (/groupfolder/.test(path)) {
-				const filePath = path.split('/').slice(2)
-				const groupPath = await this.groupPath(filePath[0], userId)
-				relativePath = `${groupPath}/${filePath.slice(1).join('/')}`
-			} else {
-				relativePath = `${userId}/files${path}`
-			}
-
-			const fsPath = `${process.env.PRIVATE_FILESYSTEM}/${relativePath}`
-			const files = fs.readdirSync(fsPath, { withFileTypes: true })
+			const absolutePath = await this.absolutePath(userId, path)
+			const files = fs.readdirSync(absolutePath, { withFileTypes: true })
 
 			return Promise.resolve(
 				files.map(file => ({
@@ -98,6 +93,40 @@ export class FilesService {
 			this.logger.error(e)
 			throw new BadRequestException('ENOTDIR: not a directory')
 		}
+	}
+
+	public async content(userId: string, path: string) {
+		try {
+			const absolutePath = await this.absolutePath(userId, path)
+
+			return new Promise((resolve, reject) => {
+				fs.readFile(absolutePath, 'utf8', function (err, data) {
+					if (err) {
+						reject(err)
+					}
+					resolve(data)
+				})
+			})
+		} catch (e) {
+			this.logger.error(e)
+			throw new HttpException(e.message, e.status)
+		}
+	}
+
+	private async absolutePath(userId: string, path: string) {
+		let relativePath
+		this.logger.debug(`absolutePath, ${path}`)
+		if (/GROUP_FOLDER/.test(path)) {
+			const filePath = path.split('/').slice(2)
+			const groupPath = await this.groupPath(filePath[0], userId)
+			relativePath = `${groupPath}/${filePath.slice(1).join('/')}`
+		} else {
+			relativePath = `${userId}/files${path}`
+		}
+		const fsPath = `${process.env.PRIVATE_FILESYSTEM}/${relativePath}`
+
+		this.logger.debug(`fsPath, ${fsPath}`)
+		return fsPath 
 	}
 
 	private async groupPath(name: string, userId: string) {

@@ -1,23 +1,29 @@
+import { estypes } from '@elastic/elasticsearch'
 import {
 	Body,
 	Controller,
+	DefaultValuePipe,
 	Get,
 	HttpStatus,
 	Patch,
+	ParseArrayPipe,
 	Post,
 	Query,
+	Logger,
 	Request as Req,
 	Response as Res,
 	UsePipes,
-	ValidationPipe,
+	ValidationPipe
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { BidsGetSubjectDto } from './dto/bids-get-subject.dto'
+import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-participants-tsv.dto'
 import { CreateBidsDatasetDto } from './dto/create-bids-dataset.dto'
 import { CreateSubjectDto } from './dto/create-subject.dto'
 import { EditSubjectClinicalDto } from './dto/edit-subject-clinical.dto'
-import { ToolsService } from './tools.service'
+import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
+import { BIDSDataset, ToolsService } from './tools.service'
 
 @Controller('tools')
 export class ToolsController {
@@ -26,24 +32,155 @@ export class ToolsController {
 		private readonly nextcloudService: NextcloudService
 	) {}
 
-	@Get('/bids/datasets')
-	async getBids(@Req() req: Request, @Res() res: Response) {
-		await this.nextcloudService.authenticate(req).then(async () => {
-			const { cookie } = req.headers
-			const ds = await this.toolsService.getBIDSDatasets({ cookie })
+	private logger = new Logger('ToolsController')
 
-			return res.status(HttpStatus.OK).json(ds)
+	@Get('/bids/datasets/create_index')
+	createBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.createBIDSDatasetsIndex()
+		}) 
+	}
+
+	@Get('/bids/datasets/delete_index')
+	deleteBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.deleteBIDSDatasetsIndex()
+		})
+	}
+
+	@Get('/bids/dataset/index')
+	indexBIDSDataset(
+		@Query('owner') owner: string,
+		@Query('path') path: string,
+		@Query('id') id: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.indexBIDSDataset(owner, path, id)
+		})
+	}
+
+	@Get('/bids/dataset/delete')
+	deleteBIDSDataset(
+		@Query('owner') owner: string,
+		@Query('path') path: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		return this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.deleteBIDSDataset(owner, path)
+		})
+	}
+
+	@UsePipes(ValidationPipe)
+	@Get('/bids/datasets/refresh_index')
+	async refreshDatasetsIndex(
+		@Query('owner') owner: string,
+		@Req() req: Request,
+		@Res() res: Response
+	) {
+		return this.nextcloudService.authenticate(req).then(async () => {
+			const { cookie, requesttoken } = req.headers
+			return this.toolsService.refreshBIDSDatasetsIndex(owner, {
+				cookie,
+				requesttoken
+			})
+		})
+		// return res.status(HttpStatus.OK).send()
+	}
+
+	@UsePipes(ValidationPipe)
+	@Get('/bids/datasets/search')
+	async searchBidsDatasets(
+		@Query('owner') owner: string,
+		@Query('query') query: string,
+		@Query('ageRange', new ParseArrayPipe({ items: Number, separator: ',' }))
+		ageRange: number[],
+		@Query(
+			'participantsCountRange',
+			new ParseArrayPipe({ items: Number, separator: ',' })
+		)
+		participantsCountRange: number[],
+		@Query(
+			'datatypes',
+			new DefaultValuePipe(['*']),
+			new ParseArrayPipe({ items: String, separator: ',', optional: true })
+		)
+		datatypes: string[],
+		@Query('page') page: number,
+		@Query('nbOfResults') nbOfResults: number,
+		@Req() req: Request
+	) {
+		const searchQueryOpts: SearchBidsDatasetsQueryOptsDto = {
+			owner,
+			textQuery: query,
+			filterPaths: true,
+			ageRange,
+			participantsCountRange,
+			datatypes,
+			page,
+			nbOfResults
+		}
+
+		return await this.nextcloudService.authenticate(req).then(async () => {
+			const { cookie, requesttoken } = req.headers
+			// FIXME: See if this.refreshDatasetsIndex is needed as for now,
+			//        it is run in parallel with another one and causes
+			//		  double indexing
+			/* this.toolsService.refreshBIDSDatasetsIndex(owner, {
+				cookie,
+				requesttoken,
+			}) */
+			const searchResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = await this.toolsService.searchBidsDatasets(searchQueryOpts)
+
+			const foundDatasets = searchResults.datasets.map(dataset => ({
+				// query metadata fields returned by elastic
+				id: dataset._id,
+				...dataset._source
+			}))
+
+			if (foundDatasets.length > 0) {
+				return {
+					datasets: foundDatasets,
+					total: searchResults.total
+				}
+			} else {
+				return {
+					datasets: [],
+					total: 0
+				}
+			}
+		})
+	}
+
+	@UsePipes(ValidationPipe)
+	@Get('/bids/datasets/count')
+	async getBidsDatasetsCount(@Req() req: Request) {
+		return await this.nextcloudService.authenticate(req).then(async () => {
+			return this.toolsService.getDatasetsCount()
 		})
 	}
 
 	@UsePipes(ValidationPipe)
 	@Post('/bids/dataset')
-	async createDatabase(
+	async createDataset(
 		@Body() createBidsDatasetDto: CreateBidsDatasetDto,
 		@Req() req: Request
 	) {
 		return await this.nextcloudService.authenticate(req).then(() => {
 			return this.toolsService.createBidsDataset(createBidsDatasetDto)
+		})
+	}
+
+	@UsePipes(ValidationPipe)
+	@Get('/bids/dataset/generate_id')
+	async generateDatasetId(@Query('owner') owner: string, @Req() req: Request) {
+		return await this.nextcloudService.authenticate(req).then(() => {
+			return this.toolsService.generateDatasetId(owner)
 		})
 	}
 
@@ -59,9 +196,8 @@ export class ToolsController {
 			const bidsGetSubjectDto: BidsGetSubjectDto = {
 				owner,
 				path,
-				sub,
+				sub
 			}
-
 			return this.toolsService.getSubject(bidsGetSubjectDto)
 		})
 	}
@@ -98,6 +234,24 @@ export class ToolsController {
 		return await this.nextcloudService.authenticate(req).then(() => {
 			const { cookie } = req.headers
 			return this.toolsService.participants(path, { cookie })
+		})
+	}
+
+	@UsePipes(ValidationPipe)
+	@Post('/bids/dataset/write_participants_tsv')
+	async write(
+		@Query('owner') owner: string,
+		@Query('datasetPath') datasetPath: string,
+		@Body()
+		createBidsDatasetParticipantsTsvDto: CreateBidsDatasetParticipantsTsvDto,
+		@Req() req: Request
+	) {
+		return await this.nextcloudService.authenticate(req).then(() => {
+			return this.toolsService.writeBIDSDatasetParticipantsTSV(
+				owner,
+				datasetPath,
+				createBidsDatasetParticipantsTsvDto
+			)
 		})
 	}
 }

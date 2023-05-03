@@ -1,196 +1,235 @@
 [
-    {
-        "label": "AMU-NS",
-        "id": "amu-ns",
-        "pi": "Dr. Olivier David",
-        "country": "France",
-        "city": "Marseille",
-        "logo": "media/amu-tng__logo.jpeg",
-        "description": "Aix-Marseille University",
-        "website": "https://www.univ-amu.fr/",
-        "socialnetwork": {
-            "twitter": "https://twitter.com/univamu",
-            "youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
-            "facebook": "https://www.facebook.com/aixmarseilleuniversite/",
-            "linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
-            "researchgate":
-                "https://www.researchgate.net/institution/Aix-Marseille-University"
-        }
-    },
-    {
-        "label": "CHUV",
-        "id": "chuv",
-        "pi": "Professor Philippe Ryvlin",
-        "country": "Switzerland",
-        "city": "Lausanne",
-        "logo": "media/chuv__logo.png",
-        "description": "Centre Hospitalier Universitaire de Lausanne (CHUV)",
-        "website": "https://www.chuv.ch/",
-        "socialnetwork": {
-            "twitter": "https://twitter.com/CHUVLausanne",
-            "instagram": "https://www.instagram.com/chuvlausanne/",
-            "facebook": "https://www.facebook.com/CHUVLausanne",
-            "linkedin": "https://www.linkedin.com/company/chuv/"
-        }
-    },
-    {
-        "label": "AMU-TNG",
-        "id": "amu-tng",
-        "pi": "Dr. Viktor Jirsa",
-        "country": "France",
-        "city": "Marseille",
-        "logo": "media/amu-tng__logo.jpeg",
-        "description": "Aix-Marseille University",
-        "website": "https://www.univ-amu.fr/",
-        "socialnetwork": {
-            "twitter": "https://twitter.com/univamu",
-            "youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
-            "facebook": "https://www.facebook.com/aixmarseilleuniversite/",
-            "linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
-            "researchgate":
-                "https://www.researchgate.net/institution/Aix-Marseille-University"
-        }
-    },
-    {
-        "label": "APHM",
-        "id": "aphm",
-        "pi": "Professor Fabrice Bartolomei",
-        "country": "France",
-        "city": "Marseille",
-        "logo": "media/amu-tng__logo.jpeg",
-        "description": "University Hospitals of Marseille, Epilepsy Dpt.",
-        "website": "https://www.univ-amu.fr/",
-        "socialnetwork": {
-            "twitter": "https://twitter.com/univamu",
-            "youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
-            "facebook": "https://www.facebook.com/aixmarseilleuniversite/",
-            "linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
-            "researchgate":
-                "https://www.researchgate.net/institution/Aix-Marseille-University"
-        }
-    },
-    {
-        "label": "CHRU-LILLE",
-        "id": "chru-lille",
-        "pi": "Professor Philippe Derambure",
-        "country": "France",
-        "city": "Lille",
-        "logo": "media/chru-lille__logo.png",
-        "description": "CHRU LILLE, Epilepsy Unit",
-        "website": "https://www.chu-lille.fr/",
-        "socialnetwork": {
-            "youtube": "https://www.youtube.com/channel/UCvB81CdUUKNpaGCTaJFkNVQ",
-            "instagram": "https://www.instagram.com/chulille/",
-            "twitter": "https://twitter.com/CHU_Lille",
-            "facebook": "https://www.facebook.com/chulille"
-        }
-    },
-    {
-        "label": "CHU-LYON",
-        "id": "chu-lyon",
-        "pi": "Professor Alexis Arzimanoglou",
-        "country": "France",
-        "city": "Lyon",
-        "logo": "media/chu-lyon__logo.png",
-        "description": "Hospices Civils de Lyon (GHE-HCL)",
-        "website": "https://www.chu-lyon.fr/",
-        "socialnetwork": {
-            "youtube": "https://www.youtube.com/ChudeLyon",
-            "instagram": "https://www.instagram.com/hospicescivilslyon/",
-            "twitter": "https://twitter.com/chudelyon",
-            "facebook": "https://www.facebook.com/CHUdeLyon/",
-            "linkedin": "https://www.linkedin.com/company/hospices-civils-de-lyon/"
-        }
-    },
-    {
-        "label": "FNUSA",
-        "id": "fnusa",
-        "pi": "Professor Milan Brazdil",
-        "country": "Czech Republic",
-        "city": "BRNO",
-        "logo": "media/fnusa__logo.png",
-        "description": "St. Anne's University Hospital Czech Republic",
-        "website": "https://www.fnusa.cz/en/hp/"
-    },
-    {
-        "label": "HUS",
-        "id": "hus",
-        "pi": "Professor Eeeva-Liisa Metsähonkala",
-        "country": "Finland",
-        "city": "Helsinki",
-        "logo": "media/hus__logo.png",
-        "description":
-            "Helsinki University Hospital (HUS), Hospital District of Helsinki and Uusimaa",
-        "website": "https://www.hus.fi/en",
-        "socialnetwork": {
-            "youtube": "https://www.youtube.com/channel/UChHLhcahbu3iv-2rN7Rg6Sw",
-            "instagram": "https://www.instagram.com/hus_sairaala/",
-            "twitter": "https://twitter.com/HUS_fi",
-            "facebook": "https://www.facebook.com/HUS.fi",
-            "linkedin": "https://www.linkedin.com/company/huslinkedin/"
-        }
-    },
-    {
-        "label": "OU-SSE",
-        "id": "ou-sse",
-        "pi": "Professor Morten Lossius",
-        "country": "Norway",
-        "city": "Oslo",
-        "logo": "media/ou-sse__logo.png",
-        "description":
-            "The Norwegian National Unit for Epilepsy, Oslo universitetssykehus",
-        "website": "https://oslo-universitetssykehus.no/",
-        "socialnetwork": {
-            "youtube": "https://www.youtube.com/channel/UCRkdLJ014TTOXh8r8k6SciA",
-            "instagram": "https://www.instagram.com/oushf/",
-            "twitter": "https://twitter.com/oslounivsykehus",
-            "facebook": "https://www.facebook.com/oslouniversitetssykehus",
-            "linkedin":
-                "https://www.linkedin.com/company/oslo-universitetssykehus/"
-        }
-    },
-    {
-        "label": "PSMAR",
-        "id": "psmar",
-        "pi": "Professor Rodrigo Rocamora Zuniga",
-        "country": "Spain",
-        "city": "Barcelona",
-        "logo": "media/psmar__logo.png",
-        "description": "Hospital del Mar-Parc de Salut Mar",
-        "website": "https://www.parcdesalutmar.cat/en/",
-        "socialnetwork": {
-            "youtube": "https://www.youtube.com/HospitaldelMarIMAS",
-            "instagram": "https://www.instagram.com/hospitaldelmar/?hl=es",
-            "twitter": "https://twitter.com/hospitaldelmar",
-            "linkedin":
-                "https://www.linkedin.com/company/hospital-del-mar--parc-de-salut-mar/?originalSubdomain=es"
-        }
-    },
-    {
-        "label": "UCBL",
-        "id": "ucbl",
-        "pi": "Dr. Jean-Philippe Lachaux ",
-        "country": "France",
-        "city": "Lyon",
-        "logo": "media/lyon1__logo.png",
-        "description": "Université Claude Bernard Lyon 1",
-        "website": "https://www.univ-lyon1.fr/",
-        "socialnetwork": {
-            "youtube": "https://www.youtube.com/UnivLyon1",
-            "instagram": "https://www.instagram.com/univlyon1/",
-            "twitter": "https://twitter.com/UnivLyon1",
-            "facebook": "https://www.facebook.com/UnivLyon1"
-        }
-    },
-    {
-        "label": "UMCU",
-        "id": "umcu",
-        "pi": "Professor Kees Braun",
-        "country": "Netherlands",
-        "city": "Utrecht",
-        "logo": "media/umcu__logo.png",
-        "description":
-            "University Medical Center Utrecht (Brain Center Rudolf Magnus)",
-        "website": "https://www.umcutrecht.nl/en/"
-    }
+	{
+		"label": "AMU-NS",
+		"id": "amu-ns",
+		"pi": "Dr. Olivier David",
+		"country": "France",
+		"city": "Marseille",
+		"logo": "media/amu-tng__logo.jpeg",
+		"description": "Aix-Marseille University",
+		"website": "https://www.univ-amu.fr/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/univamu",
+			"youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
+			"facebook": "https://www.facebook.com/aixmarseilleuniversite/",
+			"linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
+			"researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
+		}
+	},
+	{
+		"label": "CHUV",
+		"id": "chuv",
+		"pi": "Professor Philippe Ryvlin",
+		"country": "Switzerland",
+		"city": "Lausanne",
+		"logo": "media/chuv__logo.png",
+		"description": "Centre Hospitalier Universitaire de Lausanne (CHUV)",
+		"website": "https://www.chuv.ch/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/CHUVLausanne",
+			"instagram": "https://www.instagram.com/chuvlausanne/",
+			"facebook": "https://www.facebook.com/CHUVLausanne",
+			"linkedin": "https://www.linkedin.com/company/chuv/"
+		}
+	},
+	{
+		"label": "AMU-TNG",
+		"id": "amu-tng",
+		"pi": "Dr. Viktor Jirsa",
+		"country": "France",
+		"city": "Marseille",
+		"logo": "media/amu-tng__logo.jpeg",
+		"description": "Aix-Marseille University",
+		"website": "https://www.univ-amu.fr/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/univamu",
+			"youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
+			"facebook": "https://www.facebook.com/aixmarseilleuniversite/",
+			"linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
+			"researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
+		}
+	},
+	{
+		"label": "APHM",
+		"id": "aphm",
+		"pi": "Professor Fabrice Bartolomei",
+		"country": "France",
+		"city": "Marseille",
+		"logo": "media/amu-tng__logo.jpeg",
+		"description": "University Hospitals of Marseille, Epilepsy Dpt.",
+		"website": "https://www.univ-amu.fr/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/univamu",
+			"youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
+			"facebook": "https://www.facebook.com/aixmarseilleuniversite/",
+			"linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
+			"researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
+		}
+	},
+	{
+		"label": "CHRU-LILLE",
+		"id": "chru-lille",
+		"pi": "Professor Philippe Derambure",
+		"country": "France",
+		"city": "Lille",
+		"logo": "media/chru-lille__logo.png",
+		"description": "CHRU LILLE, Epilepsy Unit",
+		"website": "https://www.chu-lille.fr/",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/channel/UCvB81CdUUKNpaGCTaJFkNVQ",
+			"instagram": "https://www.instagram.com/chulille/",
+			"twitter": "https://twitter.com/CHU_Lille",
+			"facebook": "https://www.facebook.com/chulille"
+		}
+	},
+	{
+		"label": "CHM",
+		"id": "chm",
+		"pi": "Professor Carmen Barba",
+		"country": "Italy",
+		"city": "Florence",
+		"logo": "media/chm__logo.png",
+		"description": "Children's Hospital Meyer",
+		"website": "https://www.meyer.it/index.php/en/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/fondazionemeyer",
+			"youtube": "",
+			"facebook": "https://www.facebook.com/fondazione.meyer",
+			"instagram": "https://www.instagram.com/fondazionemeyer/"
+		}
+	},
+	{
+		"label": "CHUGA",
+		"id": "chuga",
+		"pi": "Philippe Kahane",
+		"country": "France",
+		"city": "Grenoble",
+		"logo": "media/chuga__logo.png",
+		"description": "Le CHU Grenoble Alpes",
+		"website": "https://www.chu-grenoble.fr/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/chu_grenoble",
+			"youtube": "https://www.youtube.com/user/CHUGrenoble"
+		}
+	},
+	{
+		"label": "CHU-LYON",
+		"id": "chu-lyon",
+		"pi": "Professor Alexis Arzimanoglou",
+		"country": "France",
+		"city": "Lyon",
+		"logo": "media/chu-lyon__logo.png",
+		"description": "Hospices Civils de Lyon (GHE-HCL)",
+		"website": "https://www.chu-lyon.fr/",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/ChudeLyon",
+			"instagram": "https://www.instagram.com/hospicescivilslyon/",
+			"twitter": "https://twitter.com/chudelyon",
+			"facebook": "https://www.facebook.com/CHUdeLyon/",
+			"linkedin": "https://www.linkedin.com/company/hospices-civils-de-lyon/"
+		}
+	},
+	{
+		"label": "FNUSA",
+		"id": "fnusa",
+		"pi": "Professor Milan Brazdil",
+		"country": "Czech Republic",
+		"city": "BRNO",
+		"logo": "media/fnusa__logo.png",
+		"description": "St. Anne's University Hospital Czech Republic",
+		"website": "https://www.fnusa.cz/en/hp/"
+	},
+	{
+		"label": "HUS",
+		"id": "hus",
+		"pi": "Professor Eeeva-Liisa Metsähonkala",
+		"country": "Finland",
+		"city": "Helsinki",
+		"logo": "media/hus__logo.png",
+		"description": "Helsinki University Hospital (HUS), Hospital District of Helsinki and Uusimaa",
+		"website": "https://www.hus.fi/en",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/channel/UChHLhcahbu3iv-2rN7Rg6Sw",
+			"instagram": "https://www.instagram.com/hus_sairaala/",
+			"twitter": "https://twitter.com/HUS_fi",
+			"facebook": "https://www.facebook.com/HUS.fi",
+			"linkedin": "https://www.linkedin.com/company/huslinkedin/"
+		}
+	},
+	{
+		"label": "CHRU-S",
+		"id": "chru-s",
+		"pi": "Professor Edouard Hirsch",
+		"country": "France",
+		"city": "Strasbourg",
+		"logo": "media/chru-s__logo.png",
+		"description": "Les Hôpitaux Universitaires de Strasbourg",
+		"website": "https://www.chru-strasbourg.fr/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/CHRUStrasbourg",
+			"instagram": "https://www.instagram.com/chrustrasbourg/",
+			"facebook": "https://www.facebook.com/CHRUStrasbourg/",
+			"linkedin": "https://www.linkedin.com/company/hopitaux-universitaires-de-strasbourg/",
+			"youtube": "https://www.youtube.com/channel/UCmi2NODbFOehHubjQamZtAQ"
+		}
+	},
+	{
+		"label": "OU-SSE",
+		"id": "ou-sse",
+		"pi": "Professor Morten Lossius",
+		"country": "Norway",
+		"city": "Oslo",
+		"logo": "media/ou-sse__logo.png",
+		"description": "The Norwegian National Unit for Epilepsy, Oslo universitetssykehus",
+		"website": "https://oslo-universitetssykehus.no/",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/channel/UCRkdLJ014TTOXh8r8k6SciA",
+			"instagram": "https://www.instagram.com/oushf/",
+			"twitter": "https://twitter.com/oslounivsykehus",
+			"facebook": "https://www.facebook.com/oslouniversitetssykehus",
+			"linkedin": "https://www.linkedin.com/company/oslo-universitetssykehus/"
+		}
+	},
+	{
+		"label": "PSMAR",
+		"id": "psmar",
+		"pi": "Professor Rodrigo Rocamora Zuniga",
+		"country": "Spain",
+		"city": "Barcelona",
+		"logo": "media/psmar__logo.png",
+		"description": "Hospital del Mar-Parc de Salut Mar",
+		"website": "https://www.parcdesalutmar.cat/en/",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/HospitaldelMarIMAS",
+			"instagram": "https://www.instagram.com/hospitaldelmar/?hl=es",
+			"twitter": "https://twitter.com/hospitaldelmar",
+			"linkedin": "https://www.linkedin.com/company/hospital-del-mar--parc-de-salut-mar/?originalSubdomain=es"
+		}
+	},
+	{
+		"label": "UCBL",
+		"id": "ucbl",
+		"pi": "Dr. Jean-Philippe Lachaux ",
+		"country": "France",
+		"city": "Lyon",
+		"logo": "media/lyon1__logo.png",
+		"description": "Université Claude Bernard Lyon 1",
+		"website": "https://www.univ-lyon1.fr/",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/UnivLyon1",
+			"instagram": "https://www.instagram.com/univlyon1/",
+			"twitter": "https://twitter.com/UnivLyon1",
+			"facebook": "https://www.facebook.com/UnivLyon1"
+		}
+	},
+	{
+		"label": "UMCU",
+		"id": "umcu",
+		"pi": "Professor Kees Braun",
+		"country": "Netherlands",
+		"city": "Utrecht",
+		"logo": "media/umcu__logo.png",
+		"description": "University Medical Center Utrecht (Brain Center Rudolf Magnus)",
+		"website": "https://www.umcutrecht.nl/en/"
+	}
 ]
