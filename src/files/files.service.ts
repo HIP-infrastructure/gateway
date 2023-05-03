@@ -125,7 +125,8 @@ export class FilesService {
 		}
 		const fsPath = `${process.env.PRIVATE_FILESYSTEM}/${relativePath}`
 
-		return fsPath
+		this.logger.debug(`fsPath, ${fsPath}`)
+		return fsPath 
 	}
 
 	private async groupPath(name: string, userId: string) {
