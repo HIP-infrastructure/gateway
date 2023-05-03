@@ -25,8 +25,6 @@ import {
 	ResponseContext
 } from './remote-app.types'
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-
 export const httpService = new HttpService()
 
 export const backendConfig = (backendId: BackendId) => {
@@ -233,6 +231,7 @@ export class RemoteAppService {
 								type: ContainerAction.DESTROY,
 								nextContext: {
 									...remoteContext,
+									// nextAction: undefined,
 									error: undefined
 								}
 							})

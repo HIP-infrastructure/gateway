@@ -55,7 +55,7 @@ export class FilesService {
 	constructor(
 		private readonly httpService: HttpService,
 		private readonly nextcloudService: NextcloudService
-	) {}
+	) { }
 
 	private logger = new Logger('Files Service')
 
@@ -115,17 +115,18 @@ export class FilesService {
 
 	private async absolutePath(userId: string, path: string) {
 		let relativePath
-		if (/groupfolder/.test(path)) {
+		this.logger.debug(`absolutePath, ${path}`)
+		if (/GROUP_FOLDER/.test(path)) {
 			const filePath = path.split('/').slice(2)
 			const groupPath = await this.groupPath(filePath[0], userId)
 			relativePath = `${groupPath}/${filePath.slice(1).join('/')}`
 		} else {
 			relativePath = `${userId}/files${path}`
 		}
-
 		const fsPath = `${process.env.PRIVATE_FILESYSTEM}/${relativePath}`
 
-		return fsPath
+		this.logger.debug(`fsPath, ${fsPath}`)
+		return fsPath 
 	}
 
 	private async groupPath(name: string, userId: string) {

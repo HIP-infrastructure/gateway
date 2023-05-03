@@ -252,9 +252,9 @@ export class ToolsService {
 
 			// Create the json to be passed with the request
 			const importBIDSSubjectToProjectDto = {
-				sourceDatasetPath,
+				sourceDatasetPath: sourceDatasetPath,
 				participantId: importSubjectDto.subjectId,
-				targetProjectPath
+				targetDatasetPath: `${targetProjectPath}/inputs/bids-dataset`
 			}
 			fs.writeFileSync(
 				`${tmpDir}/project.sub.import.json`,
@@ -316,15 +316,25 @@ export class ToolsService {
 	 * @returns - the file content
 	 */
 	public async importDocumentToProject(
-		sourceDocumentAbsPath: string,
+		userId: string,
+		sourceDocumentPath: string,
 		targetProjectAbsPath: string,
 		targetDocumentRelPath: string
 	) {
 		this.logger.debug(
-			`importDocumentToProject ${sourceDocumentAbsPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
+			`importDocumentToProject ${sourceDocumentPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
 		)
 
 		try {
+			const userGroups = await this.nextcloudService.groupFoldersForUserId(
+				userId
+			)
+			const sourceDocumentAbsPath = await this.filePath(
+				sourceDocumentPath,
+				userId,
+				userGroups
+			)
+
 			// Create unique tmp directory
 			const uniquId = Math.round(Date.now() + Math.random())
 			const tmpDir = `/tmp/${uniquId}`
@@ -820,7 +830,7 @@ export class ToolsService {
 				owner,
 				ownerGroups
 			)
-			datasetPathsQuery.push(`Path:"${datasetPath}"`)
+			datasetPathsQuery.push(`(Path:"${datasetPath}") AND (Owner:"${owner}")`)
 		}
 		const searchResults = await this.multiSearchBidsDatasets(datasetPathsQuery)
 		let foundDatasetIDs: string[] = []
@@ -862,7 +872,7 @@ export class ToolsService {
 		// find IDs of datasets with name existing in the index in the case of
 		// (1) a dataset with changed path and (2) a dataset copy
 		let foundRenamedDatasetsQuery = foundDatasets.map(
-			(d: BIDSDataset) => `"${d.Name}"`
+			(d: BIDSDataset) => `(Name:"${d.Name}") AND (Owner:"${owner}")`
 		)
 		const searchRenamedResults = await this.multiSearchBidsDatasets(
 			foundRenamedDatasetsQuery
@@ -1143,9 +1153,12 @@ export class ToolsService {
 			page: undefined,
 			nbOfResults: undefined
 		}
-		const searchIndexedResults = await this.searchBidsDatasets(searchQueryOpts)
+		const searchIndexedResults: {
+			datasets: estypes.SearchHit<BIDSDataset>[]
+			total: number | estypes.SearchTotalHits
+		} = await this.searchBidsDatasets(searchQueryOpts)
 		// extract absolute path of each dataset
-		const foundIndexedDatasetPaths = searchIndexedResults.map(
+		const foundIndexedDatasetPaths = searchIndexedResults.datasets.map(
 			dataset => dataset._source.Path
 		)
 		if (foundIndexedDatasetPaths.length > 0) {
@@ -1226,7 +1239,7 @@ export class ToolsService {
 			?.replace(/mnt\/nextcloud-dp\/nextcloud\/data\/.*?\/files\//, '')
 			.replace(
 				/\/mnt\/nextcloud-dp\/nextcloud\/data\/__groupfolders\/.*?\//,
-				'/groupfolder/'
+				'/GROUP_FOLDER/'
 			)
 	}
 
@@ -1248,6 +1261,18 @@ export class ToolsService {
 			// get list of BIDS datasets (folder name) present in the file system (accessible by user)
 			const s = await this.search(cookie, PARTICIPANTS_FILE)
 			const searchDatasetsResults = s?.entries
+
+			// return empty lists if no dataset found
+			if (searchDatasetsResults.length === 0) {
+				this.logger.warn(
+					'SKIP: Refresh BIDS Datasets Index because no dataset found!'
+				)
+				return {
+					addedDatasets: [],
+					renamedDatasets: [],
+					deletedDatasets: []
+				}
+			}
 
 			// get the list of datasets already indexed in the root of the user private space
 			// let searchIndexedResults = await this.searchBidsDatasets(owner)
@@ -1442,10 +1467,12 @@ export class ToolsService {
 				page: undefined,
 				nbOfResults: undefined
 			}
-			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
-			if (searchResults.length > 0) {
-				const currentDataset = searchResults[0]
-				this.logger.debug('Update a currently indexed dataset')
+			const searchResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = await this.searchBidsDatasets(datasetPathQueryOpts)
+			if (searchResults?.datasets.length > 0) {
+				const currentDataset = searchResults.datasets[0]
 				bidsDataset.Owner = currentDataset._source.Owner
 				bidsDataset.Groups = currentDataset._source.Groups
 				bidsDataset.CreationDate = currentDataset._source.CreationDate
@@ -1502,9 +1529,9 @@ export class ToolsService {
 				ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
 			}
 			// get abosolute path of the dataset
-			const dsPath = await this.filePath(path, owner, ownerGroups)
+			// const dsPath = await this.filePath(path, owner, ownerGroups)
 			// find the dataset index to be deleted
-			const datasetPathQuery = `Path:"${dsPath}"`
+			const datasetPathQuery = `Path:"${path}"`
 			const datasetPathQueryOpts: SearchBidsDatasetsQueryOptsDto = {
 				owner,
 				textQuery: datasetPathQuery,
@@ -1515,9 +1542,12 @@ export class ToolsService {
 				page: undefined,
 				nbOfResults: undefined
 			}
-			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
-			if (searchResults.length > 0) {
-				const dataset = searchResults[0]
+			const searchResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = await this.searchBidsDatasets(datasetPathQueryOpts)
+			if (searchResults.datasets.length > 0) {
+				const dataset = searchResults.datasets[0]
 				// delete the document with id related to the dataset
 				const datasetID = {
 					index: dataset._index,
@@ -1686,8 +1716,22 @@ export class ToolsService {
 				!datatypes.includes('')
 			) {
 				queryObj['bool']['must'].push({
-					terms: {
-						DataTypes: datatypes
+					terms_set: {
+						DataTypes: {
+							terms: datatypes,
+							minimum_should_match_script: {
+								source: 'params.num_terms'
+							},
+							boost: 1
+						}
+					}
+				})
+			}
+			// add owner filter only if owner is not 'all'
+			if (owner !== 'all') {
+				queryObj['bool']['must'].push({
+					term: {
+						Owner: owner
 					}
 				})
 			}
@@ -1699,9 +1743,9 @@ export class ToolsService {
 				query: queryObj
 			}
 			// perform and return the search query
-			const foundDatasets = await this.elasticClientRO
+			const { foundDatasets, total } = await this.elasticClientRO
 				.search(query_params)
-				.then((result: estypes.SearchResponse) => {
+				.then((result: estypes.SearchResponse<BIDSDataset>) => {
 					// remove "Path" in dataset objects returned to the frontend
 					if (filterPaths && result.hits.hits && result.hits.hits.length > 0) {
 						result.hits.hits.forEach((ds, index: number) => {
@@ -1713,17 +1757,24 @@ export class ToolsService {
 							}
 						})
 					}
-					return result.hits.hits
+					return {
+						foundDatasets: result.hits.hits,
+						total: result.hits.total['value']
+					}
 				})
-			// filter only datasets accessible by the user if owner is not 'all'
-			if (owner !== 'all') {
-				return await this.filterBidsDatasetsAccessibleByUser(
-					owner,
-					foundDatasets
-				)
-			} else {
-				return foundDatasets
-			}
+			return { datasets: foundDatasets, total: total }
+			// // filter only datasets accessible by the user if owner is not 'all'
+			// if (owner !== 'all') {
+			// 	return {
+			// 		datasets: await this.filterBidsDatasetsAccessibleByUser(
+			// 			owner,
+			// 			foundDatasets
+			// 		),
+			// 		total: total
+			// 	}
+			// } else {
+			// 	return { foundDatasets: foundDatasets, total: total }
+			// }
 		} catch (e) {
 			this.logger.error(e)
 			throw new HttpException(e.message, e.status || HttpStatus.BAD_REQUEST)
@@ -1830,7 +1881,10 @@ export class ToolsService {
 			// get number of datasets indexed in elasticsearch
 			const nbOfDatasets = await this.getDatasetsCount()
 
-			let searchIndexedResults = []
+			let searchIndexedResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = { datasets: [], total: 0 }
 			let datasetIDs = []
 			if (nbOfDatasets > 0) {
 				// get a list of dataset ids (<=> folder name) already indexed
@@ -1846,7 +1900,7 @@ export class ToolsService {
 				}
 				searchIndexedResults = await this.searchBidsDatasets(searchAllQueryOpts)
 				// extract ids of indexed datasets
-				datasetIDs = searchIndexedResults.map(dataset => dataset._id)
+				datasetIDs = searchIndexedResults.datasets.map(dataset => dataset._id)
 			}
 
 			// generate a first if using either the provided initial value or
@@ -2049,8 +2103,11 @@ export class ToolsService {
 				page: undefined,
 				nbOfResults: undefined
 			}
-			const searchResults = await this.searchBidsDatasets(datasetPathQueryOpts)
-			const datasetID = searchResults[0].id
+			const searchResults: {
+				datasets: estypes.SearchHit<BIDSDataset>[]
+				total: number | estypes.SearchTotalHits
+			} = await this.searchBidsDatasets(datasetPathQueryOpts)
+			const datasetID = searchResults.datasets[0]._id
 
 			// FIXME: replace by all settled
 			const filePathes = createSubject.files.map(file =>
@@ -2197,13 +2254,13 @@ export class ToolsService {
 	public deleteSubject() {}
 
 	/**
-	 * TODO: To be completed
-	 * @param path
-	 * @param param1
-	 * @returns
+	 * Get the list of participants in a BIDS dataset from the participants.tsv file
+	 * @param path to the database with a trailing slash (e.g. /dataset)
+	 * @param cookie
+	 * @returns Participant[]
 	 */
 	public async participants(path: string, { cookie }: any) {
-		const nextPath = `${path}${PARTICIPANTS_FILE}`
+		const nextPath = `${path}/${PARTICIPANTS_FILE}`
 
 		return this.participantsWithPath(nextPath, cookie)
 	}
@@ -2609,9 +2666,10 @@ export class ToolsService {
 		userId: string,
 		userGroups: GroupFolder[]
 	) {
+		this.logger.debug(`filePath ${path} and ${userId}, userGroups: ${userGroups}`)
 		try {
-			// Remove the first slash
-			path = path.replace(/^\//, '')
+			// Remove the first slash and GROUP_FOLDER if it exists
+			path = path.replace('/GROUP_FOLDER', '').replace(/^\//, '')
 			// Get the root path
 			let rootPath = path.split('/')[0]
 

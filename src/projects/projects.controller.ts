@@ -17,6 +17,7 @@ import { Project, ProjectsService } from './projects.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { ImportSubjectDto } from './dto/import-subject.dto'
+import { ImportDocumentDto } from './dto/import-document.dto'
 
 @Controller('projects')
 export class ProjectsController {
@@ -31,19 +32,8 @@ export class ProjectsController {
 	findAll(@Req() req: Request) {
 		this.logger.debug(`findAll()`)
 		return this.nextcloudService
-			.authenticate(req)
-			.then(() => this.projectsService.findAll())
-	}
-
-	@Get('forUser/:userId')
-	findUserProjects(
-		@Req() req: Request,
-		@Param('userId') userId: string
-	): Promise<Project[]> {
-		this.logger.debug(`findUserProjects(${userId})`)
-		return this.nextcloudService
-			.authenticate(req)
-			.then(() => this.projectsService.findUserProjects(userId))
+		.authUserIdFromRequest(req)
+			.then((userId) => this.projectsService.findAll(userId))
 	}
 
 	@Get(':projectName')
@@ -53,8 +43,8 @@ export class ProjectsController {
 	): Promise<Project> {
 		this.logger.debug(`findOne(${projectName})`)
 		return this.nextcloudService
-			.authenticate(req)
-			.then(() => this.projectsService.findOne(projectName))
+		.authUserIdFromRequest(req)
+			.then((userId) => this.projectsService.findOne(projectName, userId))
 	}
 
 	// TODO: @Roles(Role.Admin)
@@ -65,7 +55,7 @@ export class ProjectsController {
 	) {
 		this.logger.debug(`create(${JSON.stringify(createProjectDto)})`)
 		const userId = await this.nextcloudService.authUserIdFromRequest(req)
-		const isAdmin = await this.projectsService.hasProjectsAdminRole(userId)
+		const isAdmin = await this.projectsService.isProjectsAdmin(userId)
 
 		if (!isAdmin)
 			throw new HttpException(
@@ -92,20 +82,37 @@ export class ProjectsController {
 			.then(userId => this.projectsService.remove(projectName, userId))
 	}
 
-	@Post(':projectName/addUser/:username/')
+	@Post(':projectName/users/:userId')
 	addUser(
 		@Req() req: Request,
 		@Param('projectName') projectName: string,
-		@Param('username') username: string
+		@Param('userId') userId: string
 	) {
-		this.logger.debug(`addUser(${projectName}, ${username})`)
+		this.logger.debug(`addUser(${projectName}, ${userId})`)
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
 			.then(userId =>
 				this.projectsService.userIsProjectAdmin(projectName, userId)
 			)
 			.then(adminId =>
-				this.projectsService.addUserToProject(username, projectName)
+				this.projectsService.addUserToProject(userId, projectName)
+			)
+	}
+
+	@Delete(':projectName/users/:userId/')
+	removeUser(
+		@Req() req: Request,
+		@Param('projectName') projectName: string,
+		@Param('userId') userId: string
+	) {
+		this.logger.debug(`removeUser(${projectName}, ${userId})`)
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(userId =>
+				this.projectsService.userIsProjectAdmin(projectName, userId)
+			)
+			.then(adminId =>
+				this.projectsService.removeUserFromProject(userId, projectName)
 			)
 	}
 
@@ -137,12 +144,17 @@ export class ProjectsController {
 	}
 
 	@Post(':projectName/document')
-	importDocument(@Req() req: Request) {
+	importDocument(@Req() req: Request, @Param('projectName') projectName: string,
+	@Body() importDocumentDto: ImportDocumentDto) {
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
 			.then(async userId => {
 				this.logger.debug(`importDocument(${userId})`)
-				return this.projectsService.importDocument()
+				return this.projectsService.importDocument(
+					userId,
+					importDocumentDto,
+					projectName
+				)
 			})
 	}
 
