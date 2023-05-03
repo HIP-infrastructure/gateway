@@ -1234,13 +1234,20 @@ export class ToolsService {
 	 * @param absPath absolute path of a dataset
 	 * @returns relative path of a dataset
 	 */
-	public getRelativePath(absPath: string): string {
-		return absPath
+	public getRelativePath(absPath: string, userGroups: GroupFolder[]): string {
+		// Get the group folder label
+		const label = userGroups.find(g => absPath.includes(g.path))?.label
+		this.logger.debug(
+			'getRelativePath: absPath=' + absPath + ', group_label=' + label
+		)
+		const relPath = absPath
 			?.replace(/mnt\/nextcloud-dp\/nextcloud\/data\/.*?\/files\//, '')
 			.replace(
 				/\/mnt\/nextcloud-dp\/nextcloud\/data\/__groupfolders\/.*?\//,
-				'/GROUP_FOLDER/'
+				'/GROUP_FOLDER/' + label + '/'
 			)
+		this.logger.debug('relPath=' + relPath)
+		return relPath
 	}
 
 	/**
@@ -1332,7 +1339,8 @@ export class ToolsService {
 				addedBidsDatasets.forEach((ds: BIDSDataset, index: number) => {
 					if (ds && ds.hasOwnProperty('Path')) {
 						addedBidsDatasets[index].Path = this.getRelativePath(
-							addedBidsDatasets[index].Path
+							addedBidsDatasets[index].Path,
+							groupFolders
 						)
 					}
 				})
@@ -1341,7 +1349,8 @@ export class ToolsService {
 				renamedBidsDatasets.forEach((ds: BIDSDataset, index: number) => {
 					if (ds && ds.hasOwnProperty('Path')) {
 						renamedBidsDatasets[index].Path = this.getRelativePath(
-							renamedBidsDatasets[index].Path
+							renamedBidsDatasets[index].Path,
+							groupFolders
 						)
 					}
 				})
@@ -1502,7 +1511,10 @@ export class ToolsService {
 			// create and send elasticsearch bulk to index the dataset
 			await this.sendElasticSearchDatasetsBulk([bidsDataset])
 
-			bidsDataset.Path = this.getRelativePath(bidsDataset.Path)
+			bidsDataset.Path = this.getRelativePath(
+				bidsDataset.Path,
+				bidsDataset.Groups
+			)
 
 			return bidsDataset
 		} catch (e) {
@@ -1752,7 +1764,8 @@ export class ToolsService {
 							if (ds && ds['_source'].hasOwnProperty('Path')) {
 								result.hits.hits[index]['_source']['Path'] =
 									this.getRelativePath(
-										result.hits.hits[index]['_source']['Path']
+										result.hits.hits[index]['_source']['Path'],
+										result.hits.hits[index]['_source']['Groups']
 									)
 							}
 						})
