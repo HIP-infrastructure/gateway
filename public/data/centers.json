@@ -1,11 +1,11 @@
 [
 	{
-		"label": "UCLouvain",
-		"id": "uclouvain",
+		"label": "UCL",
+		"id": "ucl",
 		"pi": "Prof. Susana Ferrao Santos",
 		"country": "Belgium",
 		"city": "Brussel",
-		"logo": "media/ucllouvain__logo.png",
+		"logo": "media/256x256-ucllouvain__logo.png",
 		"description": "Cliniques Universitaires St-Luc (BRACE)",
 		"website": "https://www.saintluc.be/",
 		"socialnetwork": {
@@ -22,7 +22,7 @@
 		"pi": "Francisco Sales",
 		"country": "Portugal",
 		"city": "Coimbra",
-		"logo": "media/chuc__logo.png",
+		"logo": "media/256x256-chuc__logo.png",
 		"description": "Centro Hospitalar e Universitario de Coimbra",
 		"website": "https://www.chuc.min-saude.pt/"
 	},
@@ -32,7 +32,7 @@
 		"pi": "Dr. Olivier David",
 		"country": "France",
 		"city": "Marseille",
-		"logo": "media/amu-tng__logo.jpeg",
+		"logo": "media/256x256-amu__logo.png",
 		"description": "Aix-Marseille University",
 		"website": "https://www.univ-amu.fr/",
 		"socialnetwork": {
@@ -58,8 +58,8 @@
 			"facebook": "https://www.facebook.com/CHUVLausanne",
 			"linkedin": "https://www.linkedin.com/company/chuv/"
 		},
-		"chat": {
-			"prod": "https://thehip.app/call/zwk3g4ra"
+		"community": {
+			"url": "https://hip.collab.local/call/3gu65p7j"
 		}
 	},
 	{
