@@ -75,7 +75,7 @@ export class ProjectsService {
 				'instance.hostname'
 			)}`,
 			projects,
-			60 * 60
+			10 * 60
 		)
 	}
 
@@ -132,7 +132,7 @@ function to change the ownership of the user's folder in the collab workspace to
 			this.logger.error(error)
 			throw error
 		}
-	} 
+	}
 
 	public async userIsProjectAdmin(projectName, userId) {
 		try {
@@ -276,16 +276,14 @@ function to change the ownership of the user's folder in the collab workspace to
 
 	async remove(projectName: string, adminId: string) {
 		this.logger.debug(`remove(${projectName}, ${adminId})`)
-		try {
-			return this.iamService.deleteGroup(projectName).then(async () => {
-				await this.refreshProjectsCacheFor(adminId)
+		return this.iamService.deleteGroup(projectName).then(async () => {
+			await this.refreshProjectsCacheFor(adminId)
 
-				return this.findAll(adminId)
-			})
-		} catch (error) {
-			this.logger.debug(error)
+			return this.findAll(adminId)
+		}).catch(error => {
+			this.logger.error(error)
 			throw error
-		}
+		})
 	}
 
 	async addUserToProject(userId: string, projectName: string) {
