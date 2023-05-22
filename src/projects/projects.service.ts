@@ -10,6 +10,8 @@ import { ImportDocumentDto } from './dto/import-document.dto'
 import { ImportSubjectDto } from './dto/import-subject.dto'
 const fsPromises = require('fs').promises
 const userIdLib = require('userid')
+const chownr = require('chownr')
+
 interface FileMetadata {
 	name: string
 	size: number
@@ -95,12 +97,14 @@ export class ProjectsService {
 		return Promise.all(users.map(u => this.refreshProjectsCacheFor(u)))
 	}
 
-	/* The `chown` function changes the ownership of a file or directory specified by the `path` parameter
+	/* The `chownr` function changes recursively the ownership of a file or directory specified by the `path` parameter
 to the user and group specified by `this.dataUserId`. This is used in the `createUserFolder`
 function to change the ownership of the user's folder in the collab workspace to the data user. */
 	private async chown(path: string) {
 		this.logger.debug(`${path} ownership changed to ${this.dataUserId}`)
-		return fsPromises.chown(path, this.dataUserId, this.dataUserId)
+		return await chownr(path, this.dataUserId, this.dataUserId, error => {
+			if (error) throw error
+		})
 	}
 
 	/* It creates a folder for the user in the collab workspace. */
@@ -164,6 +168,7 @@ function to change the ownership of the user's folder in the collab workspace to
 				return cached
 			}
 		}
+
 		try {
 			const rootProject = await this.iamService.getGroup(this.PROJECTS_GROUP)
 			const groups = rootProject.members.groups
@@ -244,11 +249,11 @@ function to change the ownership of the user's folder in the collab workspace to
 			}
 
 			// create group folder on collab workspace
-			const projectPath = `${this.configService.get(
-				'collab.mountPoint'
-			)}/__groupfolders/${name}`
+			const groupfolderPath = `${this.configService.get('collab.mountPoint')}/__groupfolders`
+			const projectPath = `${groupfolderPath}/${name}`
+
 			jetpack.dir(projectPath)
-			await this.chown(projectPath)
+			await this.chown(groupfolderPath)
 
 			// create project structure
 			this.toolsService
