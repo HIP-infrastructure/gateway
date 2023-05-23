@@ -56,47 +56,47 @@ export class ProjectsService {
 
 	}
 
-	private async getProjectsCacheFor(userId: string): Promise<Project[]> {
-		this.logger.debug(
-			`getProjectsCacheFor(${userId})@${this.configService.get<string>(
-				'instance.hostname'
-			)}`
-		)
-		return this.cacheService.get(
-			`${CACHE_KEY_PROJECTS}:${userId}@${this.configService.get<string>(
-				'instance.hostname'
-			)}`
-		)
-	}
+	// private async getProjectsCacheFor(userId: string): Promise<Project[]> {
+	// 	this.logger.debug(
+	// 		`getProjectsCacheFor(${userId})@${this.configService.get<string>(
+	// 			'instance.hostname'
+	// 		)}`
+	// 	)
+	// 	return this.cacheService.get(
+	// 		`${CACHE_KEY_PROJECTS}:${userId}@${this.configService.get<string>(
+	// 			'instance.hostname'
+	// 		)}`
+	// 	)
+	// }
 
-	private async setProjectsCacheFor(userId: string, projects: Project[]) {
-		this.logger.debug(`setProjectsCacheFor(${userId})`)
-		return this.cacheService.set(
-			`${CACHE_KEY_PROJECTS}:${userId}@${this.configService.get<string>(
-				'instance.hostname'
-			)}`,
-			projects,
-			10 * 60
-		)
-	}
+	// private async setProjectsCacheFor(userId: string, projects: Project[]) {
+	// 	this.logger.debug(`setProjectsCacheFor(${userId})`)
+	// 	return this.cacheService.set(
+	// 		`${CACHE_KEY_PROJECTS}:${userId}@${this.configService.get<string>(
+	// 			'instance.hostname'
+	// 		)}`,
+	// 		projects,
+	// 		10 * 60
+	// 	)
+	// }
 
-	private async refreshProjectsCacheFor(userId: string): Promise<Project[]> {
-		const projects = await this.findAll(userId, true)
-		await this.setProjectsCacheFor(userId, projects)
+	// private async refreshProjectsCacheFor(userId: string): Promise<Project[]> {
+	// 	const projects = await this.findAll(userId, true)
+	// 	await this.setProjectsCacheFor(userId, projects)
 
-		return projects
-	}
+	// 	return projects
+	// }
 
-	public async refreshProjectsCache(projectName: string) {
-		const groupList = await this.iamService.getGroupListsByRole(
-			projectName,
-			'member'
-		)
-		const users = groupList.users.map(u => u.username)
-		for (const user of users) await this.refreshProjectsCacheFor(user)
+	// public async refreshProjectsCache(projectName: string) {
+	// 	const groupList = await this.iamService.getGroupListsByRole(
+	// 		projectName,
+	// 		'member'
+	// 	)
+	// 	const users = groupList.users.map(u => u.username)
+	// 	for (const user of users) await this.refreshProjectsCacheFor(user)
 
-		return Promise.resolve()
-	}
+	// 	return Promise.resolve()
+	// }
 
 	/* The `chownr` function changes recursively the ownership of a file or directory specified by the `path` parameter
 to the user and group specified by `this.dataUserId`. This is used in the `createUserFolder`
@@ -162,13 +162,13 @@ function to change the ownership of the user's folder in the collab workspace to
 	async findAll(userId: string, forceCache = false): Promise<Project[]> {
 		this.logger.debug(`findAll: userId=${userId} forceCache=${forceCache}`)
 
-		if (!forceCache) {
-			const cached = await this.getProjectsCacheFor(userId)
-			if (cached) {
-				this.logger.debug(`- cached`)
-				return cached
-			}
-		}
+		// if (!forceCache) {
+		// 	const cached = await this.getProjectsCacheFor(userId)
+		// 	if (cached) {
+		// 		this.logger.debug(`- cached`)
+		// 		return cached
+		// 	}
+		// }
 
 		try {
 			const rootProject = await this.iamService.getGroup(this.PROJECTS_GROUP)
@@ -188,7 +188,7 @@ function to change the ownership of the user's folder in the collab workspace to
 				admins: p.administrators.users.map(u => u.username)
 			}))
 
-			this.setProjectsCacheFor(userId, projects)
+			// this.setProjectsCacheFor(userId, projects)
 
 			return projects
 		} catch (error) {
@@ -270,7 +270,7 @@ function to change the ownership of the user's folder in the collab workspace to
 					)
 				})
 
-			return this.refreshProjectsCacheFor(adminId)
+			// return this.refreshProjectsCacheFor(adminId)
 		} catch (error) {
 			this.logger.debug(error)
 			throw error
@@ -284,7 +284,7 @@ function to change the ownership of the user's folder in the collab workspace to
 	async remove(projectName: string, adminId: string) {
 		this.logger.debug(`remove(${projectName}, ${adminId})`)
 		return this.iamService.deleteGroup(projectName).then(async () => {
-			await this.refreshProjectsCacheFor(adminId)
+			// await this.refreshProjectsCacheFor(adminId)
 
 			return this.findAll(adminId)
 		}).catch(error => {
@@ -302,7 +302,7 @@ function to change the ownership of the user's folder in the collab workspace to
 		}
 		try {
 			await this.iamService.addUserToGroup(userId, 'member', projectName)
-			await this.refreshProjectsCache(projectName)
+			// await this.refreshProjectsCache(projectName)
 
 			return this.findOne(projectName, userId)
 		} catch (error) {
@@ -316,7 +316,7 @@ function to change the ownership of the user's folder in the collab workspace to
 
 		try {
 			await this.iamService.removeUserFromGroup(userId, 'member', projectName)
-			await this.refreshProjectsCache(projectName)
+			// await this.refreshProjectsCache(projectName)
 
 			return this.findOne(projectName, userId)
 		} catch (error) {
