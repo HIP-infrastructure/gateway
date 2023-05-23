@@ -8,7 +8,6 @@ import { BIDSDataset, ToolsService } from 'src/tools/tools.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { ImportDocumentDto } from './dto/import-document.dto'
 import { ImportSubjectDto } from './dto/import-subject.dto'
-const fsPromises = require('fs').promises
 const userIdLib = require('userid')
 const chownr = require('chownr')
 
@@ -94,7 +93,9 @@ export class ProjectsService {
 			'member'
 		)
 		const users = groupList.users.map(u => u.username)
-		return Promise.all(users.map(u => this.refreshProjectsCacheFor(u)))
+		for (const user of users) await this.refreshProjectsCacheFor(user)
+
+		return Promise.resolve()
 	}
 
 	/* The `chownr` function changes recursively the ownership of a file or directory specified by the `path` parameter
