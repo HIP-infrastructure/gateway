@@ -115,8 +115,8 @@ function to change the ownership of the user's folder in the collab workspace to
 		)}/${userId}`
 
 		jetpack
-			.dir(userFolder, { empty: true })
-			.dir(`${userFolder}/files`, { empty: true })
+			.dir(userFolder, { empty: false })
+			.dir(`${userFolder}/files`, { empty: false })
 		await this.chown(userFolder)
 
 		return jetpack.inspectTree(userFolder)
