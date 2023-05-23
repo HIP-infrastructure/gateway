@@ -172,9 +172,10 @@ function to change the ownership of the user's folder in the collab workspace to
 		try {
 			const rootProject = await this.iamService.getGroup(this.PROJECTS_GROUP)
 			const groups = rootProject.members.groups
-			const fullgroups = await Promise.all(
-				groups.map(g => this.iamService.getGroup(g.name))
-			)
+			let fullgroups = []
+			for (const g of groups) {
+				fullgroups.push(await this.iamService.getGroup(g.name))
+			}
 			const userGroups = await this.iamService.getUserGroups(userId)
 			const projects = fullgroups.map(p => ({
 				isMember: userGroups.map(g => g.name).includes(p.name),
@@ -416,11 +417,13 @@ function to change the ownership of the user's folder in the collab workspace to
 			'Holds all HIP projects as sub groups'
 		)
 		const admins = this.configService.get('iam.platformAdmins')
-		await Promise.all(
-			admins.map(adminId =>
-				this.iamService.addUserToGroup(adminId, 'administrator', this.PROJECTS_GROUP)
+		for (const adminId of admins) {
+			await this.iamService.addUserToGroup(
+				adminId,
+				'administrator',
+				this.PROJECTS_GROUP
 			)
-		)
+		}
 	}
 
 	/* It creates a group called `HIP-Projects-admins` and adds the platform admins to it.
@@ -436,15 +439,13 @@ function to change the ownership of the user's folder in the collab workspace to
 				'Gives members access to administrate HIP projects'
 			)
 			const admins = this.configService.get('iam.platformAdmins')
-			await Promise.all(
-				admins.map(adminId =>
-					this.iamService.addUserToGroup(
-						adminId,
-						'administrator',
-						this.PROJECTS_ADMINS_GROUP
-					)
+			for (const adminId of admins) {
+				await this.iamService.addUserToGroup(
+					adminId,
+					'administrator',
+					this.PROJECTS_ADMINS_GROUP
 				)
-			)
+			}
 		} catch (error) {
 			this.logger.error(error)
 			throw error
