@@ -29,12 +29,32 @@ export class ProjectsController {
 	) { }
 
 	@Get()
-	async findAll(@Req() req: Request) {
+	async findAll(
+		@Req() req: Request,
+		) {
 		this.logger.debug(`findAll()`)
 		try {
 			return await this.nextcloudService
 				.authUserIdFromRequest(req)
 				.then((userId) => this.projectsService.findAll(userId))
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				`Error fetching projects: ${error}`,
+				HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
+	}
+
+	@Get('/users/:userId')
+	async findProjectsForUser(
+			@Req() req: Request,
+			@Param('userId') userId: string) {
+		this.logger.debug(`findProjectsForUser(${userId})`)
+		try {
+			return await this.nextcloudService
+				.authUserIdFromRequest(req)
+				.then((id) => this.projectsService.findProjectsForUser(id))
 		} catch (error) {
 			this.logger.error(error)
 			throw new HttpException(

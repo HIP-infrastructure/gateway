@@ -10,6 +10,7 @@ import {
 import { Request } from 'express'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { ProjectsService } from 'src/projects/projects.service'
+import { CacheService } from 'src/cache/cache.service'
 
 const NEXTCLOUD_HIP_SETTINGS = [
 	'text workspace_enabled 0',

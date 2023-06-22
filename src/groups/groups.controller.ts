@@ -20,19 +20,4 @@ export class GroupsController {
 		const uid =  await this.nextcloudService.authUserIdFromRequest(req)
 		return await this.nextcloudService.groupFoldersForUserId(uid)
 	}
-	
-
-	@Get(':groupid/users')
-	async findOne(@Param('groupid') groupid: string, @Req() req: Request): Promise<User[]> {
-		return await this.nextcloudService.authenticate(req).then(async () => {
-			const userids = await this.nextcloudService.usersForGroup(groupid)
-			const requests = userids.map(uid => this.nextcloudService.user(uid))
-			
-			const results = await Promise.allSettled(requests)
-			const users = results.filter(isFulfilled).map(p => p.value).filter(u => u.enabled)
-			// const rejectedReasons = results.filter(isRejected).map(p => p.reason)
-
-			return users
-		})
-	}
 }
