@@ -3,9 +3,9 @@ import { Module } from '@nestjs/common'
 import { NextcloudService } from './nextcloud.service'
 
 @Module({
-    imports: [HttpModule],
+	imports: [HttpModule],
 	controllers: [],
-	providers: [ NextcloudService],
+	providers: [NextcloudService],
 	exports: [NextcloudModule],
 })
-export class NextcloudModule {}
+export class NextcloudModule { }

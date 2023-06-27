@@ -1,11 +1,44 @@
 [
 	{
+		"label": "UCL",
+		"id": "ucl",
+		"pi": "Prof. Susana Ferrao Santos",
+		"country": "Belgium",
+		"city": "Brussel",
+		"logo": "media/256x256-ucllouvain__logo.png",
+		"description": "Cliniques Universitaires St-Luc (BRACE)",
+		"website": "https://www.saintluc.be/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/ClinUnivStLuc",
+			"youtube": "https://www.youtube.com/user/cliniquesuclsaintluc",
+			"facebook": "https://www.facebook.com/CliniquesUniversitairesSaintLuc",
+			"instagram": "https://www.instagram.com/cliniques_saint_luc/",
+			"linkedin": "https://www.linkedin.com/company/cliniques-universitaires-saint-luc/"
+		},
+		"community": {
+			"url": "/call/wcrcmohh"
+		}
+	},
+	{
+		"label": "CHUC",
+		"id": "chuc",
+		"pi": "Francisco Sales",
+		"country": "Portugal",
+		"city": "Coimbra",
+		"logo": "media/256x256-chuc__logo.png",
+		"description": "Centro Hospitalar e Universitario de Coimbra",
+		"website": "https://www.chuc.min-saude.pt/",
+		"community": {
+			"url": "/call/rwq6t7jc"
+		}
+	},
+	{
 		"label": "AMU-NS",
 		"id": "amu-ns",
 		"pi": "Dr. Olivier David",
 		"country": "France",
 		"city": "Marseille",
-		"logo": "media/amu-tng__logo.jpeg",
+		"logo": "media/256x256-amu__logo.png",
 		"description": "Aix-Marseille University",
 		"website": "https://www.univ-amu.fr/",
 		"socialnetwork": {
@@ -14,6 +47,9 @@
 			"facebook": "https://www.facebook.com/aixmarseilleuniversite/",
 			"linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
 			"researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
+		},
+		"community": {
+			"url": "/call/syqenpjc"
 		}
 	},
 	{
@@ -30,6 +66,9 @@
 			"instagram": "https://www.instagram.com/chuvlausanne/",
 			"facebook": "https://www.facebook.com/CHUVLausanne",
 			"linkedin": "https://www.linkedin.com/company/chuv/"
+		},
+		"community": {
+			"url": "/call/zwk3g4ra"
 		}
 	},
 	{
@@ -47,6 +86,9 @@
 			"facebook": "https://www.facebook.com/aixmarseilleuniversite/",
 			"linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
 			"researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
+		},
+		"community": {
+			"url": "/call/ptn4xq7v"
 		}
 	},
 	{
@@ -64,6 +106,9 @@
 			"facebook": "https://www.facebook.com/aixmarseilleuniversite/",
 			"linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
 			"researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
+		},
+		"community": {
+			"url": "/call/wb8zmpx8"
 		}
 	},
 	{
@@ -80,6 +125,9 @@
 			"instagram": "https://www.instagram.com/chulille/",
 			"twitter": "https://twitter.com/CHU_Lille",
 			"facebook": "https://www.facebook.com/chulille"
+		},
+		"community": {
+			"url": "/call/aprczohz"
 		}
 	},
 	{
@@ -96,12 +144,15 @@
 			"youtube": "",
 			"facebook": "https://www.facebook.com/fondazione.meyer",
 			"instagram": "https://www.instagram.com/fondazionemeyer/"
+		},
+		"community": {
+			"url": "/call/gosbe3ix"
 		}
 	},
 	{
 		"label": "CHUGA",
 		"id": "chuga",
-		"pi": "Philippe Kahane",
+		"pi": "Professor Philippe Kahane",
 		"country": "France",
 		"city": "Grenoble",
 		"logo": "media/chuga__logo.png",
@@ -110,6 +161,9 @@
 		"socialnetwork": {
 			"twitter": "https://twitter.com/chu_grenoble",
 			"youtube": "https://www.youtube.com/user/CHUGrenoble"
+		},
+		"community": {
+			"url": "/call/ifp8s389"
 		}
 	},
 	{
@@ -127,6 +181,9 @@
 			"twitter": "https://twitter.com/chudelyon",
 			"facebook": "https://www.facebook.com/CHUdeLyon/",
 			"linkedin": "https://www.linkedin.com/company/hospices-civils-de-lyon/"
+		},
+		"community": {
+			"url": "/call/9kdsiosv"
 		}
 	},
 	{
@@ -137,7 +194,10 @@
 		"city": "BRNO",
 		"logo": "media/fnusa__logo.png",
 		"description": "St. Anne's University Hospital Czech Republic",
-		"website": "https://www.fnusa.cz/en/hp/"
+		"website": "https://www.fnusa.cz/en/hp/",
+		"community": {
+			"url": "/call/kkj5uxdr"
+		}
 	},
 	{
 		"label": "HUS",
@@ -153,7 +213,10 @@
 			"instagram": "https://www.instagram.com/hus_sairaala/",
 			"twitter": "https://twitter.com/HUS_fi",
 			"facebook": "https://www.facebook.com/HUS.fi",
-			"linkedin": "https://www.linkedin.com/company/huslinkedin/"
+			"linkedin": "https://www.linkedin.com/company/huslinkedin/",
+			"community": {
+				"url": "/call/y88bty7s"
+			}
 		}
 	},
 	{
@@ -171,6 +234,9 @@
 			"facebook": "https://www.facebook.com/CHRUStrasbourg/",
 			"linkedin": "https://www.linkedin.com/company/hopitaux-universitaires-de-strasbourg/",
 			"youtube": "https://www.youtube.com/channel/UCmi2NODbFOehHubjQamZtAQ"
+		},
+		"community": {
+			"url": "/call/krryfvt4"
 		}
 	},
 	{
@@ -188,6 +254,9 @@
 			"twitter": "https://twitter.com/oslounivsykehus",
 			"facebook": "https://www.facebook.com/oslouniversitetssykehus",
 			"linkedin": "https://www.linkedin.com/company/oslo-universitetssykehus/"
+		},
+		"community": {
+			"url": "/call/avkmkup8"
 		}
 	},
 	{
@@ -204,6 +273,9 @@
 			"instagram": "https://www.instagram.com/hospitaldelmar/?hl=es",
 			"twitter": "https://twitter.com/hospitaldelmar",
 			"linkedin": "https://www.linkedin.com/company/hospital-del-mar--parc-de-salut-mar/?originalSubdomain=es"
+		},
+		"community": {
+			"url": "/call/8wccb3ye"
 		}
 	},
 	{
@@ -220,6 +292,9 @@
 			"instagram": "https://www.instagram.com/univlyon1/",
 			"twitter": "https://twitter.com/UnivLyon1",
 			"facebook": "https://www.facebook.com/UnivLyon1"
+		},
+		"community": {
+			"url": "/call/fkzbc29m"
 		}
 	},
 	{
@@ -230,6 +305,9 @@
 		"city": "Utrecht",
 		"logo": "media/umcu__logo.png",
 		"description": "University Medical Center Utrecht (Brain Center Rudolf Magnus)",
-		"website": "https://www.umcutrecht.nl/en/"
+		"website": "https://www.umcutrecht.nl/en/",
+		"community": {
+			"url": "/call/hph8xdzp"
+		}
 	}
 ]

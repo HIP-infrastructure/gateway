@@ -114,9 +114,6 @@ export class IamEbrainsService {
 			)
 		})
 
-		// this.logger.debug({ url, method })
-		// body && this.logger.debug({ body})
-
 		if (method === 'delete' || method === 'get') {
 			return await firstValueFrom(
 				this.httpService[method](url, { headers }).pipe(catcher)

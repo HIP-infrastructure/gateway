@@ -109,7 +109,7 @@ export class ToolsService {
 	private elasticClientRW: Client
 	private readonly es_index_datasets =
 		process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
-	private readonly bidsToolsImage = `${process.env.GL_REGISTRY}/${process.env.BIDS_TOOLS_IMAGE}:${process.env.BIDS_TOOLS_VERSION}`
+	private readonly dataHIPyImage = `${process.env.GL_REGISTRY}/${process.env.DataHIPy_IMAGE}:${process.env.DataHIPy_VERSION}`
 
 	constructor(
 		private readonly httpService: HttpService,
@@ -190,7 +190,7 @@ export class ToolsService {
 				`${projectPath}:${projectPath}`
 			]
 			const cmd2 = [
-				this.bidsToolsImage,
+				this.dataHIPyImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=project.create',
@@ -282,7 +282,7 @@ export class ToolsService {
 				`${targetProjectPath}:${targetProjectPath}`
 			]
 			const cmd2 = [
-				this.bidsToolsImage,
+				this.dataHIPyImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=project.sub.import',
@@ -362,7 +362,7 @@ export class ToolsService {
 				`${targetProjectAbsPath}:${targetProjectAbsPath}`
 			]
 			const cmd2 = [
-				this.bidsToolsImage,
+				this.dataHIPyImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=project.doc.import',
@@ -1983,7 +1983,7 @@ export class ToolsService {
 				`${dsParentPath}:/output`
 			]
 			const cmd2 = [
-				this.bidsToolsImage,
+				this.dataHIPyImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=dataset.create',
@@ -2055,7 +2055,7 @@ export class ToolsService {
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dbPath}:/output`]
 			const cmd2 = [
-				this.bidsToolsImage,
+				this.dataHIPyImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.get',
@@ -2156,7 +2156,7 @@ export class ToolsService {
 				`${dbPath}:/output`,
 				// '-v',  // 2 lines can be uncommented to debug interaction with BIDS manager
 				// '/home/stourbie/Softwares/bidsificator/bids_manager:/usr/local/lib/python3.8/dist-packages/bids_manager-0.3.2-py3.8.egg/bids_manager',
-				this.bidsToolsImage,
+				this.dataHIPyImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.import',
@@ -2242,7 +2242,7 @@ export class ToolsService {
 				`${dbPath}:/output`
 			]
 			const cmd2 = [
-				this.bidsToolsImage,
+				this.dataHIPyImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=sub.edit.clinical',
@@ -2507,7 +2507,7 @@ export class ToolsService {
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, '-v', `${dsPath}:/output`]
 			const cmd2 = [
-				this.bidsToolsImage,
+				this.dataHIPyImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=dataset.get',
@@ -2599,7 +2599,7 @@ export class ToolsService {
 
 			const cmd1 = ['run', '-v', `${tmpDir}:/input`, ...volumes]
 			const cmd2 = [
-				this.bidsToolsImage,
+				this.dataHIPyImage,
 				this.dataUser,
 				this.dataUserId,
 				'--command=datasets.get',

@@ -8,8 +8,9 @@ import { BIDSDataset, ToolsService } from 'src/tools/tools.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { ImportDocumentDto } from './dto/import-document.dto'
 import { ImportSubjectDto } from './dto/import-subject.dto'
-const fsPromises = require('fs').promises
 const userIdLib = require('userid')
+const chownr = require('chownr')
+
 interface FileMetadata {
 	name: string
 	size: number
@@ -75,32 +76,36 @@ export class ProjectsService {
 				'instance.hostname'
 			)}`,
 			projects,
-			60 * 60
+			10 * 60
 		)
 	}
 
-	private async refreshProjectsCacheFor(userId: string): Promise<Project[]> {
-		const projects = await this.findAll(userId, true)
-		await this.setProjectsCacheFor(userId, projects)
+	// private async refreshProjectsCacheFor(userId: string): Promise<Project[]> {
+	// 	const projects = await this.findAll(userId, true)
+	// 	await this.setProjectsCacheFor(userId, projects)
 
-		return projects
-	}
+	// 	return projects
+	// }
 
-	public async refreshProjectsCache(projectName: string) {
-		const groupList = await this.iamService.getGroupListsByRole(
-			projectName,
-			'member'
-		)
-		const users = groupList.users.map(u => u.username)
-		return Promise.all(users.map(u => this.refreshProjectsCacheFor(u)))
-	}
+	// public async refreshProjectsCache(projectName: string) {
+	// 	const groupList = await this.iamService.getGroupListsByRole(
+	// 		projectName,
+	// 		'member'
+	// 	)
+	// 	const users = groupList.users.map(u => u.username)
+	// 	for (const user of users) await this.refreshProjectsCacheFor(user)
 
-	/* The `chown` function changes the ownership of a file or directory specified by the `path` parameter
+	// 	return Promise.resolve()
+	// }
+
+	/* The `chownr` function changes recursively the ownership of a file or directory specified by the `path` parameter
 to the user and group specified by `this.dataUserId`. This is used in the `createUserFolder`
 function to change the ownership of the user's folder in the collab workspace to the data user. */
 	private async chown(path: string) {
 		this.logger.debug(`${path} ownership changed to ${this.dataUserId}`)
-		return fsPromises.chown(path, this.dataUserId, this.dataUserId)
+		return await chownr(path, this.dataUserId, this.dataUserId, error => {
+			if (error) throw error
+		})
 	}
 
 	/* It creates a folder for the user in the collab workspace. */
@@ -111,8 +116,8 @@ function to change the ownership of the user's folder in the collab workspace to
 		)}/${userId}`
 
 		jetpack
-			.dir(userFolder, { empty: true })
-			.dir(`${userFolder}/files`, { empty: true })
+			.dir(userFolder, { empty: false })
+			.dir(`${userFolder}/files`, { empty: false })
 		await this.chown(userFolder)
 
 		return jetpack.inspectTree(userFolder)
@@ -120,6 +125,9 @@ function to change the ownership of the user's folder in the collab workspace to
 
 	public async isProjectsAdmin(userId) {
 		this.logger.debug(`isProjectsAdmin: userId=${userId}`)
+		const cachedAdmin = await this.cacheService.get(`${CACHE_KEY_PROJECTS}:${userId}:isAdmin`)
+
+		if (cachedAdmin) return cachedAdmin
 
 		try {
 			const group = await this.iamService.getGroupListsByRole(
@@ -127,12 +135,15 @@ function to change the ownership of the user's folder in the collab workspace to
 				'member'
 			)
 
-			return group.users.map(u => u.username).includes(userId)
+			const isAdmin = group.users.map(u => u.username).includes(userId)
+			await this.cacheService.set(`${CACHE_KEY_PROJECTS}:${userId}:isAdmin`, true, 10 * 50)
+
+			return isAdmin
 		} catch (error) {
 			this.logger.error(error)
 			throw error
 		}
-	} 
+	}
 
 	public async userIsProjectAdmin(projectName, userId) {
 		try {
@@ -154,25 +165,23 @@ function to change the ownership of the user's folder in the collab workspace to
 		}
 	}
 
-	async findAll(userId: string, forceCache = false): Promise<Project[]> {
-		this.logger.debug(`findAll: userId=${userId} forceCache=${forceCache}`)
+	async findAll(userId: string, full = false): Promise<Project[]> {
+		this.logger.debug(`findAll: userId=${userId} full=${full}`)
 
-		if (!forceCache) {
-			const cached = await this.getProjectsCacheFor(userId)
-			if (cached) {
-				this.logger.debug(`- cached`)
-				return cached
-			}
+		const cached = await this.getProjectsCacheFor(userId)
+		if (cached) {
+			this.logger.debug(`- cached`)
+			return cached
 		}
+
 		try {
 			const rootProject = await this.iamService.getGroup(this.PROJECTS_GROUP)
 			const groups = rootProject.members.groups
-			const fullgroups = await Promise.all(
-				groups.map(g => this.iamService.getGroup(g.name))
-			)
-			const userGroups = await this.iamService.getUserGroups(userId)
+			let fullgroups = []
+			for (const g of groups) {
+				fullgroups.push(await this.iamService.getGroup(g.name))
+			}
 			const projects = fullgroups.map(p => ({
-				isMember: userGroups.map(g => g.name).includes(p.name),
 				name: p.name,
 				title: p.title,
 				description: p.description,
@@ -187,6 +196,32 @@ function to change the ownership of the user's folder in the collab workspace to
 		} catch (error) {
 			this.logger.error(error)
 			throw error
+		}
+	}
+
+	async findProjectsForUser(
+		userId: string
+	): Promise<Project[]> {
+		try {
+			const rootProject = await this.iamService.getGroup(this.PROJECTS_GROUP)
+			const groups = rootProject.members.groups
+			let fullgroups = []
+			for (const g of groups) {
+				fullgroups.push(await this.iamService.getGroup(g.name))
+			}
+
+			const projects = fullgroups.map(p => ({
+				isMember: true,
+				name: p.name,
+				title: p.title,
+				description: p.description,
+				acceptMembershipRequest: p.acceptMembershipRequest,
+				members: p.members.users.map(u => u.username),
+				admins: p.administrators.users.map(u => u.username)
+			}))
+			return projects
+		} catch (error) {
+			throw new Error('Could not get project')
 		}
 	}
 
@@ -244,11 +279,11 @@ function to change the ownership of the user's folder in the collab workspace to
 			}
 
 			// create group folder on collab workspace
-			const projectPath = `${this.configService.get(
-				'collab.mountPoint'
-			)}/__groupfolders/${name}`
+			const groupfolderPath = `${this.configService.get('collab.mountPoint')}/__groupfolders`
+			const projectPath = `${groupfolderPath}/${name}`
+
 			jetpack.dir(projectPath)
-			await this.chown(projectPath)
+			await this.chown(groupfolderPath)
 
 			// create project structure
 			this.toolsService
@@ -262,8 +297,8 @@ function to change the ownership of the user's folder in the collab workspace to
 						dataset
 					)
 				})
-
-			return this.refreshProjectsCacheFor(adminId)
+			this.setProjectsCacheFor(adminId, null)
+			return this.findProjectsForUser(adminId)
 		} catch (error) {
 			this.logger.debug(error)
 			throw error
@@ -276,16 +311,14 @@ function to change the ownership of the user's folder in the collab workspace to
 
 	async remove(projectName: string, adminId: string) {
 		this.logger.debug(`remove(${projectName}, ${adminId})`)
-		try {
-			return this.iamService.deleteGroup(projectName).then(async () => {
-				await this.refreshProjectsCacheFor(adminId)
+		return this.iamService.deleteGroup(projectName).then(async () => {
+			this.setProjectsCacheFor(adminId, null)
 
-				return this.findAll(adminId)
-			})
-		} catch (error) {
-			this.logger.debug(error)
+			return this.findAll(adminId)
+		}).catch(error => {
+			this.logger.error(error)
 			throw error
-		}
+		})
 	}
 
 	async addUserToProject(userId: string, projectName: string) {
@@ -297,7 +330,7 @@ function to change the ownership of the user's folder in the collab workspace to
 		}
 		try {
 			await this.iamService.addUserToGroup(userId, 'member', projectName)
-			await this.refreshProjectsCache(projectName)
+			// await this.refreshProjectsCache(projectName)
 
 			return this.findOne(projectName, userId)
 		} catch (error) {
@@ -311,7 +344,7 @@ function to change the ownership of the user's folder in the collab workspace to
 
 		try {
 			await this.iamService.removeUserFromGroup(userId, 'member', projectName)
-			await this.refreshProjectsCache(projectName)
+			// await this.refreshProjectsCache(projectName)
 
 			return this.findOne(projectName, userId)
 		} catch (error) {
@@ -413,11 +446,13 @@ function to change the ownership of the user's folder in the collab workspace to
 			'Holds all HIP projects as sub groups'
 		)
 		const admins = this.configService.get('iam.platformAdmins')
-		await Promise.all(
-			admins.map(adminId =>
-				this.iamService.addUserToGroup(adminId, 'administrator', this.PROJECTS_GROUP)
+		for (const adminId of admins) {
+			await this.iamService.addUserToGroup(
+				adminId,
+				'administrator',
+				this.PROJECTS_GROUP
 			)
-		)
+		}
 	}
 
 	/* It creates a group called `HIP-Projects-admins` and adds the platform admins to it.
@@ -433,15 +468,13 @@ function to change the ownership of the user's folder in the collab workspace to
 				'Gives members access to administrate HIP projects'
 			)
 			const admins = this.configService.get('iam.platformAdmins')
-			await Promise.all(
-				admins.map(adminId =>
-					this.iamService.addUserToGroup(
-						adminId,
-						'administrator',
-						this.PROJECTS_ADMINS_GROUP
-					)
+			for (const adminId of admins) {
+				await this.iamService.addUserToGroup(
+					adminId,
+					'administrator',
+					this.PROJECTS_ADMINS_GROUP
 				)
-			)
+			}
 		} catch (error) {
 			this.logger.error(error)
 			throw error

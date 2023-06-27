@@ -1,6 +1,6 @@
 {
     "name": "hip-gateway",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "description": "",
     "author": "",
     "private": true,
@@ -32,6 +32,7 @@
         "@nestjs/schedule": "^2.1.0",
         "@nestjs/swagger": "^6.1.4",
         "@nestjs/typeorm": "^9.0.1",
+        "chownr": "^2.0.0",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.13.2",
         "cookie-parser": "^1.4.6",

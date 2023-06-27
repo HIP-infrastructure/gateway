@@ -10,6 +10,7 @@ import {
 import { Request } from 'express'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
 import { ProjectsService } from 'src/projects/projects.service'
+import { CacheService } from 'src/cache/cache.service'
 
 const NEXTCLOUD_HIP_SETTINGS = [
 	'text workspace_enabled 0',
@@ -40,16 +41,23 @@ export class UsersController {
 
 	@Get(':userId')
 	async findOne(@Req() req: Request, @Param('userId') userId: string) {
+		let hasProjectsAdminRole = false
+
 		const validatedId = await this.nextcloudService.authUserIdFromRequest(req)
 		if (userId !== validatedId) {
 			throw new HttpException('User is not logged in', HttpStatus.UNAUTHORIZED)
 		}
 
 		const user = await this.nextcloudService.user(userId)
-		const hasProjectsAdminRole = await this.projectsService.isProjectsAdmin(
-			userId
-		)
 
+		try {
+			hasProjectsAdminRole = await this.projectsService.isProjectsAdmin(
+				userId
+			)
+		} catch (error) {
+			this.logger.error(error)
+		}
+		
 		return {
 			...user,
 			hasProjectsAdminRole

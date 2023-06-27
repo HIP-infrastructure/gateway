@@ -45,14 +45,14 @@ import { IamEbrainsService } from './iam-ebrains/iam-ebrains.service'
 				}
 			}),
 		}),
-		TypeOrmModule.forRootAsync({
-			inject: [ConfigService],
-			useFactory: (config: ConfigService) => ({
-				...config.get('postgres'),
-				autoLoadEntities: true,
-				synchronize: false,
-			}),
-		}),
+		// TypeOrmModule.forRootAsync({
+		// 	inject: [ConfigService],
+		// 	useFactory: (config: ConfigService) => ({
+		// 		...config.get('postgres'),
+		// 		autoLoadEntities: true,
+		// 		synchronize: false,
+		// 	}),
+		// }),
 		ToolsModule,
 		UsersModule,
 		GroupsModule,

@@ -26,14 +26,42 @@ export class ProjectsController {
 	constructor(
 		private readonly projectsService: ProjectsService,
 		private readonly nextcloudService: NextcloudService
-	) {}
+	) { }
 
 	@Get()
-	findAll(@Req() req: Request) {
+	async findAll(
+		@Req() req: Request,
+		) {
 		this.logger.debug(`findAll()`)
-		return this.nextcloudService
-		.authUserIdFromRequest(req)
-			.then((userId) => this.projectsService.findAll(userId))
+		try {
+			return await this.nextcloudService
+				.authUserIdFromRequest(req)
+				.then((userId) => this.projectsService.findAll(userId))
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				`Error fetching projects: ${error}`,
+				HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
+	}
+
+	@Get('/users/:userId')
+	async findProjectsForUser(
+			@Req() req: Request,
+			@Param('userId') userId: string) {
+		this.logger.debug(`findProjectsForUser(${userId})`)
+		try {
+			return await this.nextcloudService
+				.authUserIdFromRequest(req)
+				.then((id) => this.projectsService.findProjectsForUser(id))
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				`Error fetching projects: ${error}`,
+				HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
 	}
 
 	@Get(':projectName')
@@ -43,7 +71,7 @@ export class ProjectsController {
 	): Promise<Project> {
 		this.logger.debug(`findOne(${projectName})`)
 		return this.nextcloudService
-		.authUserIdFromRequest(req)
+			.authUserIdFromRequest(req)
 			.then((userId) => this.projectsService.findOne(projectName, userId))
 	}
 
@@ -145,7 +173,7 @@ export class ProjectsController {
 
 	@Post(':projectName/document')
 	importDocument(@Req() req: Request, @Param('projectName') projectName: string,
-	@Body() importDocumentDto: ImportDocumentDto) {
+		@Body() importDocumentDto: ImportDocumentDto) {
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
 			.then(async userId => {
