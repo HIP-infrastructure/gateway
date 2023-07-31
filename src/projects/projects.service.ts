@@ -181,6 +181,7 @@ function to change the ownership of the user's folder in the collab workspace to
 			for (const g of groups) {
 				fullgroups.push(await this.iamService.getGroup(g.name))
 			}
+
 			const projects = fullgroups.map(p => ({
 				name: p.name,
 				title: p.title,
@@ -210,15 +211,16 @@ function to change the ownership of the user's folder in the collab workspace to
 				fullgroups.push(await this.iamService.getGroup(g.name))
 			}
 
-			const projects = fullgroups.map(p => ({
-				isMember: true,
-				name: p.name,
-				title: p.title,
-				description: p.description,
-				acceptMembershipRequest: p.acceptMembershipRequest,
-				members: p.members.users.map(u => u.username),
-				admins: p.administrators.users.map(u => u.username)
-			}))
+			const projects = fullgroups.filter(g => [...g.members.users, ...g.administrators.users].map(g => g.username)
+				.includes(userId)).map(p => ({
+					isMember: true,
+					name: p.name,
+					title: p.title,
+					description: p.description,
+					acceptMembershipRequest: p.acceptMembershipRequest,
+					members: p.members.users.map(u => u.username),
+					admins: p.administrators.users.map(u => u.username)
+				}))
 			return projects
 		} catch (error) {
 			throw new Error('Could not get project')
