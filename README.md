@@ -28,3 +28,7 @@ While the backend service for remote apps is the [App in Browser](https://github
     -e PRIVATE_WEBDAV_URL=${PRIVATE_WEBDAV_URL} \
     .`
 
+
+## Acknowledgement
+
+This research was supported by the EBRAINS research infrastructure, funded from the European Union’s Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreement No. 945539 (Human Brain Project SGA3).
