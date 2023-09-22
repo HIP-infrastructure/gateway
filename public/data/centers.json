@@ -1,5 +1,24 @@
 [
 	{
+		"label": "Horus Analytics",
+		"id": "dip",
+		"pi": "Pr. Jean Louis Raisaro",
+		"country": "Switzerland",
+		"city": "Lausanne",
+		"logo": "media/horus-wheel-small.png",
+		"description": "Horus Analytics",
+		"website": "https://www.chuv.ch/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/CHUVLausanne",
+			"instagram": "https://www.instagram.com/chuvlausanne/",
+			"facebook": "https://www.facebook.com/CHUVLausanne",
+			"linkedin": "https://www.linkedin.com/company/chuv/"
+		},
+		"community": {
+			"url": "/call/zwk3g4ra"
+		}
+	},
+	{
 		"label": "UCL",
 		"id": "ucl",
 		"pi": "Prof. Susana Ferrao Santos",
