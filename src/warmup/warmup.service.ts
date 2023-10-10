@@ -16,13 +16,13 @@ export class WarmupService implements OnApplicationBootstrap {
     try {
       await this.projectsService.createProjectsGroup()
     } catch (error) {
-      this.logger.error('Above Error 409 IS OK, WARMUP SERVICE: createProjectsGroup', error)
+      this.logger.error(error)
     }
 
-    try {
-      await this.projectsService.createAdminGroup()
-    } catch (error) {
-      this.logger.error('Above Error 409 IS OK, WARMUP SERVICE: createAdminGroup', error)
-    }
+    // try {
+    //   await this.projectsService.createAdminGroup()
+    // } catch (error) {
+    //   this.logger.error('Above Error 409 IS OK, WARMUP SERVICE: createAdminGroup', error)
+    // }
   }
 }
