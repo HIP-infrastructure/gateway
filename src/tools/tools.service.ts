@@ -229,11 +229,11 @@ export class ToolsService {
 		importSubjectDto: ImportSubjectDto,
 		targetProjectPath: string
 	) {
-		this.logger.debug(
-			`importBIDSSubjectToProject ${JSON.stringify(
-				importSubjectDto
-			)} ${targetProjectPath}`
-		)
+		// this.logger.debug(
+		// 	`importBIDSSubjectToProject ${JSON.stringify(
+		// 		importSubjectDto
+		// 	)} ${targetProjectPath}`
+		// )
 
 		try {
 			const userGroups = await this.nextcloudService.groupFoldersForUserId(
@@ -321,9 +321,9 @@ export class ToolsService {
 		targetProjectAbsPath: string,
 		targetDocumentRelPath: string
 	) {
-		this.logger.debug(
-			`importDocumentToProject ${sourceDocumentPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
-		)
+		// this.logger.debug(
+		// 	`importDocumentToProject ${sourceDocumentPath} ${targetProjectAbsPath} ${targetDocumentRelPath}`
+		// )
 
 		try {
 			const userGroups = await this.nextcloudService.groupFoldersForUserId(
@@ -649,14 +649,14 @@ export class ToolsService {
 			)
 				return val
 		})
-		this.logger.debug({ foundDatasetsNotIndexed })
+		// this.logger.debug({ foundDatasetsNotIndexed })
 		// get content of dataset_description.json for all datasets that are not indexed yet
 		const foundDatasetNamesNotIndexed = foundDatasets.map((val, index) => {
 			if (
 				foundDatasetIDs[index] === null &&
 				foundRenamedDatasetIDs[index] === null
 			) {
-				this.logger.debug(JSON.stringify(foundDatasets[index], null, 4))
+				// this.logger.debug(JSON.stringify(foundDatasets[index], null, 4))
 				return foundDatasets[index].Name
 			}
 		})
@@ -748,7 +748,7 @@ export class ToolsService {
 		const foundRenamedDatasets = foundDatasetPaths.map((val, index) => {
 			if (foundRenamedDatasetIDs[index]) return val
 		})
-		this.logger.debug({ foundRenamedDatasets })
+		// this.logger.debug({ foundRenamedDatasets })
 		// filter null in foundRenamedDatasets
 		const filteredFoundRenamedDatasets = foundRenamedDatasets.flatMap(f =>
 			f ? [f] : []
@@ -1037,7 +1037,7 @@ export class ToolsService {
 			// generate and index content of every private dataset not indexed
 			if (foundPrivateDatasetsNotIndexed.length > 0) {
 				this.logger.warn('Add the following private datasets to the index:')
-				this.logger.debug({ foundPrivateDatasetsNotIndexed })
+				// this.logger.debug({ foundPrivateDatasetsNotIndexed })
 				addedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
 					owner,
 					groupFolders,
@@ -1048,7 +1048,7 @@ export class ToolsService {
 			// for which a private dataset with the same same has already been indexed
 			if (foundGroupDatasetsNotIndexed.length > 0) {
 				this.logger.warn('Add the following group datasets to the index:')
-				this.logger.debug({ foundGroupDatasetsNotIndexed })
+				// this.logger.debug({ foundGroupDatasetsNotIndexed })
 				const { groupDatasetIDsToBeAdded, groupDatasetPathsToBeAdded } =
 					await this.filterGroupDatasetsNotIndexed(
 						owner,
@@ -2165,22 +2165,22 @@ export class ToolsService {
 
 			this.logger.debug(command.join(' '))
 
-			const { code, message } = await this.spawnable('docker', command)
+			// const { code, message } = await this.spawnable('docker', command)
 
-			const errorMatching =
-				/does not match/.test(message) ||
-				// /does not exist/.test(message) ||  // Appears when success with "dataset_description.json does not exist"
-				/not imported/.test(message)
+			// const errorMatching =
+			// 	/does not match/.test(message) ||
+			// 	// /does not exist/.test(message) ||  // Appears when success with "dataset_description.json does not exist"
+			// 	/not imported/.test(message)
 
-			if (errorMatching) throw new BadRequestException(message)
+			// if (errorMatching) throw new BadRequestException(message)
 
-			if (code === 0) {
-				await this.nextcloudService.scanPath(owner, dataset_path)
-				await this.indexBIDSDataset(owner, dataset_path, datasetID)
-				return nextCreateSubject
-			} else {
-				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
-			}
+			// if (code === 0) {
+			// 	await this.nextcloudService.scanPath(owner, dataset_path)
+			// 	await this.indexBIDSDataset(owner, dataset_path, datasetID)
+			// 	return nextCreateSubject
+			// } else {
+			// 	throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			// }
 		} catch (err) {
 			this.logger.error(err)
 			throw new HttpException(
