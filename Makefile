@@ -1,14 +1,13 @@
 .DEFAULT_GOAL := help
 
-#install: @ Install all dependencies defined in package.json
-install:
-	curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-	sudo apt-get install -y nodejs
-	sudo npm i --location=global @nestjs/cli
-	npm install
+require:
+	@echo "Checking the programs required for the build are installed..."
+	@node --version >/dev/null 2>&1 || (echo "ERROR: node is required."; exit 1)
+	@nest --version >/dev/null 2>&1 || (echo "ERROR: nest is required."; exit 1)
+
 
 #build: @ Builds the project
-build: install b.clean b.bundle
+build: require b.clean b.bundle
 
 #b.clean: @ Removes all build artifacts
 b.clean:
@@ -16,6 +15,8 @@ b.clean:
 
 #b.bundle: @ Builds the application as a JavaScript bundle
 b.bundle:
+	sudo chown -R ${USER}:${USER} "/root/.npm"
+	npm install
 	npm run build
 
 #release: @ Release on GitHub, tag the application with package version 

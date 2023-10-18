@@ -1,9 +1,9 @@
 import { HttpService } from '@nestjs/axios'
 import { HttpException, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-// import { AxiosError, AxiosResponse } from 'axios'
 import { catchError, firstValueFrom } from 'rxjs'
 import { CacheService } from 'src/cache/cache.service'
+import { Project } from 'src/projects/projects.service'
 
 type AuthTokenResponse = {
 	access_token: string
@@ -36,8 +36,8 @@ export interface GroupLists {
 }
 
 @Injectable()
-export class IamEbrainsService {
-	private readonly logger = new Logger(IamEbrainsService.name)
+export class IamService {
+	private readonly logger = new Logger(IamService.name)
 	private apiUrl: string
 	private clientId: string
 
@@ -54,17 +54,11 @@ export class IamEbrainsService {
 		this.logger.debug(`getAuthToken()`)
 
 		try {
-			const cachedToken = await this.cacheService.get(`iam_ebrains_token`)
-			if (cachedToken) {
-				this.logger.debug(`getAuthToken() - cached`)
-				return cachedToken
-			}
-
 			const headers = { 'Content-Type': 'application/x-www-form-urlencoded' }
 			const body = {
 				grant_type: 'client_credentials',
 				scope:
-					'openid email roles team profile group clb.wiki.read clb.wiki.write',
+					'openid email roles team profile group',
 				client_id: this.clientId,
 				client_secret: this.configService.get<string>('iam.clientSecret')
 			}
@@ -84,12 +78,6 @@ export class IamEbrainsService {
 				)
 			)
 
-			await this.cacheService.set(
-				`iam_ebrains_token`,
-				access_token,
-				3600 * 24 * 5
-			)
-
 			return access_token
 		} catch (error) {
 			this.logger.error(error)
@@ -102,16 +90,14 @@ export class IamEbrainsService {
 		method: 'get' | 'post' | 'put' | 'delete',
 		body?: {}
 	): Promise<any> {
+		this.logger.debug(`request(${url}, ${method}, ${JSON.stringify(body)})`)
 		const token = await this.getAuthToken()
 		const headers = { Authorization: `Bearer ${token}` }
 
 		const catcher = catchError((error: any) => {
 			this.logger.error(error)
 
-			throw new HttpException(
-				error.response.data.description,
-				error.response.data.code
-			)
+			throw error
 		})
 
 		if (method === 'delete' || method === 'get') {
@@ -125,9 +111,17 @@ export class IamEbrainsService {
 		)
 	}
 
-	private async getGroupInfo(groupName: string): Promise<Group> {
+	private async getGroupInfo(groupName: string): Promise<Project> {
 		this.logger.debug(`getGroupInfo(${groupName})`)
-		const url = `${this.apiUrl}/identity/groups/${groupName}`
+		const url = `${this.apiUrl}/identity/groups/${groupName}?realm=hip`
+		const { data } = await this.request(url, 'get', {})
+
+		return data
+	}
+
+	public async getGroups(): Promise<Project[]> {
+		this.logger.debug(`getGroups()`)
+		const url = `${this.apiUrl}/identity/groups?realm=hip`
 		const { data } = await this.request(url, 'get', {})
 
 		return data
@@ -135,7 +129,7 @@ export class IamEbrainsService {
 
 	public async getUser(username: string) {
 		this.logger.debug(`getUser(${username})`)
-		const url = `${this.apiUrl}/identity/users/${username}`
+		const url = `${this.apiUrl}/identity/users/${username}?realm=hip`
 		const { data } = await this.request(url, 'get', {})
 
 		return data
@@ -154,21 +148,21 @@ export class IamEbrainsService {
 
 	public async getUserGroups(userName: string, role?: Role): Promise<Group[]> {
 		this.logger.debug(`getUserGroups(${userName})`)
-		const baseUrl = `${this.apiUrl}/identity/groups?username=${userName}`
+		const baseUrl = `${this.apiUrl}/projects/users/${userName}?realm=hip`
 		const url = role ? `${baseUrl}&role=${role}` : baseUrl
 		const { data } = await this.request(url, 'get', {})
 
 		return data
 	}
 
-	public async createGroup(name: string, title: string, description: string) {
+	public async createGroup(name: string, title: string, description: string, adminId?: string) {
 		this.logger.debug(`createGroup(${name})`)
 
 		// sanitize name
 		const projectName = `${name.replace(/[^a-zA-Z0-9]+/g, '-')}`
 
-		const url = `${this.apiUrl}/identity/groups`
-		const body = { name: projectName, title, description }
+		const url = `${this.apiUrl}/identity/groups?realm=hip`
+		const body = { name: projectName, description, adminId }
 		const { status } = await this.request(url, 'post', body)
 
 		return { data: projectName, status }
@@ -176,8 +170,10 @@ export class IamEbrainsService {
 
 	public async deleteGroup(name: string) {
 		this.logger.debug(`deleteGroup(${name})`)
-		const url = `${this.apiUrl}/identity/groups/${name}`
-		const { status } = await this.request(url, 'delete')
+		const url = `${this.apiUrl}/identity/groups/${name}?realm=hip`
+
+		const data = await this.request(url, 'delete')
+		const { status } = data
 
 		return { data: 'Success', status }
 	}
@@ -198,8 +194,7 @@ export class IamEbrainsService {
 
 	public async addUserToGroup(userName: string, role: Role, groupName: string) {
 		this.logger.debug(`addUserToGroup(${userName}, ${role}, ${groupName})`)
-
-		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
+		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}?realm=hip`
 		const { status } = await this.request(url, 'put', {})
 
 		return { data: 'Success', status }
@@ -211,7 +206,7 @@ export class IamEbrainsService {
 		groupName: string
 	) {
 		this.logger.debug(`removeUserFromGroup(${userName}, ${role}, ${groupName})`)
-		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}`
+		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}?realm=hip`
 		const { status } = await this.request(url, 'delete', {})
 
 		return { data: 'Success', status }
@@ -219,21 +214,9 @@ export class IamEbrainsService {
 
 	public async getGroup(
 		groupName: string
-	): Promise<Group & { members: GroupLists; administrators: GroupLists }> {
-		const group = await this.getGroupInfo(groupName)
-		const groupList = await this.getGroupListsByRole(groupName, 'member')
-		const groupListAdmin = await this.getGroupListsByRole(
-			groupName,
-			'administrator'
-		)
+	): Promise<Project & { members: GroupLists; administrators: GroupLists }> {
+		const group: any = await this.getGroupInfo(groupName)
 
-		return {
-			...group,
-			members: groupList,
-			administrators: {
-				...groupListAdmin,
-				users: groupListAdmin.users.filter(u => !/service-account/.test(u.username))
-			}
-		}
+		return group
 	}
 }

@@ -126,7 +126,7 @@ export class NextcloudService {
 					groups: user.groups,
 					enabled: user.enabled
 				}
-			})
+			})//.filter(u => u.groups.length > 1)
 
 			return users || []
 		} catch (error) {
@@ -149,6 +149,7 @@ export class NextcloudService {
 			}
 
 			const url = `${process.env.HOSTNAME_SCHEME}://${process.env.HOSTNAME}${USER_ID_PATH}`
+			// this.logger.debug(`authUserIdFromRequest: ${url}`)
 			const response = this.httpService.get(url, {
 				headers: {
 					cookie,
@@ -159,6 +160,8 @@ export class NextcloudService {
 			})
 
 			const uid = await firstValueFrom(response).then(r => {
+				// this.logger.debug(`authUserIdFromRequest: ${r.data}`)
+
 				return r.data
 			})
 
@@ -327,6 +330,7 @@ export class NextcloudService {
 	}
 
 	private async groupFolders(): Promise<NCGroupFolder[]> {
+		// console.trace(`groupFolders`)
 		this.logger.debug(`groupFolders`)
 		try {
 			const args = ['groupfolders:list']

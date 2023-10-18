@@ -31,7 +31,7 @@ export class ProjectsController {
 	@Get()
 	async findAll(
 		@Req() req: Request,
-		) {
+	) {
 		this.logger.debug(`findAll()`)
 		try {
 			return await this.nextcloudService
@@ -48,8 +48,8 @@ export class ProjectsController {
 
 	@Get('/users/:userId')
 	async findProjectsForUser(
-			@Req() req: Request,
-			@Param('userId') userId: string) {
+		@Req() req: Request,
+		@Param('userId') userId: string) {
 		this.logger.debug(`findProjectsForUser(${userId})`)
 		try {
 			return await this.nextcloudService
@@ -72,7 +72,7 @@ export class ProjectsController {
 		this.logger.debug(`findOne(${projectName})`)
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
-			.then((userId) => this.projectsService.findOne(projectName, userId))
+			.then((userId) => this.projectsService.findOne(projectName))
 	}
 
 	// TODO: @Roles(Role.Admin)
@@ -104,9 +104,9 @@ export class ProjectsController {
 		this.logger.debug(`remove(${projectName})`)
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
-			.then(userId =>
-				this.projectsService.userIsProjectAdmin(projectName, userId)
-			)
+			// .then(userId =>
+			// 	this.projectsService.userIsProjectAdmin(projectName, userId)
+			// )
 			.then(userId => this.projectsService.remove(projectName, userId))
 	}
 
@@ -119,10 +119,10 @@ export class ProjectsController {
 		this.logger.debug(`addUser(${projectName}, ${userId})`)
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
-			.then(userId =>
-				this.projectsService.userIsProjectAdmin(projectName, userId)
-			)
-			.then(adminId =>
+			// .then(userId =>
+			// 	this.projectsService.userIsProjectAdmin(projectName, userId)
+			// )
+			.then(_ =>
 				this.projectsService.addUserToProject(userId, projectName)
 			)
 	}
@@ -136,10 +136,10 @@ export class ProjectsController {
 		this.logger.debug(`removeUser(${projectName}, ${userId})`)
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
-			.then(userId =>
-				this.projectsService.userIsProjectAdmin(projectName, userId)
-			)
-			.then(adminId =>
+			// .then(userId =>
+			// 	this.projectsService.userIsProjectAdmin(projectName, userId)
+			// )
+			.then(_ =>
 				this.projectsService.removeUserFromProject(userId, projectName)
 			)
 	}
