@@ -1,7 +1,6 @@
 import { HttpService } from '@nestjs/axios'
 import { HttpException, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-// import { AxiosError, AxiosResponse } from 'axios'
 import { catchError, firstValueFrom } from 'rxjs'
 import { CacheService } from 'src/cache/cache.service'
 import { Project } from 'src/projects/projects.service'
@@ -117,9 +116,6 @@ export class IamService {
 		const url = `${this.apiUrl}/identity/groups/${groupName}?realm=hip`
 		const { data } = await this.request(url, 'get', {})
 
-
-		console.log(JSON.stringify(data, null, 2))
-
 		return data
 	}
 
@@ -127,9 +123,6 @@ export class IamService {
 		this.logger.debug(`getGroups()`)
 		const url = `${this.apiUrl}/identity/groups?realm=hip`
 		const { data } = await this.request(url, 'get', {})
-
-
-		console.log(JSON.stringify(data, null, 2))
 
 		return data
 	}
@@ -170,7 +163,6 @@ export class IamService {
 
 		const url = `${this.apiUrl}/identity/groups?realm=hip`
 		const body = { name: projectName, description, adminId }
-		console.log(body)
 		const { status } = await this.request(url, 'post', body)
 
 		return { data: projectName, status }
@@ -182,8 +174,6 @@ export class IamService {
 
 		const data = await this.request(url, 'delete')
 		const { status } = data
-		console.log({ data })
-		console.log({ status })
 
 		return { data: 'Success', status }
 	}
