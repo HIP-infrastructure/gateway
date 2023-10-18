@@ -20,7 +20,7 @@ interface FileMetadata {
 	md5Hash: string
 	contentType: string
 	contentEncoding: string
-}
+} 
 
 export interface Project extends Group {
 	isMember?: boolean
@@ -29,6 +29,7 @@ export interface Project extends Group {
 }
 
 const CACHE_KEY_PROJECTS = 'projects'
+const sanitize = (title: string) => `HIP-${title.replace(/[^a-zA-Z0-9]+/g, '-')}`
 
 @Injectable()
 export class ProjectsService {
@@ -49,7 +50,7 @@ export class ProjectsService {
 
 		const suffix = this.configService.get<string>('collab.suffix')
 		this.PROJECTS_GROUP = `HIP-${suffix}-projects`
-		this.PROJECTS_ADMINS_GROUP = `HIP-${suffix}-projects-admin-group`
+		this.PROJECTS_ADMINS_GROUP = `HIP-${suffix}-projects-administrators`
 
 	}
 
@@ -86,7 +87,7 @@ function to change the ownership of the user's folder in the collab workspace to
 	public async isProjectsAdmin(userId) {
 		this.logger.debug(`isProjectsAdmin: userId=${userId}`)
 		try {
-			const user = await this.iamService.getUser(userId)
+			const user = await this.iamService.getUser(userId, this.PROJECTS_ADMINS_GROUP)
 
 			return user['hasProjectsAdminRole'] === true
 		} catch (error) {
@@ -99,7 +100,7 @@ function to change the ownership of the user's folder in the collab workspace to
 		try {
 			const group = await this.iamService.getGroupListsByRole(
 				projectName,
-				'administrator'
+				'member'
 			)
 			const isAdmin = group.users.map(u => u.username).includes(userId)
 			if (!isAdmin)
@@ -117,7 +118,7 @@ function to change the ownership of the user's folder in the collab workspace to
 
 	async findAll(userId: string, full = false): Promise<Project[]> {
 		this.logger.debug(`findAll: userId=${userId} full=${full}`)
-		const projects = await this.iamService.getGroups()
+		const projects = await this.iamService.getGroups(this.PROJECTS_GROUP)
 
 		return projects.map(p => ({
 			...p,
@@ -129,7 +130,7 @@ function to change the ownership of the user's folder in the collab workspace to
 		userId: string
 	): Promise<Project[]> {
 		try {
-			const projects = await this.iamService.getUserGroups(userId)
+			const projects = await this.iamService.getUserGroups(this.PROJECTS_GROUP, userId)
 			const nextProjects = projects.map(p => ({
 				...p,
 				title: p.name,
@@ -147,7 +148,7 @@ function to change the ownership of the user's folder in the collab workspace to
 		// userId: string
 	): Promise<Project & { dataset: BIDSDataset }> {
 		try {
-			const group: any = await this.iamService.getGroup(projectName)
+			const group: any = await this.iamService.getGroup(this.PROJECTS_GROUP, projectName)
 			const dataset = await this.cacheService.get(
 				`${CACHE_KEY_PROJECTS}:${projectName}:dataset`
 			)
@@ -170,17 +171,14 @@ function to change the ownership of the user's folder in the collab workspace to
 
 		try {
 			const { title, description, adminId } = createProjectDto
-			const name = `HIP-${title.replace(/[^a-zA-Z0-9]+/g, '-')}`
+			const name = sanitize(title)
 			try {
-				// create group on iam
 				const { data } = await this.iamService.createGroup(
+					this.PROJECTS_GROUP,
 					name,
-					title,
 					description,
 					adminId,
 				)
-
-				// create user folder on collab workspace if it doesn't exist
 
 				await this.createUserFolder(adminId)
 			} catch (error) {
@@ -216,7 +214,7 @@ function to change the ownership of the user's folder in the collab workspace to
 
 	async remove(projectName: string, adminId: string) {
 		this.logger.debug(`remove(${projectName}, ${adminId})`)
-		return this.iamService.deleteGroup(projectName).then(async () => {
+		return this.iamService.deleteGroup(this.PROJECTS_GROUP, projectName).then(async () => {
 			return this.findProjectsForUser(adminId)
 		}).catch(error => {
 			this.logger.error(error)
@@ -232,7 +230,7 @@ function to change the ownership of the user's folder in the collab workspace to
 			this.logger.debug('userFolder exists')
 		}
 		try {
-			await this.iamService.addUserToGroup(userId, 'member', projectName)
+			await this.iamService.addUserToGroup(userId, 'member', this.PROJECTS_GROUP, projectName)
 
 			return this.findOne(projectName)
 		} catch (error) {
@@ -244,7 +242,7 @@ function to change the ownership of the user's folder in the collab workspace to
 	async removeUserFromProject(userId: string, projectName: string) {
 		this.logger.debug(`removeUserFromProject(${userId}, ${projectName})`)
 		try {
-			await this.iamService.removeUserFromGroup(userId, 'member', projectName)
+			await this.iamService.removeUserFromGroup(userId, 'member', this.PROJECTS_GROUP, projectName)
 
 			return this.findOne(projectName)
 		} catch (error) {
@@ -337,14 +335,15 @@ function to change the ownership of the user's folder in the collab workspace to
 
 	/* It creates a group called `HIP-[COLLAB_SUFFIX]-Projects`. 
 	This group is used to hold all HIP projects as sub groups. */
-	public async createProjectsGroup() {
-		this.logger.debug(`createProjectsGroup ${this.PROJECTS_GROUP}`)
+	public async createRootContainerProjectsGroup() {
+		this.logger.debug(`createRootContainerProjectsGroup ${this.PROJECTS_GROUP}`)
 		try {
-			const project = await this.iamService.createGroup(
-				this.PROJECTS_GROUP,
+			const project = await this.iamService.createRootContainerGroup(
 				this.PROJECTS_GROUP,
 				'Holds all HIP projects as sub groups'
 			)
+
+			return project
 		} catch (error) {
 			this.logger.debug(error)
 			throw error
@@ -355,22 +354,21 @@ function to change the ownership of the user's folder in the collab workspace to
 	 * This group is used to give users access to administrate HIP projects, i.e. create new projects,
 	 * by adding them to the group `HIP-[COLLAB_SUFFIX]-Projects-admins` as member.
 	 */
-	public async createAdminGroup() {
-		this.logger.debug(`createAdminGroup ${this.PROJECTS_ADMINS_GROUP}`)
+	public async createProjectsAdminsGroup() {
+		this.logger.debug(`createProjectsAdminsGroup ${this.PROJECTS_ADMINS_GROUP}`)
 		try {
-			await this.iamService.createGroup(
+			await this.iamService.createRootContainerGroup(
 				this.PROJECTS_ADMINS_GROUP,
-				this.PROJECTS_ADMINS_GROUP,
-				'Gives members access to administrate HIP projects'
+				'Gives members access to administrate HIP projects' 
 			)
+ 
 			const admins = this.configService.get('iam.platformAdmins')
 			for (const adminId of admins) {
-				await this.iamService.addUserToGroup(
+				await this.iamService.addUserToRootContainerGroup(
 					adminId,
-					'administrator',
 					this.PROJECTS_ADMINS_GROUP
-				)
-			}
+				) 
+			} 
 		} catch (error) {
 			this.logger.error(error)
 			throw error
