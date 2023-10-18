@@ -3,7 +3,7 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as jetpack from 'fs-jetpack'
 import { CacheService } from 'src/cache/cache.service'
-import { Group, IamEbrainsService } from 'src/iam-ebrains/iam-ebrains.service'
+import { Group, IamService } from 'src/iam/iam.service'
 import { BIDSDataset, ToolsService } from 'src/tools/tools.service'
 import { CreateProjectDto } from './dto/create-project.dto'
 import { ImportDocumentDto } from './dto/import-document.dto'
@@ -38,7 +38,7 @@ export class ProjectsService {
 	private PROJECTS_ADMINS_GROUP: string // Holds members allowed to create HIP projects
 
 	constructor(
-		private readonly iamService: IamEbrainsService,
+		private readonly iamService: IamService,
 		private readonly httpService: HttpService,
 		private readonly cacheService: CacheService,
 		private readonly configService: ConfigService,
@@ -239,7 +239,7 @@ function to change the ownership of the user's folder in the collab workspace to
 			const { title, description, adminId } = createProjectDto
 			const name = `HIP-${title.replace(/[^a-zA-Z0-9]+/g, '-')}`
 
-			// create group on iam-ebrains
+			// create group on iam
 			const { data } = await this.iamService.createGroup(
 				name,
 				title,

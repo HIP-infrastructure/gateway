@@ -1,10 +1,10 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { IamEbrainsService } from './iam-ebrains.service';
+import { IamService } from './iam.service';
 
 @Injectable()
 export class AddHeadersInterceptor implements NestInterceptor {
-  constructor(private iamService: IamEbrainsService) { }
+  constructor(private iamService: IamService) { }
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
 
     const token = "" // this.iamService.getAuthToken();

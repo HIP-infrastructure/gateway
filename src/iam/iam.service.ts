@@ -37,8 +37,8 @@ export interface GroupLists {
 }
 
 @Injectable()
-export class IamEbrainsService {
-	private readonly logger = new Logger(IamEbrainsService.name)
+export class IamService {
+	private readonly logger = new Logger(IamService.name)
 	private apiUrl: string
 	private clientId: string
 
@@ -94,18 +94,11 @@ export class IamEbrainsService {
 		this.logger.debug(`request(${url}, ${method}, ${JSON.stringify(body)})`)
 		const token = await this.getAuthToken()
 		const headers = { Authorization: `Bearer ${token}` }
-		// const headers = { 'Authorization': 'Basic ' }
 
-		this.logger.log(headers, url, body)
 		const catcher = catchError((error: any) => {
 			this.logger.error(error)
 
 			throw error
-
-			// throw new HttpException(
-			// 	error.response.data.description, 
-			// 	error.response.data.code
-			// )
 		})
 
 		if (method === 'delete' || method === 'get') {
@@ -162,7 +155,6 @@ export class IamEbrainsService {
 
 	public async getUserGroups(userName: string, role?: Role): Promise<Group[]> {
 		this.logger.debug(`getUserGroups(${userName})`)
-		// const baseUrl = `${this.apiUrl}/identity/groups?username=${userName}`
 		const baseUrl = `${this.apiUrl}/projects/users/${userName}?realm=hip`
 		const url = role ? `${baseUrl}&role=${role}` : baseUrl
 		const { data } = await this.request(url, 'get', {})
@@ -235,21 +227,6 @@ export class IamEbrainsService {
 	): Promise<Project & { members: GroupLists; administrators: GroupLists }> {
 		const group: any = await this.getGroupInfo(groupName)
 
-		// const groupList = await this.getGroupListsByRole(groupName, 'member')
-		// const groupListAdmin = await this.getGroupListsByRole(
-		// 	groupName,
-		// 	'administrator'
-		// )
-
 		return group
-
-		// return {
-		// 	...group,
-		// 	members: groupList,
-		// 	administrators: {
-		// 		...groupListAdmin,
-		// 		users: groupListAdmin.users.filter(u => !/service-account/.test(u.username))
-		// 	}
-		// }
 	}
 }
