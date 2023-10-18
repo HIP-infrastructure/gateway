@@ -1,9 +1,9 @@
 import { HttpModule } from '@nestjs/axios'
 import { Test, TestingModule } from '@nestjs/testing'
-import { IamEbrainsService } from './iam-ebrains.service'
+import { IamService } from './iam.service'
 
-describe('IamEbrainsService', () => {
-	let service: IamEbrainsService
+describe('IamService', () => {
+	let service: IamService
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -13,11 +13,11 @@ describe('IamEbrainsService', () => {
 					provide: 'TOKEN',
 					useValue: 'my-secret-token'
 				},
-				IamEbrainsService
+				IamService
 			]
 		}).compile()
 
-		service = module.get<IamEbrainsService>(IamEbrainsService)
+		service = module.get<IamService>(IamService)
 	})
 
 	it('should be defined', () => {
