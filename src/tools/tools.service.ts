@@ -2325,9 +2325,6 @@ export class ToolsService {
 		createBidsDatasetParticipantsTsvDto: CreateBidsDatasetParticipantsTsvDto
 	) {
 		try {
-			console.log(
-				`datasetPath for writing Participants TSV file: ${datasetPath}`
-			)
 			// get list of group folders associated with the owner/user
 			const ownerGroups = await this.nextcloudService.groupFoldersForUserId(
 				owner
