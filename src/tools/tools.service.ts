@@ -23,6 +23,7 @@ import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-p
 import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
 import { CreateProjectDto } from 'src/projects/dto/create-project.dto'
 import { ImportSubjectDto } from 'src/projects/dto/import-subject.dto'
+import { ConfigService } from '@nestjs/config'
 // import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
@@ -113,7 +114,8 @@ export class ToolsService {
 
 	constructor(
 		private readonly httpService: HttpService,
-		private readonly nextcloudService: NextcloudService
+		private readonly nextcloudService: NextcloudService,
+		private readonly configService: ConfigService,
 	) {
 		this.dataUser = process.env.DATA_USER
 		const uid = parseInt(userIdLib.uid(this.dataUser), 10)
@@ -376,6 +378,73 @@ export class ToolsService {
 
 			if (code === 0) {
 				return importDocumentToProjectDto
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
+	}
+
+	public async publishDatasetToPublicSpace(owner: string, path: string) {
+		this.logger.debug(
+			`copyDatasetToPublicSpace ${path} `
+		)
+
+		const name = path.split('/').pop()
+		const targetDatasetPath = `${this.configService.get<string>('public.mountPoint')}/${name}`
+
+		const uniquId = Math.round(Date.now() + Math.random())
+		const tmpDir = `/tmp/${uniquId}`
+		const output_file = `${tmpDir}/dataset_publish_output.json`
+
+		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(
+					owner
+				)
+		const sourceDatasetPath = await this.filePath(path, owner, ownerGroups)
+
+		const datasets = {
+			sourceDatasetPath,
+			targetDatasetPath
+		}
+
+		fs.mkdirSync(tmpDir, true)
+		fs.writeFileSync(
+			`${tmpDir}/dataset_publish.json`,
+			JSON.stringify(datasets)
+		)
+
+		try {
+			// Create the docker run command
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${path}:${path}`,
+				'-v',
+				`${targetDatasetPath}:${targetDatasetPath}`
+			]
+			const cmd2 = [
+				this.dataHIPyImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=dataset.publish',
+				'--input_data=/input/dataset_publish.json',
+				'--output_file=/input/dataset_publish_output.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return JSON.parse(fs.readFileSync(output_file, 'utf8'))
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
@@ -1456,7 +1525,7 @@ export class ToolsService {
 				owner
 			)
 
-			// get abosolute path of the dataset
+			// get absolute path of the dataset
 			const dsPath = await this.filePath(path, owner, ownerGroups)
 
 			const bidsDataset = await this.createDatasetIndexedContent(

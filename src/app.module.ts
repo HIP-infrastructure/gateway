@@ -9,6 +9,7 @@ import redisConfig from './config/db.redis.config';
 import iamConfig from './config/api.iam.config';
 import collab from './config/collab.config';
 import instance from './config/instance.config';
+import publicWorkspace from './config/public.config';
 import { FilesModule } from './files/files.module';
 import { GroupsModule } from './groups/groups.module';
 import { NextcloudModule } from './nextcloud/nextcloud.module';
@@ -30,7 +31,7 @@ import { IamService } from './iam/iam.service'
 		ConfigModule.forRoot({
 			isGlobal: true,
 			envFilePath: ['.env'],
-			load: [collab, iamConfig, postgresConfig, redisConfig, instance],
+			load: [collab, publicWorkspace, iamConfig, postgresConfig, redisConfig, instance],
 		}),
 		FilesModule,
 		RemoteAppModule,
