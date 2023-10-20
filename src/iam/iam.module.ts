@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common'
 import { HttpModule } from '@nestjs/axios'
-import { IamEbrainsService } from './iam-ebrains.service'
+import { IamService } from './iam.service'
 import { CacheService } from 'src/cache/cache.service';
 @Module({
 	imports: [HttpModule],
 	controllers: [],
 	providers: [
-		IamEbrainsService,
+		IamService,
 		CacheService
 	],
-	exports: [IamEbrainsModule]
+	exports: [IamModule]
 })
-export class IamEbrainsModule {}
+export class IamModule {}
