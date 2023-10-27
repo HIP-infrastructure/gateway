@@ -6,7 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import postgresConfig from './config/db.postgres.config';
 import redisConfig from './config/db.redis.config';
-import ebrains from './config/api.iam-ebrains.config';
+import iamConfig from './config/api.iam.config';
 import collab from './config/collab.config';
 import instance from './config/instance.config';
 import { FilesModule } from './files/files.module';
@@ -16,21 +16,21 @@ import { RemoteAppModule } from './remote-app/remote-app.module';
 import { ToolsModule } from './tools/tools.module';
 import { UsersModule } from './users/users.module';
 import { ProjectsModule } from './projects/projects.module';
-import { IamEbrainsModule } from './iam-ebrains/iam-ebrains.module';
+import { IamModule } from './iam/iam.module';
 import { WarmupService } from './warmup/warmup.service';
 import { ProjectsService } from './projects/projects.service'
 import { HttpModule } from '@nestjs/axios'
 import { CacheService } from './cache/cache.service'
 import { ToolsService } from './tools/tools.service'
 import { NextcloudService } from './nextcloud/nextcloud.service'
-import { IamEbrainsService } from './iam-ebrains/iam-ebrains.service'
+import { IamService } from './iam/iam.service'
 
 @Module({
 	imports: [
 		ConfigModule.forRoot({
 			isGlobal: true,
 			envFilePath: ['.env'],
-			load: [collab, ebrains, postgresConfig, redisConfig, instance],
+			load: [collab, iamConfig, postgresConfig, redisConfig, instance],
 		}),
 		FilesModule,
 		RemoteAppModule,
@@ -58,10 +58,10 @@ import { IamEbrainsService } from './iam-ebrains/iam-ebrains.service'
 		GroupsModule,
 		NextcloudModule,
 		ProjectsModule,
-		IamEbrainsModule,
+		IamModule,
 		HttpModule
 	],
 	controllers: [AppController],
-	providers: [CacheService, IamEbrainsService, NextcloudService, ConfigService, ToolsService, ProjectsService, WarmupService],
+	providers: [CacheService, IamService, NextcloudService, ConfigService, ToolsService, ProjectsService, WarmupService],
 })
 export class AppModule { }
