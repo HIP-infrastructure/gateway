@@ -29,7 +29,7 @@ export interface Project extends Group {
 }
 
 const CACHE_KEY_PROJECTS = 'projects'
-const sanitize = (title: string) => `HIP-${title.replace(/[^a-zA-Z0-9]+/g, '-')}`
+const sanitize = (title: string) => `${title.replace(/[^a-zA-Z0-9]+/g, '-')}`
 
 @Injectable()
 export class ProjectsService {
@@ -49,8 +49,8 @@ export class ProjectsService {
 		this.dataUserId = id
 
 		const suffix = this.configService.get<string>('collab.suffix')
-		this.PROJECTS_GROUP = `HIP-${suffix}-projects`
-		this.PROJECTS_ADMINS_GROUP = `HIP-${suffix}-projects-administrators`
+		this.PROJECTS_GROUP = `${suffix}-projects`
+		this.PROJECTS_ADMINS_GROUP = `${suffix}-projects-administrators`
 
 	}
 
@@ -333,7 +333,7 @@ function to change the ownership of the user's folder in the collab workspace to
 		}
 	}
 
-	/* It creates a group called `HIP-[COLLAB_SUFFIX]-Projects`. 
+	/* It creates a group called `[COLLAB_SUFFIX]-Projects`. 
 	This group is used to hold all HIP projects as sub groups. */
 	public async createRootContainerProjectsGroup() {
 		this.logger.debug(`createRootContainerProjectsGroup ${this.PROJECTS_GROUP}`)
@@ -350,9 +350,9 @@ function to change the ownership of the user's folder in the collab workspace to
 		}
 	}
 
-	/* It creates a group called `HIP-[COLLAB_SUFFIX]-Projects-admins` and adds the platform admins to it.
+	/* It creates a group called `[COLLAB_SUFFIX]-Projects-admins` and adds the platform admins to it.
 	 * This group is used to give users access to administrate HIP projects, i.e. create new projects,
-	 * by adding them to the group `HIP-[COLLAB_SUFFIX]-Projects-admins` as member.
+	 * by adding them to the group `[COLLAB_SUFFIX]-Projects-admins` as member.
 	 */
 	public async createProjectsAdminsGroup() {
 		this.logger.debug(`createProjectsAdminsGroup ${this.PROJECTS_ADMINS_GROUP}`)
