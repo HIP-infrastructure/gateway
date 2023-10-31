@@ -1,5 +1,24 @@
 [
 	{
+		"label": "VR-VIS",
+		"id": "vr-vis",
+		"pi": "Dr. Katja Bühler",
+		"country": "Austria",
+		"city": "Wien",
+		"logo": "media/256x256-vrvis__logo.png",
+		"description": "VRVis Zentrum für Virtual Reality und Visualisierung Forschungs-GmbH",
+		"website": "https://www.vrvis.at/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/vrvis",
+			"youtube": "https://www.youtube.com/user/VRVis",
+			"facebook": "https://www.facebook.com/vrvisvienna",
+			"linkedin": "https://www.linkedin.com/company/vrvis-zentrum-f%C3%BCr-virtual-reality-und-visualisierung-forschungs-gmbh/"
+		},
+		"community": {
+			"url": "/call/fcad5mb5"
+		}
+	},
+	{
 		"label": "UCL",
 		"id": "ucl",
 		"pi": "Prof. Susana Ferrao Santos",
