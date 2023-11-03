@@ -169,7 +169,7 @@ export class ToolsController {
 	@Get('/bids/datasets/publish')
 	async publish(@Req() req: Request, @Query('path') path: string,) {
 		return await this.nextcloudService.authUserIdFromRequest(req).then(async (userId) => {
-			return this.toolsService.publishDatasetToPublicSpace(userId, path)
+			return await this.toolsService.publishDatasetToPublicSpace(userId, path)
 		})
 	}
 
