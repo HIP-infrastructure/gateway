@@ -37,7 +37,7 @@ export const invokeRemoteContainer = (
 				...(startApp && {
 					nc: context.dataSource.fsUrl,
 					ab: context.dataSource.authUrl,
-					gf: JSON.stringify(context.dataSource.groupFolders),
+					gf: JSON.stringify(context.dataSource.groupFolders.filter(({ label }) => label !== 'tutorial_data'))
 				}),
 				app: context.name,
 			}

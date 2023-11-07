@@ -40,6 +40,7 @@ export class IamService {
 	private readonly logger = new Logger(IamService.name)
 	private apiUrl: string
 	private clientId: string
+	private realm: string
 
 	constructor(
 		private readonly httpService: HttpService,
@@ -48,6 +49,7 @@ export class IamService {
 	) {
 		this.apiUrl = this.configService.get<string>('iam.apiUrl')
 		this.clientId = this.configService.get<string>('iam.clientId')
+		this.realm = this.configService.get<string>('iam.realm')
 	}
 
 	private async getAuthToken() {
@@ -113,7 +115,7 @@ export class IamService {
 
 	private async getGroupInfo(root: string, groupName: string): Promise<Project> {
 		this.logger.debug(`getGroupInfo(${groupName})`)
-		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}?realm=hip`
+		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}?realm=${this.realm}`
 		const { data } = await this.request(url, 'get', {})
 
 		return data
@@ -121,7 +123,7 @@ export class IamService {
 
 	public async getGroups(root: string): Promise<Project[]> {
 		this.logger.debug(`getGroups(${root})`)
-		const url = `${this.apiUrl}/identity/groups/${root}?realm=hip`
+		const url = `${this.apiUrl}/identity/groups/${root}?realm=${this.realm}`
 		const { data } = await this.request(url, 'get', {})
 
 		return data
@@ -129,7 +131,7 @@ export class IamService {
 
 	public async getUser(username: string, root: string) {
 		this.logger.debug(`getUser(${username})`)
-		const url = `${this.apiUrl}/identity/projects/${root}/users/${username}?realm=hip`
+		const url = `${this.apiUrl}/identity/projects/${root}/users/${username}?realm=${this.realm}`
 		const { data } = await this.request(url, 'get', {})
 
 		return data
@@ -148,7 +150,7 @@ export class IamService {
 
 	public async getUserGroups(root, userName: string, role?: Role): Promise<Group[]> {
 		this.logger.debug(`getUserGroups(${userName}, ${root})`)
-		const baseUrl = `${this.apiUrl}/projects/${root}/users/${userName}?realm=hip`
+		const baseUrl = `${this.apiUrl}/projects/${root}/users/${userName}?realm=${this.realm}`
 		const url = role ? `${baseUrl}&role=${role}` : baseUrl
 		const { data } = await this.request(url, 'get', {})
 
@@ -158,7 +160,7 @@ export class IamService {
 	public async createRootContainerGroup(name: string, description: string) {
 		this.logger.debug(`createRootContainerGroup(${name})`)
 
-		const url = `${this.apiUrl}/identity/groupsroot?realm=hip`
+		const url = `${this.apiUrl}/identity/groupsroot?realm=${this.realm}`
 		const body = { name, description }
 		const { status } = await this.request(url, 'post', body)
 
@@ -168,7 +170,7 @@ export class IamService {
 	public async createGroup(root: string, name: string, description: string, adminId?: string) {
 		this.logger.debug(`createGroup(${name})`)
 
-		const url = `${this.apiUrl}/identity/groups?realm=hip`
+		const url = `${this.apiUrl}/identity/groups?realm=${this.realm}`
 		const body = { root, name, description, adminId }
 		const { status } = await this.request(url, 'post', body)
 
@@ -177,7 +179,7 @@ export class IamService {
 
 	public async deleteGroup(root: string, name: string) {
 		this.logger.debug(`deleteGroup(${name})`)
-		const url = `${this.apiUrl}/identity/groups/${root}/${name}?realm=hip`
+		const url = `${this.apiUrl}/identity/groups/${root}/${name}?realm=${this.realm}`
 
 		const data = await this.request(url, 'delete')
 		const { status } = data
@@ -201,7 +203,7 @@ export class IamService {
 
 	public async addUserToGroup(userName: string, role: Role, root: string, groupName: string) {
 		this.logger.debug(`addUserToGroup(${userName}, ${role}, ${groupName})`)
-		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}/${role}/users/${userName}?realm=hip`
+		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}/${role}/users/${userName}?realm=${this.realm}`
 		const { status } = await this.request(url, 'put', {})
 
 		return { data: 'Success', status }
@@ -209,7 +211,7 @@ export class IamService {
 
 	public async addUserToRootContainerGroup(userName: string, root: string,) {
 		this.logger.debug(`addUserToGroup(${userName}, ${root})`)
-		const url = `${this.apiUrl}/identity/groups/${root}/users/${userName}?realm=hip`
+		const url = `${this.apiUrl}/identity/groups/${root}/users/${userName}?realm=${this.realm}`
 		const { status } = await this.request(url, 'put', {})
 
 		return { data: 'Success', status }
@@ -222,7 +224,7 @@ export class IamService {
 		groupName: string
 	) {
 		this.logger.debug(`removeUserFromGroup(${userName}, ${role}, ${groupName})`)
-		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}/${role}/users/${userName}?realm=hip`
+		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}/${role}/users/${userName}?realm=${this.realm}`
 		const { status } = await this.request(url, 'delete', {})
 
 		return { data: 'Success', status }

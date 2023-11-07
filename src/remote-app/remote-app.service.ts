@@ -471,7 +471,7 @@ export class RemoteAppService {
 			id: serverId,
 			name,
 			userId,
-			groupIds: oidcGroupIds,
+			groupIds: oidcGroupIds.filter(id => id !== 'tutorial_data'),
 			url: '',
 			state: ContainerState.UNINITIALIZED,
 			error: null,
