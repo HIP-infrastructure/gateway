@@ -29,24 +29,10 @@ import { BIDSDataset, ToolsService } from './tools.service'
 export class ToolsController {
 	constructor(
 		private readonly toolsService: ToolsService,
-		private readonly nextcloudService: NextcloudService
-	) {}
+		private readonly nextcloudService: NextcloudService,
+	) { }
 
 	private logger = new Logger('ToolsController')
-
-	@Get('/bids/datasets/create_index')
-	createBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
-		return this.nextcloudService.authenticate(req).then(async () => {
-			return this.toolsService.createBIDSDatasetsIndex()
-		}) 
-	}
-
-	@Get('/bids/datasets/delete_index')
-	deleteBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
-		return this.nextcloudService.authenticate(req).then(async () => {
-			return this.toolsService.deleteBIDSDatasetsIndex()
-		})
-	}
 
 	@Get('/bids/dataset/index')
 	indexBIDSDataset(
@@ -162,6 +148,14 @@ export class ToolsController {
 	async getBidsDatasetsCount(@Req() req: Request) {
 		return await this.nextcloudService.authenticate(req).then(async () => {
 			return this.toolsService.getDatasetsCount()
+		})
+	}
+
+	@UsePipes(ValidationPipe)
+	@Get('/bids/datasets/publish')
+	async publish(@Req() req: Request, @Query('path') path: string,) {
+		return await this.nextcloudService.authUserIdFromRequest(req).then(async (userId) => {
+			return await this.toolsService.publishDatasetToPublicSpace(userId, path)
 		})
 	}
 

@@ -20,7 +20,7 @@ interface FileMetadata {
 	md5Hash: string
 	contentType: string
 	contentEncoding: string
-} 
+}
 
 export interface Project extends Group {
 	isMember?: boolean
@@ -169,11 +169,22 @@ function to change the ownership of the user's folder in the collab workspace to
 			`create createProjectDto=${JSON.stringify(createProjectDto)}`
 		)
 
+		const { title, description, adminId } = createProjectDto
+		const name = sanitize(title)
+
 		try {
-			const { title, description, adminId } = createProjectDto
-			const name = sanitize(title)
+			const existing = await this.findOne(name)
+			if (existing) throw new HttpException(`Could not create project ${name}, as it already exists`, HttpStatus.FORBIDDEN)
+		} catch (error) {
+			this.logger.debug(error)
+			if (!/404/.test(error.message))
+				throw error
+		}
+
+		try {
+
 			try {
-				const { data } = await this.iamService.createGroup(
+				await this.iamService.createGroup(
 					this.PROJECTS_GROUP,
 					name,
 					description,
@@ -335,7 +346,7 @@ function to change the ownership of the user's folder in the collab workspace to
 
 	/* It creates a group called `HIP-[COLLAB_SUFFIX]-Projects`. 
 	This group is used to hold all HIP projects as sub groups. */
-	public async createRootContainerProjectsGroup() {
+	public async createProjectsGroup() {
 		this.logger.debug(`createRootContainerProjectsGroup ${this.PROJECTS_GROUP}`)
 		try {
 			const project = await this.iamService.createRootContainerGroup(
@@ -346,7 +357,8 @@ function to change the ownership of the user's folder in the collab workspace to
 			return project
 		} catch (error) {
 			this.logger.debug(error)
-			throw error
+			// don't throw error because it is ok if the group already exists
+			// throw error
 		}
 	}
 
@@ -359,19 +371,20 @@ function to change the ownership of the user's folder in the collab workspace to
 		try {
 			await this.iamService.createRootContainerGroup(
 				this.PROJECTS_ADMINS_GROUP,
-				'Gives members access to administrate HIP projects' 
+				'Gives members access to administrate HIP projects'
 			)
- 
+
 			const admins = this.configService.get('iam.platformAdmins')
 			for (const adminId of admins) {
 				await this.iamService.addUserToRootContainerGroup(
 					adminId,
 					this.PROJECTS_ADMINS_GROUP
-				) 
-			} 
+				)
+			}
 		} catch (error) {
 			this.logger.error(error)
-			throw error
+			// don't throw error because it is ok if the group already exists
+			// throw error
 		}
 	}
 }

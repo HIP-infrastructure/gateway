@@ -23,6 +23,7 @@ import { CreateBidsDatasetParticipantsTsvDto } from './dto/create-bids-dataset-p
 import { SearchBidsDatasetsQueryOptsDto } from './dto/search-bids-datasets-quey-opts.dto'
 import { CreateProjectDto } from 'src/projects/dto/create-project.dto'
 import { ImportSubjectDto } from 'src/projects/dto/import-subject.dto'
+import { ConfigService } from '@nestjs/config'
 // import { Dataset } from './entities/dataset.entity'
 
 const userIdLib = require('userid')
@@ -113,7 +114,8 @@ export class ToolsService {
 
 	constructor(
 		private readonly httpService: HttpService,
-		private readonly nextcloudService: NextcloudService
+		private readonly nextcloudService: NextcloudService,
+		private readonly configService: ConfigService,
 	) {
 		this.dataUser = process.env.DATA_USER
 		const uid = parseInt(userIdLib.uid(this.dataUser), 10)
@@ -388,6 +390,87 @@ export class ToolsService {
 		}
 	}
 
+	public async publishDatasetToPublicSpace(owner: string, path: string) {
+		this.logger.debug(
+			`publishDatasetToPublicSpace ${path} `
+		)
+
+		const name = path.split('/').pop()
+		const targetDatasetRootPath = this.configService.get<string>('public.mountPoint')
+		const targetDatasetPath = `${targetDatasetRootPath}/${name}`
+		const uniquId = Math.round(Date.now() + Math.random())
+		const tmpDir = `/tmp/${uniquId}`
+		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
+		const sourceDatasetPath = await this.filePath(path, owner, ownerGroups)
+
+		const datasets = {
+			sourceDatasetPath,
+			targetDatasetPath
+		}
+
+		fs.mkdirSync(tmpDir, true)
+		fs.writeFileSync(
+			`${tmpDir}/dataset_publish.json`,
+			JSON.stringify(datasets)
+		)
+
+		// Create an empty output JSON file with correct ownership
+		const output_file = `${tmpDir}/dataset_publish_output.json`
+		let empty_content = {}
+		fs.writeFileSync(output_file, JSON.stringify(empty_content))
+
+		fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
+			if (err) {
+				throw err
+			}
+		})
+
+		// delete target if existing
+		fs.rmdirSync(targetDatasetPath, { recursive: true }, (err) => {
+			if (err) {
+				throw err
+			}
+		})
+
+		try {
+			// Create the docker run command
+			const cmd1 = [
+				'run',
+				'-v',
+				`${tmpDir}:/input`,
+				'-v',
+				`${sourceDatasetPath}:${sourceDatasetPath}`,
+				'-v',
+				`${targetDatasetRootPath}:${targetDatasetRootPath}`
+			]
+			const cmd2 = [
+				this.dataHIPyImage,
+				this.dataUser,
+				this.dataUserId,
+				'--command=dataset.publish',
+				'--input_data=/input/dataset_publish.json',
+				'--output_file=/input/dataset_publish_output.json'
+			]
+			const command = [...cmd1, ...cmd2]
+			this.logger.debug(command.join(' '))
+
+			// Run the docker command
+			const { code, message } = await this.spawnable('docker', command)
+
+			if (code === 0) {
+				return JSON.parse(fs.readFileSync(output_file, 'utf8'))
+			} else {
+				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
+			}
+		} catch (error) {
+			this.logger.error(error)
+			throw new HttpException(
+				error.message,
+				error.status || HttpStatus.INTERNAL_SERVER_ERROR
+			)
+		}
+	}
+
 	/**
 	 * Generate a list of BIDSDataset objects (JSON content indexed to elasticsearch) given a list of dataset paths
 	 * @param owner user id
@@ -493,10 +576,10 @@ export class ToolsService {
 			bidsDatasets[index].version = 1
 			// generate id for next dataset
 			datasetIdNum++
-			;({ datasetId, datasetIdNum } = await this.generateDatasetId(
-				owner,
-				datasetIdNum
-			))
+				; ({ datasetId, datasetIdNum } = await this.generateDatasetId(
+					owner,
+					datasetIdNum
+				))
 		}
 		// create and send elasticsearch bulk to index the datasets
 		this.logger.debug('Sending elasticsearch bulk to index the datasets')
@@ -1456,7 +1539,7 @@ export class ToolsService {
 				owner
 			)
 
-			// get abosolute path of the dataset
+			// get absolute path of the dataset
 			const dsPath = await this.filePath(path, owner, ownerGroups)
 
 			const bidsDataset = await this.createDatasetIndexedContent(
@@ -2264,7 +2347,7 @@ export class ToolsService {
 		}
 	}
 
-	public deleteSubject() {}
+	public deleteSubject() { }
 
 	/**
 	 * Get the list of participants in a BIDS dataset from the participants.tsv file
@@ -2687,9 +2770,8 @@ export class ToolsService {
 			rootPath = rootPath + '/'
 			// Create the path depending on whether it's a group folder or not
 			const nextPath = id
-				? `${
-						process.env.PRIVATE_FILESYSTEM
-				  }/__groupfolders/${id}/${path.replace(rootPath, '')}`
+				? `${process.env.PRIVATE_FILESYSTEM
+				}/__groupfolders/${id}/${path.replace(rootPath, '')}`
 				: `${process.env.PRIVATE_FILESYSTEM}/${userId}/files/${path}`
 
 			return nextPath
