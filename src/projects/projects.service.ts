@@ -160,7 +160,7 @@ function to change the ownership of the user's folder in the collab workspace to
 				dataset
 			}
 		} catch (error) {
-			throw new Error('Could not get project')
+			throw new Error(`Could not get project: ${error}`)
 		}
 	}
 
