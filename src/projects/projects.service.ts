@@ -169,11 +169,22 @@ function to change the ownership of the user's folder in the collab workspace to
 			`create createProjectDto=${JSON.stringify(createProjectDto)}`
 		)
 
+		const { title, description, adminId } = createProjectDto
+		const name = sanitize(title)
+
 		try {
-			const { title, description, adminId } = createProjectDto
-			const name = sanitize(title)
+			const existing = await this.findOne(name)
+			if (existing) throw new HttpException(`Could not create project ${name}, as it already exists`, HttpStatus.FORBIDDEN)
+		} catch (error) {
+			this.logger.debug(error)
+			if (!/404/.test(error.message))
+				throw error
+		}
+
+		try {
+
 			try {
-				const { data } = await this.iamService.createGroup(
+				await this.iamService.createGroup(
 					this.PROJECTS_GROUP,
 					name,
 					description,
