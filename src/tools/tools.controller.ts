@@ -96,6 +96,7 @@ export class ToolsController {
 		datatypes: string[],
 		@Query('page') page: number,
 		@Query('nbOfResults') nbOfResults: number,
+		@Query('indexType') indexType: string,
 		@Req() req: Request
 	) {
 		const searchQueryOpts: SearchBidsDatasetsQueryOptsDto = {
@@ -106,7 +107,8 @@ export class ToolsController {
 			participantsCountRange,
 			datatypes,
 			page,
-			nbOfResults
+			nbOfResults,
+			indexType: indexType as 'personal' | 'public' | undefined
 		}
 
 		return await this.nextcloudService.authenticate(req).then(async () => {

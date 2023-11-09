@@ -7,4 +7,5 @@ export class SearchBidsDatasetsQueryOptsDto {
 	datatypes: string[] | undefined
 	page: number | undefined
 	nbOfResults: number | undefined
+	indexType?: 'personal' | 'public'
 }

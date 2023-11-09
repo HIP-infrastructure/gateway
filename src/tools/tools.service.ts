@@ -1,7 +1,4 @@
 import { firstValueFrom } from 'rxjs'
-
-import { mappings } from '../mappings/datasets_mapping.json'
-
 import { HttpService } from '@nestjs/axios'
 import {
 	BadRequestException,
@@ -108,8 +105,8 @@ export class ToolsService {
 	private dataUserId
 	private elasticClientRO: Client
 	private elasticClientRW: Client
-	private readonly es_index_datasets =
-		process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
+	private readonly elasticSearchBidsDatasetsIndex = process.env.ELASTICSEARCH_BIDS_DATASETS_INDEX
+	private readonly elasticSearchBidsPublicDatasetsIndex = process.env.ELASTICSEARCH_PUBLIC_BIDS_DATASETS_INDEX
 	private readonly dataHIPyImage = `${process.env.GL_REGISTRY}/${process.env.DataHIPy_IMAGE}:${process.env.DataHIPy_VERSION}`
 
 	constructor(
@@ -426,11 +423,19 @@ export class ToolsService {
 		})
 
 		// delete target if existing
-		fs.rmdirSync(targetDatasetPath, { recursive: true }, (err) => {
-			if (err) {
-				throw err
-			}
-		})
+		// fs.rmdirSync(targetDatasetPath, { recursive: true })
+
+		// // create target and change rights to www-data
+		// fs.mkdirSync(targetDatasetPath, { recursive: true }, (err) => {
+		// 	if (err) {
+		// 		throw err
+		// 	}
+		// })
+		// fs.chown(targetDatasetPath, this.dataUserId, this.dataUserId, err => {
+		// 	if (err) {
+		// 		throw err
+		// 	}
+		// })
 
 		try {
 			// Create the docker run command
@@ -458,7 +463,10 @@ export class ToolsService {
 			const { code, message } = await this.spawnable('docker', command)
 
 			if (code === 0) {
-				return JSON.parse(fs.readFileSync(output_file, 'utf8'))
+				const ds = JSON.parse(fs.readFileSync(output_file, 'utf8'))
+				this.sendElasticSearchDatasetsBulk([ds], this.elasticSearchBidsPublicDatasetsIndex)
+
+				return ds
 			} else {
 				throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
 			}
@@ -505,14 +513,14 @@ export class ToolsService {
 	 * Index a list of BIDSDataset JSON objects using elasticsearch bulk API
 	 * @param bidsDatasets list of BIDSDataset JSON object to index
 	 */
-	public async sendElasticSearchDatasetsBulk(bidsDatasets: BIDSDataset[]) {
+	public async sendElasticSearchDatasetsBulk(bidsDatasets: BIDSDataset[], indexName: string = this.elasticSearchBidsDatasetsIndex) {
 		// create body for elasticsearch bulk to index the datasets
 		const body =
 			Array.isArray(bidsDatasets) &&
 			bidsDatasets.flatMap((dataset: BIDSDataset) => [
 				{
 					index: {
-						_index: this.es_index_datasets,
+						_index: indexName,
 						_id: dataset.id
 					}
 				},
@@ -524,6 +532,8 @@ export class ToolsService {
 			operations: body
 		}
 		const bulkResponse = await this.elasticClientRW.bulk(bulk_params)
+		this.logger.debug('Indexing....')
+		this.logger.debug({ bulkResponse })
 		if (bulkResponse.errors) {
 			this.logger.error('Errors for (re)indexing datasets')
 			this.logger.error(JSON.stringify(bulkResponse, null, 4))
@@ -534,7 +544,7 @@ export class ToolsService {
 		}
 		// count indexed data
 		const count = await this.elasticClientRO.count({
-			index: this.es_index_datasets
+			index: indexName
 		})
 		this.logger.debug({ count })
 	}
@@ -549,7 +559,8 @@ export class ToolsService {
 	public async addNewBIDSDatasetIndexedContents(
 		owner: string,
 		ownerGroups: GroupFolder[],
-		datasetRelPaths: string[]
+		datasetRelPaths: string[],
+		indexName: string = this.elasticSearchBidsDatasetsIndex
 	) {
 		// generate content to index of each dataset not indexed
 		this.logger.debug('Generating content to index of each dataset not indexed')
@@ -583,7 +594,7 @@ export class ToolsService {
 		}
 		// create and send elasticsearch bulk to index the datasets
 		this.logger.debug('Sending elasticsearch bulk to index the datasets')
-		await this.sendElasticSearchDatasetsBulk(bidsDatasets)
+		await this.sendElasticSearchDatasetsBulk(bidsDatasets, indexName)
 		return bidsDatasets
 	}
 
@@ -599,7 +610,8 @@ export class ToolsService {
 		owner: string,
 		ownerGroups: GroupFolder[],
 		datasetRelPaths: string[],
-		datasetIds: string[]
+		datasetIds: string[],
+		indexName: string = this.elasticSearchBidsDatasetsIndex
 	) {
 		// generate content to index of each dataset not indexed
 		const bidsDatasets = await this.genBIDSDatasetsIndexedContent(
@@ -622,7 +634,7 @@ export class ToolsService {
 			bidsDatasets[index].version = 1
 		}
 		// create and send elasticsearch bulk to index the datasets
-		await this.sendElasticSearchDatasetsBulk(bidsDatasets)
+		await this.sendElasticSearchDatasetsBulk(bidsDatasets, indexName)
 		return bidsDatasets
 	}
 
@@ -630,7 +642,8 @@ export class ToolsService {
 		owner: string,
 		ownerGroups: GroupFolder[],
 		datasetRelPaths: string[],
-		datasetIds: string[]
+		datasetIds: string[],
+		indexName: string = this.elasticSearchBidsDatasetsIndex
 	) {
 		// generate content to index of each dataset not indexed
 		const bidsDatasets = await this.genBIDSDatasetsIndexedContent(
@@ -650,7 +663,7 @@ export class ToolsService {
 			bidsDatasets[index].version = 1
 		}
 		// create and send elasticsearch bulk to index the datasets
-		await this.sendElasticSearchDatasetsBulk(bidsDatasets)
+		await this.sendElasticSearchDatasetsBulk(bidsDatasets, indexName)
 		return bidsDatasets
 	}
 
@@ -1097,7 +1110,8 @@ export class ToolsService {
 		foundDatasetPaths: string[],
 		foundDatasetIDs: string[],
 		foundRenamedDatasetIDs: string[],
-		groupFolders: GroupFolder[]
+		groupFolders: GroupFolder[],
+		indexName: string = this.elasticSearchBidsDatasetsIndex
 	) {
 		let addedBidsDatasets: BIDSDataset[] = []
 		let addedGroupBidsDatasets: BIDSDataset[] = []
@@ -1124,7 +1138,8 @@ export class ToolsService {
 				addedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
 					owner,
 					groupFolders,
-					foundPrivateDatasetsNotIndexed
+					foundPrivateDatasetsNotIndexed,
+					indexName
 				)
 			}
 			// generate and index content of every group dataset not indexed
@@ -1144,7 +1159,8 @@ export class ToolsService {
 							owner,
 							groupFolders,
 							groupDatasetPathsToBeAdded,
-							groupDatasetIDsToBeAdded
+							groupDatasetIDsToBeAdded,
+							indexName
 						)
 			}
 		} else {
@@ -1165,7 +1181,8 @@ export class ToolsService {
 		owner: string,
 		foundDatasetPaths: string[],
 		foundRenamedDatasetIDs: string[],
-		groupFolders: GroupFolder[]
+		groupFolders: GroupFolder[],
+		indexName: string = this.elasticSearchBidsDatasetsIndex
 	) {
 		let renamedBidsDatasets: BIDSDataset[] = []
 		let renamedGroupBidsDatasets: BIDSDataset[] = []
@@ -1196,7 +1213,8 @@ export class ToolsService {
 					owner,
 					groupFolders,
 					foundPrivateRenamedDatasets,
-					foundPrivateRenamedDatasetIDs
+					foundPrivateRenamedDatasetIDs,
+					indexName
 				)
 			}
 			// update indexed content of every dataset that has been moved to a group folder
@@ -1279,7 +1297,8 @@ export class ToolsService {
 		owner: string,
 		foundDatasetPaths: string[],
 		foundDuplicatedDatasetPaths: string[],
-		groupFolders: GroupFolder[]
+		groupFolders: GroupFolder[],
+		indexName: string = this.elasticSearchBidsDatasetsIndex
 	) {
 		let duplicatedBidsDatasets: BIDSDataset[] = []
 		if (foundDatasetPaths.length > 0) {
@@ -1303,7 +1322,8 @@ export class ToolsService {
 				duplicatedBidsDatasets = await this.addNewBIDSDatasetIndexedContents(
 					owner,
 					groupFolders,
-					foundPrivateDatasetsDuplicated
+					foundPrivateDatasetsDuplicated,
+					indexName
 				)
 			}
 		} else {
@@ -1341,7 +1361,8 @@ export class ToolsService {
 	 */
 	public async refreshBIDSDatasetsIndex(
 		owner: string,
-		{ cookie, requesttoken }: any
+		{ cookie, requesttoken }: any,
+		indexName: string = this.elasticSearchBidsDatasetsIndex
 	) {
 		// TODO: Index shared datasets appearing in both private and group folders
 		try {
@@ -1394,7 +1415,8 @@ export class ToolsService {
 					foundDatasetPaths,
 					foundDatasetIDs,
 					foundRenamedDatasetIDs,
-					groupFolders
+					groupFolders,
+					indexName
 				)
 
 			// 3. handle indexing of dataset duplicates not indexed
@@ -1411,7 +1433,8 @@ export class ToolsService {
 					owner,
 					foundDatasetPaths,
 					foundRenamedDatasetIDs,
-					groupFolders
+					groupFolders,
+					indexName
 				)
 
 			// 5. delete any indexed dataset that does not exist anymore
@@ -1449,30 +1472,31 @@ export class ToolsService {
 	 * This function creates the index employed to store BIDS datasets using elasticsearch indices.create API
 	 * @returns  {Promise<any>} Promise object represents the response of the elasticsearch indices.create API
 	 */
-	public async createBIDSDatasetsIndex() {
+	public async createBIDSDatasetsIndex(indexName: string = this.elasticSearchBidsDatasetsIndex) {
+		this.logger.debug(`createBIDSDatasetsIndex ${indexName}`)
 		try {
 			// create index for datasets if not existing
 			const exists = await this.elasticClientRO.indices.exists({
-				index: this.es_index_datasets
+				index: indexName
 			})
 
 			if (exists === false) {
 				try {
 					this.logger.debug('Creating index for datasets...')
 					const create = await this.elasticClientRW.indices.create({
-						index: this.es_index_datasets
+						index: indexName
 						// mappings: { mappings }
 					})
-					this.logger.debug(`New index ${this.es_index_datasets} created!`)
+					this.logger.debug(`New index ${indexName} created!`)
 					this.logger.debug(JSON.stringify(create, null, 2))
 					return create
 				} catch (error) {
-					this.logger.warn(`Failed to create index ${this.es_index_datasets}!`)
+					this.logger.warn(`Failed to create index ${indexName}!`)
 					this.logger.warn(JSON.stringify(error))
 				}
 			} else {
 				this.logger.warn(
-					`SKIP: Index ${this.es_index_datasets} already exists!`
+					`SKIP: Index ${indexName} already exists!`
 				)
 				return exists
 			}
@@ -1487,30 +1511,30 @@ export class ToolsService {
 	 * This function deletes the index for datasets using the elasticsearch delete index API
 	 * @returns  {Promise<any>} Promise object represents the body response from the elasticsearch indices.delete API
 	 */
-	public async deleteBIDSDatasetsIndex() {
+	public async deleteBIDSDatasetsIndex(indexName: string = this.elasticSearchBidsDatasetsIndex) {
 		try {
 			// delete index for datasets only if it exists
 			const exists = await this.elasticClientRO.indices.exists({
-				index: this.es_index_datasets
+				index: indexName
 			})
 
 			if (exists === true) {
 				try {
 					const del = await this.elasticClientRW.indices.delete({
-						index: this.es_index_datasets
+						index: indexName
 					})
-					this.logger.debug(`Index ${this.es_index_datasets} deleted`)
+					this.logger.debug(`Index ${indexName} deleted`)
 					this.logger.debug(JSON.stringify(del, null, 2))
 					return del
 				} catch (error) {
 					this.logger.warn(
-						`Failed to create index ${this.es_index_datasets}...`
+						`Failed to create index ${indexName}...`
 					)
 					this.logger.warn(JSON.stringify(error))
 				}
 			} else {
 				this.logger.warn(
-					`SKIP: Index was not deleted because ${this.es_index_datasets} does not exist...`
+					`SKIP: Index was not deleted because ${indexName} does not exist...`
 				)
 				return exists
 			}
@@ -1525,9 +1549,10 @@ export class ToolsService {
 	 * @param owner user owner of the dataset (user id)
 	 * @param path relative path of the dataset
 	 * @param id id of the dataset
+	 * @param indexName name of the index
 	 * @returns {Promise<BIDSDataset>} Promise object represents the indexed BIDS dataset
 	 */
-	public async indexBIDSDataset(owner: string, path: string, id: string) {
+	public async indexBIDSDataset(owner: string, path: string, id: string, indexName: string = this.elasticSearchBidsDatasetsIndex) {
 		try {
 			// get a list of dataset indexed content
 			const bidsGetDatasetDto = new BidsGetDatasetDto()
@@ -1592,7 +1617,7 @@ export class ToolsService {
 			bidsDataset.Path = await this.filePath(path, owner, ownerGroups)
 
 			// create and send elasticsearch bulk to index the dataset
-			await this.sendElasticSearchDatasetsBulk([bidsDataset])
+			await this.sendElasticSearchDatasetsBulk([bidsDataset], indexName)
 
 			bidsDataset.Path = this.getRelativePath(
 				bidsDataset.Path,
@@ -1738,8 +1763,10 @@ export class ToolsService {
 		participantsCountRange = [0, 200],
 		datatypes = ['*'],
 		page = 1,
-		nbOfResults = 200
+		nbOfResults = 200,
+		indexType = 'personal'
 	}: SearchBidsDatasetsQueryOptsDto) {
+		const indexName = indexType === 'personal' ? this.elasticSearchBidsDatasetsIndex : this.elasticSearchBidsPublicDatasetsIndex
 		try {
 			// determine index to start based on pagination
 			const indexFrom = (page - 1) * nbOfResults
@@ -1832,11 +1859,13 @@ export class ToolsService {
 			}
 			// define search query in JSON format expected by elasticsearch
 			const query_params: estypes.SearchRequest = {
-				index: `${this.es_index_datasets}`,
+				index: indexName,
 				from: indexFrom,
 				size: nbOfResults,
 				query: queryObj
 			}
+
+			this.logger.debug({ query_params })
 			// perform and return the search query
 			const { foundDatasets, total } = await this.elasticClientRO
 				.search(query_params)
@@ -1853,11 +1882,15 @@ export class ToolsService {
 							}
 						})
 					}
+
 					return {
 						foundDatasets: result.hits.hits,
 						total: result.hits.total['value']
 					}
 				})
+
+			this.logger.debug({ foundDatasets, total })
+
 			return { datasets: foundDatasets, total: total }
 			// // filter only datasets accessible by the user if owner is not 'all'
 			// if (owner !== 'all') {
@@ -1882,7 +1915,7 @@ export class ToolsService {
 	 * @param textQuery 		- array of query strings to search in the datasets
 	 * @returns 				- array of datasets matching each search query of the array
 	 */
-	public async multiSearchBidsDatasets(textQuery: string[] = ['*']) {
+	public async multiSearchBidsDatasets(textQuery: string[] = ['*'], indexName: string = this.elasticSearchBidsDatasetsIndex) {
 		try {
 			// create body of query for elasticsearch msearch to search the datasets
 			const queryObj = textQuery.map((_value, index) => {
@@ -1897,7 +1930,7 @@ export class ToolsService {
 			const body =
 				Array.isArray(queryObj) &&
 				queryObj.flatMap(query => [
-					{ index: `${this.es_index_datasets}` },
+					{ index: indexName },
 					{ query: query }
 				])
 			// define msearch query in JSON format expected by elasticsearch
@@ -1928,10 +1961,10 @@ export class ToolsService {
 	 * This function is used to get the number of datasets indexed in elasticsearch
 	 * @returns - number of datasets in the elasticsearch index
 	 */
-	public async getDatasetsCount(): Promise<number> {
+	public async getDatasetsCount(indexName: string = this.elasticSearchBidsDatasetsIndex): Promise<number> {
 		// define count query in JSON format expected by elasticsearch
 		const count_params: estypes.CountRequest = {
-			index: `${this.es_index_datasets}`,
+			index: indexName,
 			// you can count based on specific query or remove body at all
 			query: { match_all: {} }
 		}
@@ -1972,10 +2005,10 @@ export class ToolsService {
 	 * @param datasetIdNum dataset id number
 	 * @returns final dataset id and dataset id number
 	 */
-	public async generateDatasetId(owner: string, datasetIdNum: number = null) {
+	public async generateDatasetId(owner: string, datasetIdNum: number = null, indexName: string = this.elasticSearchBidsDatasetsIndex) {
 		try {
 			// get number of datasets indexed in elasticsearch
-			const nbOfDatasets = await this.getDatasetsCount()
+			const nbOfDatasets = await this.getDatasetsCount(indexName)
 
 			let searchIndexedResults: {
 				datasets: estypes.SearchHit<BIDSDataset>[]
