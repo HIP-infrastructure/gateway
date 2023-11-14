@@ -133,13 +133,13 @@ function to change the ownership of the user's folder in the collab workspace to
 			const projects = await this.iamService.getUserGroups(this.PROJECTS_GROUP, userId)
 			const nextProjects = projects.map(p => ({
 				...p,
+				// isPublic: p.isPublic,
 				title: p.name,
-
 			}))
 
 			return nextProjects
 		} catch (error) {
-			throw new Error('Could not get project')
+			throw new Error(`Could not get projects: ${error}`)
 		}
 	}
 
