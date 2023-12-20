@@ -1,5 +1,20 @@
 [
 	{
+		"label": "Uniklinikum Aachen",
+		"id": "uka",
+		"pi": "Stefan Wolking",
+		"country": "Germany",
+		"city": "Aachen",
+		"logo": "media/256x256-uka__logo.png",
+		"description": "The University Hospital RWTH Aachen combines patient-oriented medicine, nursing, teaching, and research at an international level.",
+		"website": "https://www.ukaachen.de/en/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/UniklinikAachen"
+		},
+		"community": {
+			"url": "/call/fcad5mb5"
+		}},
+	{
 		"label": "VR-VIS",
 		"id": "vr-vis",
 		"pi": "Dr. Katja Bühler",
