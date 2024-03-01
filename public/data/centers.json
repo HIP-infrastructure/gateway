@@ -1,6 +1,6 @@
 [
 	{
-		"label": "EPFL - Embedded Systems Laboratory",
+		"label": "EPFL-ESL",
 		"id": "epfl-esl",
 		"pi": "David Atienza",
 		"country": "Switzerland",
@@ -12,7 +12,7 @@
 			"youtube": "https://www.youtube.com/@eslepfl"
 		},
 		"community": {
-			"url": ""
+			"url": "/call/7a8b3m37"
 		}
 	},
 	{
