@@ -1,5 +1,21 @@
 [
 	{
+		"label": "EPFL - Embedded Systems Laboratory",
+		"id": "epfl-esl",
+		"pi": "David Atienza",
+		"country": "Switzerland",
+		"city": "Lausanne",
+		"logo": "media/256x256-epfl-esl__logo.png",
+		"description": "The Embedded Systems Laboratory (ESL) is a research laboratory at the Institute of Electrical Engineering (IEL) of the Swiss Federal Institute of Technology (EPFL) in Lausanne, Switzerland.",
+		"website": "https://www.epfl.ch/labs/esl/",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/@eslepfl"
+		},
+		"community": {
+			"url": ""
+		}
+	},
+	{
 		"label": "Uniklinikum Aachen",
 		"id": "uka",
 		"pi": "Stefan Wolking",
@@ -13,7 +29,8 @@
 		},
 		"community": {
 			"url": "/call/dtp62mkp"
-		}},
+		}
+	},
 	{
 		"label": "VR-VIS",
 		"id": "vr-vis",
