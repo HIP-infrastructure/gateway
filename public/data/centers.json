@@ -1,4 +1,20 @@
 [
+        {
+                "label": "TUDelft",
+                "id": "tudelft",
+                "pi": "Arman Sharifi",
+                "country": "Netherlands",
+                "city": "Delft",
+                "logo": "media/256x256-tudelft__logo.png",
+                "description": "Delft University of Technology",
+                "website": "https://www.tudelft.nl/",
+                "socialnetwork": {
+                        "youtube": "https://www.youtube.com/@tudelft"
+                },
+                "community": {
+                        "url": ""
+                }
+        },
 	{
 		"label": "EPFL-ESL",
 		"id": "epfl-esl",
