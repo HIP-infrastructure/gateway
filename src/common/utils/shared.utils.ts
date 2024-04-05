@@ -20,9 +20,11 @@ export const getLogLevels = (level: number): LogLevel[] => {
 }
 
 export const uniq = (type: 'server' | 'app' = 'server'): string => {
-  const uniqueId = `${type === 'server' ? 'server' : 'app'}-${Date.now()
-    .toString()
-    .slice(-3)}`
+  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const randomId = Array.from({ length: 5 }, () => {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    return characters[randomIndex];
+  }).join('');
 
-  return uniqueId
+  return `${type === 'server' ? 'server' : 'app'}-${randomId}`
 }
