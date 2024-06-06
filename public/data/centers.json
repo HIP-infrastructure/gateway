@@ -348,7 +348,7 @@
 	{
 		"label": "UCBL",
 		"id": "ucbl",
-		"pi": "Dr. Jean-Philippe Lachaux ",
+		"pi": "Dr. Jean-Philippe Lachaux",
 		"country": "France",
 		"city": "Lyon",
 		"logo": "media/lyon1__logo.png",
@@ -396,7 +396,7 @@
 	{
 		"label": "UNIPD",
 		"id": "unipd",
-		"pi": "Maurizio Corbetta",
+		"pi": "Professor Maurizio Corbetta",
 		"country": "Italy",
 		"city": "Padova",
 		"logo": "media/unipd__logo.png",
