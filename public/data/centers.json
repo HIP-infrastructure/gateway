@@ -1,20 +1,20 @@
 [
-        {
-                "label": "TUDelft",
-                "id": "tudelft",
-                "pi": "Arman Sharifi",
-                "country": "Netherlands",
-                "city": "Delft",
-                "logo": "media/256x256-tudelft__logo.png",
-                "description": "Delft University of Technology",
-                "website": "https://www.tudelft.nl/",
-                "socialnetwork": {
-                        "youtube": "https://www.youtube.com/@tudelft"
-                },
-                "community": {
-                        "url": ""
-                }
-        },
+	{
+		"label": "TUDelft",
+		"id": "tudelft",
+		"pi": "Arman Sharifi",
+		"country": "Netherlands",
+		"city": "Delft",
+		"logo": "media/256x256-tudelft__logo.png",
+		"description": "Delft University of Technology",
+		"website": "https://www.tudelft.nl/",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/@tudelft"
+		},
+		"community": {
+			"url": ""
+		}
+	},
 	{
 		"label": "EPFL-ESL",
 		"id": "epfl-esl",
@@ -348,7 +348,7 @@
 	{
 		"label": "UCBL",
 		"id": "ucbl",
-		"pi": "Dr. Jean-Philippe Lachaux ",
+		"pi": "Dr. Jean-Philippe Lachaux",
 		"country": "France",
 		"city": "Lyon",
 		"logo": "media/lyon1__logo.png",
@@ -375,6 +375,38 @@
 		"website": "https://www.umcutrecht.nl/en/",
 		"community": {
 			"url": "/call/hph8xdzp"
+		}
+	},
+	{
+		"label": "ABT",
+		"id": "abt",
+		"pi": "Mehrdad Seirafi",
+		"country": "Netherlands",
+		"city": "Maastricht",
+		"logo": "media/abt__logo.png",
+		"description": "Alpha Brain Technologies",
+		"website": "https://alphabrain.tech/",
+		"socialnetwork": {
+			"linkedin": "https://www.linkedin.com/company/alphabraintech/"
+		},
+		"community": {
+			"url": ""
+		}
+	},
+	{
+		"label": "UNIPD",
+		"id": "unipd",
+		"pi": "Professor Maurizio Corbetta",
+		"country": "Italy",
+		"city": "Padova",
+		"logo": "media/unipd__logo.png",
+		"description": "University of Padova",
+		"website": "https://www.unipd.it/en/",
+		"socialnetwork": {
+			"linkedin": "https://www.linkedin.com/school/university-of-padova/"
+		},
+		"community": {
+			"url": ""
 		}
 	}
 ]
