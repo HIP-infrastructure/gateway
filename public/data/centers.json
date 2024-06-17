@@ -269,7 +269,7 @@
 	{
 		"label": "HUS",
 		"id": "hus",
-		"pi": "Professor Eeeva-Liisa Metsähonkala",
+		"pi": "Professor Eeva-Liisa Metsähonkala",
 		"country": "Finland",
 		"city": "Helsinki",
 		"logo": "media/hus__logo.png",
@@ -280,10 +280,10 @@
 			"instagram": "https://www.instagram.com/hus_sairaala/",
 			"twitter": "https://twitter.com/HUS_fi",
 			"facebook": "https://www.facebook.com/HUS.fi",
-			"linkedin": "https://www.linkedin.com/company/huslinkedin/",
-			"community": {
-				"url": "/call/y88bty7s"
-			}
+			"linkedin": "https://www.linkedin.com/company/huslinkedin/"
+		},
+		"community": {
+			"url": "/call/y88bty7s"
 		}
 	},
 	{
