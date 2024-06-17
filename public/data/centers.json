@@ -18,7 +18,7 @@
 	{
 		"label": "EPFL-ESL",
 		"id": "epfl-esl",
-		"pi": "David Atienza",
+		"pi": "Professor David Atienza",
 		"country": "Switzerland",
 		"city": "Lausanne",
 		"logo": "media/256x256-epfl-esl__logo.png",
@@ -69,7 +69,7 @@
 	{
 		"label": "UCL",
 		"id": "ucl",
-		"pi": "Prof. Susana Ferrao Santos",
+		"pi": "Professor Susana Ferrao Santos",
 		"country": "Belgium",
 		"city": "Brussel",
 		"logo": "media/256x256-ucllouvain__logo.png",
