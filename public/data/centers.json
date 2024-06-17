@@ -12,7 +12,7 @@
 			"youtube": "https://www.youtube.com/@tudelft"
 		},
 		"community": {
-			"url": ""
+			"url": "/call/o6npmdzu"
 		}
 	},
 	{
@@ -403,7 +403,11 @@
 		"description": "University of Padova",
 		"website": "https://www.unipd.it/en/",
 		"socialnetwork": {
-			"linkedin": "https://www.linkedin.com/school/university-of-padova/"
+			"facebook": "https://www.facebook.com/universitapadova/",
+			"instagram": "https://www.instagram.com/unipd/",
+			"linkedin": "https://www.linkedin.com/school/university-of-padova/",
+			"twitter": "https://x.com/UniPadova",
+			"youtube": "https://www.youtube.com/channel/UCxzGb4RIi935BkRG1KFjcfA"
 		},
 		"community": {
 			"url": ""
