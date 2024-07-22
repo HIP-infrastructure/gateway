@@ -33,9 +33,11 @@ async function bootstrap() {
 	app.enableCors()
 	app.use(cookieParser())
 	app.useStaticAssets(publicFolder)
-	app.useGlobalPipes(new ValidationPipe({
-		transform: true,
-	}))
+	app.useGlobalPipes(
+		new ValidationPipe({
+			transform: true
+		})
+	)
 
 	const document = SwaggerModule.createDocument(app, config)
 	SwaggerModule.setup('api', app, document)

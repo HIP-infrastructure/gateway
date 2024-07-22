@@ -59,8 +59,7 @@ export class IamService {
 			const headers = { 'Content-Type': 'application/x-www-form-urlencoded' }
 			const body = {
 				grant_type: 'client_credentials',
-				scope:
-					'openid email roles team profile group',
+				scope: 'openid email roles team profile group',
 				client_id: this.clientId,
 				client_secret: this.configService.get<string>('iam.clientSecret')
 			}
@@ -140,12 +139,18 @@ export class IamService {
 		return data
 	}
 
-	public async getUserGroups(root, userName: string, role?: Role): Promise<Group[]> {
+	public async getUserGroups(
+		root,
+		userName: string,
+		role?: Role
+	): Promise<Group[]> {
 		this.logger.debug(`getUserGroups(${userName}, ${root})`)
 		const baseUrl = `${this.apiUrl}/projects/${root}/users/${userName}?realm=${this.realm}`
 		const url = role ? `${baseUrl}&role=${role}` : baseUrl
 		const { data } = await this.request(url, 'get', {})
-		this.logger.debug(`getUserGroups(url: ${url}, data: ${JSON.stringify(data)}`)
+		this.logger.debug(
+			`getUserGroups(url: ${url}, data: ${JSON.stringify(data)}`
+		)
 
 		return data
 	}
@@ -160,7 +165,13 @@ export class IamService {
 		return { data: name, status }
 	}
 
-	public async createGroup(root: string, name: string, description: string, adminId?: string, isPublic: boolean = false) {
+	public async createGroup(
+		root: string,
+		name: string,
+		description: string,
+		adminId?: string,
+		isPublic = false
+	) {
 		this.logger.debug(`createGroup(${name})`)
 
 		const url = `${this.apiUrl}/identity/groups?realm=${this.realm}`
@@ -194,7 +205,12 @@ export class IamService {
 		return { data: 'Success', status }
 	}
 
-	public async addUserToGroup(userName: string, role: Role, root: string, groupName: string) {
+	public async addUserToGroup(
+		userName: string,
+		role: Role,
+		root: string,
+		groupName: string
+	) {
 		this.logger.debug(`addUserToGroup(${userName}, ${role}, ${groupName})`)
 		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}/${role}/users/${userName}?realm=${this.realm}`
 		const { status } = await this.request(url, 'put', {})
@@ -202,7 +218,7 @@ export class IamService {
 		return { data: 'Success', status }
 	}
 
-	public async addUserToRootContainerGroup(userName: string, root: string,) {
+	public async addUserToRootContainerGroup(userName: string, root: string) {
 		this.logger.debug(`addUserToGroup(${userName}, ${root})`)
 		const url = `${this.apiUrl}/identity/groups/${root}/users/${userName}?realm=${this.realm}`
 		const { status } = await this.request(url, 'put', {})

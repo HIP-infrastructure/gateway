@@ -115,7 +115,7 @@ export class ToolsService {
 	constructor(
 		private readonly httpService: HttpService,
 		private readonly nextcloudService: NextcloudService,
-		private readonly configService: ConfigService,
+		private readonly configService: ConfigService
 	) {
 		this.dataUser = process.env.DATA_USER
 		const uid = parseInt(userIdLib.uid(this.dataUser), 10)
@@ -175,7 +175,7 @@ export class ToolsService {
 
 			// Create an empty output JSON file with correct ownership
 			const output_file = `${tmpDir}/project.dataset.info.json`
-			let empty_content = {}
+			const empty_content = {}
 			fs.writeFileSync(output_file, JSON.stringify(empty_content))
 			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
 				if (err) {
@@ -265,7 +265,7 @@ export class ToolsService {
 
 			// Create an empty output JSON file with correct ownership
 			const output_file = `${tmpDir}/project.dataset.info.json`
-			let empty_content = {}
+			const empty_content = {}
 			fs.writeFileSync(output_file, JSON.stringify(empty_content))
 			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
 				if (err) {
@@ -391,12 +391,11 @@ export class ToolsService {
 	}
 
 	public async publishDatasetToPublicSpace(owner: string, path: string) {
-		this.logger.debug(
-			`publishDatasetToPublicSpace ${path} `
-		)
+		this.logger.debug(`publishDatasetToPublicSpace ${path} `)
 
 		const name = path.split('/').pop()
-		const targetDatasetRootPath = this.configService.get<string>('public.mountPoint')
+		const targetDatasetRootPath =
+			this.configService.get<string>('public.mountPoint')
 		const targetDatasetPath = `${targetDatasetRootPath}/${name}`
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
@@ -409,14 +408,11 @@ export class ToolsService {
 		}
 
 		fs.mkdirSync(tmpDir, true)
-		fs.writeFileSync(
-			`${tmpDir}/dataset_publish.json`,
-			JSON.stringify(datasets)
-		)
+		fs.writeFileSync(`${tmpDir}/dataset_publish.json`, JSON.stringify(datasets))
 
 		// Create an empty output JSON file with correct ownership
 		const output_file = `${tmpDir}/dataset_publish_output.json`
-		let empty_content = {}
+		const empty_content = {}
 		fs.writeFileSync(output_file, JSON.stringify(empty_content))
 
 		fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
@@ -426,7 +422,7 @@ export class ToolsService {
 		})
 
 		// delete target if existing
-		fs.rmdirSync(targetDatasetPath, { recursive: true }, (err) => {
+		fs.rmdirSync(targetDatasetPath, { recursive: true }, err => {
 			if (err) {
 				throw err
 			}
@@ -527,7 +523,7 @@ export class ToolsService {
 		if (bulkResponse.errors) {
 			this.logger.error('Errors for (re)indexing datasets')
 			this.logger.error(JSON.stringify(bulkResponse, null, 4))
-			for (let it of bulkResponse.items) {
+			for (const it of bulkResponse.items) {
 				if (it.index.status === 400)
 					this.logger.error(JSON.stringify(it.index, null, 4))
 			}
@@ -562,7 +558,7 @@ export class ToolsService {
 		// Generate initial dataset ID
 		this.logger.debug('Generating initial dataset ID')
 		let { datasetId, datasetIdNum } = await this.generateDatasetId(owner)
-		for (let index in bidsDatasets) {
+		for (const index in bidsDatasets) {
 			bidsDatasets[index].Path = await this.filePath(
 				datasetRelPaths[index],
 				owner,
@@ -576,10 +572,10 @@ export class ToolsService {
 			bidsDatasets[index].version = 1
 			// generate id for next dataset
 			datasetIdNum++
-				; ({ datasetId, datasetIdNum } = await this.generateDatasetId(
-					owner,
-					datasetIdNum
-				))
+			;({ datasetId, datasetIdNum } = await this.generateDatasetId(
+				owner,
+				datasetIdNum
+			))
 		}
 		// create and send elasticsearch bulk to index the datasets
 		this.logger.debug('Sending elasticsearch bulk to index the datasets')
@@ -607,7 +603,7 @@ export class ToolsService {
 			ownerGroups,
 			datasetRelPaths
 		)
-		for (let index in bidsDatasets) {
+		for (const index in bidsDatasets) {
 			bidsDatasets[index].Path = await this.filePath(
 				datasetRelPaths[index],
 				owner,
@@ -639,7 +635,7 @@ export class ToolsService {
 			datasetRelPaths
 		)
 
-		for (let index in bidsDatasets) {
+		for (const index in bidsDatasets) {
 			bidsDatasets[index].Path = await this.filePath(
 				datasetRelPaths[index],
 				owner,
@@ -666,14 +662,14 @@ export class ToolsService {
 		filteredFoundDatasetNamesNotIndexed: string[],
 		groupFolders: GroupFolder[]
 	) {
-		let foundPrivateDatasetsNotIndexed: string[] = []
-		let foundGroupDatasetsNotIndexed: string[] = []
-		let foundPrivateDatasetNamesNotIndexed: string[] = []
-		let foundGroupDatasetNamesNotIndexed: string[] = []
-		for (let index in filteredFoundDatasetsNotIndexed) {
+		const foundPrivateDatasetsNotIndexed: string[] = []
+		const foundGroupDatasetsNotIndexed: string[] = []
+		const foundPrivateDatasetNamesNotIndexed: string[] = []
+		const foundGroupDatasetNamesNotIndexed: string[] = []
+		for (const index in filteredFoundDatasetsNotIndexed) {
 			// Update the lists of datasets found in private and group space
 			let isContainedInGroupFolder = false
-			for (let groupFolder of groupFolders) {
+			for (const groupFolder of groupFolders) {
 				if (
 					filteredFoundDatasetsNotIndexed[index].includes(groupFolder.label)
 				) {
@@ -786,12 +782,12 @@ export class ToolsService {
 			f => (f ? [f] : [])
 		)
 		// differentiate private datasets own by the user and datasets in user group folders
-		let foundPrivateDatasetsDuplicated: string[] = []
-		let foundGroupDatasetsDuplicated: string[] = []
-		for (let index in filteredFoundDatasetsDuplicated) {
+		const foundPrivateDatasetsDuplicated: string[] = []
+		const foundGroupDatasetsDuplicated: string[] = []
+		for (const index in filteredFoundDatasetsDuplicated) {
 			// Update the lists of datasets found in private and group space
 			let isContainedInGroupFolder = false
-			for (let groupFolder of groupFolders) {
+			for (const groupFolder of groupFolders) {
 				if (
 					filteredFoundDatasetsDuplicated[index].includes(groupFolder.label)
 				) {
@@ -841,19 +837,19 @@ export class ToolsService {
 			f ? [f] : []
 		)
 		// differentiate private datasets own by the user and datasets in user group folders
-		let foundPrivateRenamedDatasets = Object.assign(
+		const foundPrivateRenamedDatasets = Object.assign(
 			[],
 			filteredFoundRenamedDatasets
 		)
-		let foundGroupRenamedDatasets: string[] = []
-		let foundPrivateRenamedDatasetIDs = Object.assign(
+		const foundGroupRenamedDatasets: string[] = []
+		const foundPrivateRenamedDatasetIDs = Object.assign(
 			[],
 			filteredFoundRenamedDatasetIDs
 		)
-		let foundGroupRenamedDatasetIDs: string[] = []
+		const foundGroupRenamedDatasetIDs: string[] = []
 		foundPrivateRenamedDatasets.forEach((item, index) => {
 			// Update the lists of datasets found in private and group spaces
-			for (let groupFolder of groupFolders) {
+			for (const groupFolder of groupFolders) {
 				if (foundPrivateRenamedDatasets[index].includes(groupFolder.label)) {
 					this.logger.log(
 						`groupDatasetFound: ${foundPrivateRenamedDatasets[index]}`
@@ -894,8 +890,8 @@ export class ToolsService {
 		})
 
 		// extract dataset_description.json content for each dataset found
-		let foundDatasets = []
-		for (let index in foundDatasetPaths) {
+		const foundDatasets = []
+		for (const index in foundDatasetPaths) {
 			const dataset_desc_abspath = await this.filePath(
 				foundDatasetPaths[index] + '/' + DATASET_DESCRIPTION,
 				owner,
@@ -906,7 +902,7 @@ export class ToolsService {
 		}
 
 		// find IDs of datasets existing in the index
-		let datasetPathsQuery: string[] = []
+		const datasetPathsQuery: string[] = []
 		for (const index in foundDatasetPaths) {
 			const datasetPath = await this.filePath(
 				foundDatasetPaths[index],
@@ -916,9 +912,9 @@ export class ToolsService {
 			datasetPathsQuery.push(`(Path:"${datasetPath}") AND (Owner:"${owner}")`)
 		}
 		const searchResults = await this.multiSearchBidsDatasets(datasetPathsQuery)
-		let foundDatasetIDs: string[] = []
-		let foundDatasetPathsWithIDs: string[] = []
-		for (let index in searchResults) {
+		const foundDatasetIDs: string[] = []
+		const foundDatasetPathsWithIDs: string[] = []
+		for (const index in searchResults) {
 			if (searchResults[index].length > 0) {
 				foundDatasetIDs.push(searchResults[index][0]._id)
 				foundDatasetPathsWithIDs.push(searchResults[index][0]._source.Path)
@@ -954,14 +950,14 @@ export class ToolsService {
 
 		// find IDs of datasets with name existing in the index in the case of
 		// (1) a dataset with changed path and (2) a dataset copy
-		let foundRenamedDatasetsQuery = foundDatasets.map(
+		const foundRenamedDatasetsQuery = foundDatasets.map(
 			(d: BIDSDataset) => `(Name:"${d.Name}") AND (Owner:"${owner}")`
 		)
 		const searchRenamedResults = await this.multiSearchBidsDatasets(
 			foundRenamedDatasetsQuery
 		)
-		let foundRenamedDatasetIDs: string[] = []
-		for (let index in searchRenamedResults) {
+		const foundRenamedDatasetIDs: string[] = []
+		for (const index in searchRenamedResults) {
 			if (searchRenamedResults[index].length > 0) {
 				if (!foundDatasetIDs.includes(searchRenamedResults[index][0]._id)) {
 					foundRenamedDatasetIDs.push(searchRenamedResults[index][0]._id)
@@ -1063,9 +1059,9 @@ export class ToolsService {
 		const multiSearchResults = await this.multiSearchBidsDatasets(
 			datasetNameQueries
 		)
-		let groupDatasetIDsToBeAdded: string[] = []
-		let groupDatasetPathsToBeAdded: string[] = []
-		for (let index in multiSearchResults) {
+		const groupDatasetIDsToBeAdded: string[] = []
+		const groupDatasetPathsToBeAdded: string[] = []
+		for (const index in multiSearchResults) {
 			// In case there is a result with a dataset owned by the user (e.g. <userID>_*)
 			if (
 				multiSearchResults[index].length > 0 &&
@@ -1168,7 +1164,7 @@ export class ToolsService {
 		groupFolders: GroupFolder[]
 	) {
 		let renamedBidsDatasets: BIDSDataset[] = []
-		let renamedGroupBidsDatasets: BIDSDataset[] = []
+		const renamedGroupBidsDatasets: BIDSDataset[] = []
 		if (foundDatasetPaths.length > 0) {
 			this.logger.debug(
 				'Handle reindexing of datasets for which the path changed...'
@@ -1702,12 +1698,12 @@ export class ToolsService {
 		// get user group folder names
 		const ownerGroups = await this.nextcloudService.groupFoldersForUserId(owner)
 		// filter only private datasets own by the user
-		let foundAccessibleDatasets = []
+		const foundAccessibleDatasets = []
 		foundDatasets.forEach(dataset => {
 			if (dataset._id.includes(`${owner}_`)) {
 				foundAccessibleDatasets.push(dataset)
 			} else {
-				for (let ownerGroup of ownerGroups) {
+				for (const ownerGroup of ownerGroups) {
 					if (dataset._id.includes(`${ownerGroup.label}_`)) {
 						foundAccessibleDatasets.push(dataset)
 					}
@@ -1744,7 +1740,7 @@ export class ToolsService {
 			// determine index to start based on pagination
 			const indexFrom = (page - 1) * nbOfResults
 			// define the elastic search query
-			let queryObj: {} = {
+			const queryObj: {} = {
 				bool: {
 					must: [
 						{
@@ -2120,7 +2116,7 @@ export class ToolsService {
 
 			// Create an empty output JSON file with correct ownership
 			const output_file = `${tmpDir}/sub_info.json`
-			let empty_content = {}
+			const empty_content = {}
 			fs.writeFileSync(output_file, JSON.stringify(empty_content))
 
 			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
@@ -2297,7 +2293,7 @@ export class ToolsService {
 	 * @returns EditSubjectClinicalDto object
 	 */
 	public async subEditClinical(editSubjectClinicalDto: EditSubjectClinicalDto) {
-		let { owner, path } = editSubjectClinicalDto
+		const { owner, path } = editSubjectClinicalDto
 		const uniquId = Math.round(Date.now() + Math.random())
 		const tmpDir = `/tmp/${uniquId}`
 
@@ -2347,7 +2343,7 @@ export class ToolsService {
 		}
 	}
 
-	public deleteSubject() { }
+	public deleteSubject() {}
 
 	/**
 	 * Get the list of participants in a BIDS dataset from the participants.tsv file
@@ -2414,7 +2410,8 @@ export class ToolsService {
 			)
 			// convert array of Participant object to TSV formatted string by using the
 			// map function without any framework
-			let participantObjects = createBidsDatasetParticipantsTsvDto.Participants
+			const participantObjects =
+				createBidsDatasetParticipantsTsvDto.Participants
 			// extract the keys from the Participant objects and use them to create the header row
 			const keys = new Set<string>()
 			for (const participantObject of participantObjects) {
@@ -2573,7 +2570,7 @@ export class ToolsService {
 
 			// Create an empty output JSON file with correct ownership
 			const output_file = `${tmpDir}/dataset_info.json`
-			let empty_content = {}
+			const empty_content = {}
 			fs.writeFileSync(output_file, JSON.stringify(empty_content))
 
 			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
@@ -2668,7 +2665,7 @@ export class ToolsService {
 
 			// Create an empty output JSON file with correct ownership
 			const output_file = `${tmpDir}/datasets_info.json`
-			let empty_content = {}
+			const empty_content = {}
 			fs.writeFileSync(output_file, JSON.stringify(empty_content))
 
 			fs.chown(output_file, this.dataUserId, this.dataUserId, err => {
@@ -2759,7 +2756,9 @@ export class ToolsService {
 		userId: string,
 		userGroups: GroupFolder[]
 	) {
-		this.logger.debug(`filePath ${path} and ${userId}, userGroups: ${userGroups}`)
+		this.logger.debug(
+			`filePath ${path} and ${userId}, userGroups: ${userGroups}`
+		)
 		try {
 			// Remove the first slash and GROUP_FOLDER if it exists
 			path = path.replace('/GROUP_FOLDER', '').replace(/^\//, '')
@@ -2770,8 +2769,9 @@ export class ToolsService {
 			rootPath = rootPath + '/'
 			// Create the path depending on whether it's a group folder or not
 			const nextPath = id
-				? `${process.env.PRIVATE_FILESYSTEM
-				}/__groupfolders/${id}/${path.replace(rootPath, '')}`
+				? `${
+						process.env.PRIVATE_FILESYSTEM
+				  }/__groupfolders/${id}/${path.replace(rootPath, '')}`
 				: `${process.env.PRIVATE_FILESYSTEM}/${userId}/files/${path}`
 
 			return nextPath

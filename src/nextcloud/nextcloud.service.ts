@@ -126,7 +126,7 @@ export class NextcloudService {
 					groups: user.groups,
 					enabled: user.enabled
 				}
-			})//.filter(u => u.groups.length > 1)
+			}) //.filter(u => u.groups.length > 1)
 
 			return users || []
 		} catch (error) {
@@ -174,7 +174,7 @@ export class NextcloudService {
 
 	public async user(
 		userid: string,
-		isOwner: boolean = false
+		isOwner = false
 	): Promise<User & Partial<NCUser>> {
 		this.logger.debug(`user ${userid}, ${isOwner}`)
 		try {

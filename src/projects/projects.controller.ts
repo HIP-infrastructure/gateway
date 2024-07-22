@@ -26,17 +26,15 @@ export class ProjectsController {
 	constructor(
 		private readonly projectsService: ProjectsService,
 		private readonly nextcloudService: NextcloudService
-	) { }
+	) {}
 
 	@Get()
-	async findAll(
-		@Req() req: Request,
-	) {
+	async findAll(@Req() req: Request) {
 		this.logger.debug(`findAll()`)
 		try {
 			return await this.nextcloudService
 				.authUserIdFromRequest(req)
-				.then((userId) => this.projectsService.findAll(userId))
+				.then(userId => this.projectsService.findAll(userId))
 		} catch (error) {
 			this.logger.error(error)
 			throw new HttpException(
@@ -49,12 +47,13 @@ export class ProjectsController {
 	@Get('/users/:userId')
 	async findProjectsForUser(
 		@Req() req: Request,
-		@Param('userId') userId: string) {
+		@Param('userId') userId: string
+	) {
 		this.logger.debug(`findProjectsForUser(${userId})`)
 		try {
 			return await this.nextcloudService
 				.authUserIdFromRequest(req)
-				.then((id) => this.projectsService.findProjectsForUser(id))
+				.then(id => this.projectsService.findProjectsForUser(id))
 		} catch (error) {
 			this.logger.error(error)
 			throw new HttpException(
@@ -72,7 +71,7 @@ export class ProjectsController {
 		this.logger.debug(`findOne(${projectName})`)
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
-			.then((userId) => this.projectsService.findOne(projectName))
+			.then(userId => this.projectsService.findOne(projectName))
 	}
 
 	// TODO: @Roles(Role.Admin)
@@ -102,12 +101,14 @@ export class ProjectsController {
 	@Delete(':projectName')
 	remove(@Req() req: Request, @Param('projectName') projectName: string) {
 		this.logger.debug(`remove(${projectName})`)
-		return this.nextcloudService
-			.authUserIdFromRequest(req)
-			// .then(userId =>
-			// 	this.projectsService.userIsProjectAdmin(projectName, userId)
-			// )
-			.then(userId => this.projectsService.remove(projectName, userId))
+		return (
+			this.nextcloudService
+				.authUserIdFromRequest(req)
+				// .then(userId =>
+				// 	this.projectsService.userIsProjectAdmin(projectName, userId)
+				// )
+				.then(userId => this.projectsService.remove(projectName, userId))
+		)
 	}
 
 	@Post(':projectName/users/:userId')
@@ -117,14 +118,14 @@ export class ProjectsController {
 		@Param('userId') userId: string
 	) {
 		this.logger.debug(`addUser(${projectName}, ${userId})`)
-		return this.nextcloudService
-			.authUserIdFromRequest(req)
-			// .then(userId =>
-			// 	this.projectsService.userIsProjectAdmin(projectName, userId)
-			// )
-			.then(_ =>
-				this.projectsService.addUserToProject(userId, projectName)
-			)
+		return (
+			this.nextcloudService
+				.authUserIdFromRequest(req)
+				// .then(userId =>
+				// 	this.projectsService.userIsProjectAdmin(projectName, userId)
+				// )
+				.then(_ => this.projectsService.addUserToProject(userId, projectName))
+		)
 	}
 
 	@Delete(':projectName/users/:userId/')
@@ -134,14 +135,16 @@ export class ProjectsController {
 		@Param('userId') userId: string
 	) {
 		this.logger.debug(`removeUser(${projectName}, ${userId})`)
-		return this.nextcloudService
-			.authUserIdFromRequest(req)
-			// .then(userId =>
-			// 	this.projectsService.userIsProjectAdmin(projectName, userId)
-			// )
-			.then(_ =>
-				this.projectsService.removeUserFromProject(userId, projectName)
-			)
+		return (
+			this.nextcloudService
+				.authUserIdFromRequest(req)
+				// .then(userId =>
+				// 	this.projectsService.userIsProjectAdmin(projectName, userId)
+				// )
+				.then(_ =>
+					this.projectsService.removeUserFromProject(userId, projectName)
+				)
+		)
 	}
 
 	// @Post('/api')
@@ -172,8 +175,11 @@ export class ProjectsController {
 	}
 
 	@Post(':projectName/document')
-	importDocument(@Req() req: Request, @Param('projectName') projectName: string,
-		@Body() importDocumentDto: ImportDocumentDto) {
+	importDocument(
+		@Req() req: Request,
+		@Param('projectName') projectName: string,
+		@Body() importDocumentDto: ImportDocumentDto
+	) {
 		return this.nextcloudService
 			.authUserIdFromRequest(req)
 			.then(async userId => {
@@ -190,7 +196,7 @@ export class ProjectsController {
 	metadataTree(
 		@Req() req: Request,
 		@Param('projectName') projectName: string,
-		@Query('path') path: string,
+		@Query('path') path: string
 	) {
 		return this.nextcloudService.authUserIdFromRequest(req).then(userId => {
 			return this.projectsService.metadataTree(userId, projectName, path)

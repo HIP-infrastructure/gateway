@@ -10,38 +10,37 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 jest.setTimeout(30 * 1000)
 
 describe('ToolsController: db.create (e2e)', () => {
-  let app: INestApplication
+	let app: INestApplication
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [ToolsModule],
-    }).compile()
+	beforeEach(async () => {
+		const moduleFixture: TestingModule = await Test.createTestingModule({
+			imports: [ToolsModule]
+		}).compile()
 
-    app = moduleFixture.createNestApplication()
-    await app.init()
-  })
+		app = moduleFixture.createNestApplication()
+		await app.init()
+	})
 
-  it('/ (GET)', () => {
-    const CreateBidsDatasetDto: CreateBidsDatasetDto = {
-      "owner": `${process.env.USER}`,
-      "database": "mybidsdb",
-      "path": "",
-      "DatasetDescJSON":
-      {
-        "Name": "my bids db",
-        "BIDSVersion": "1.4.1",
-        "License": "MIT",
-        "Authors": ["Manuel Spuhler"],
-        "Acknowledgements": "CHUV",
-        "Funding": "ME",
-        "ReferencesAndLinks": "http://me.com",
-        "DatasetDOI": "DOI",
-      }
-    }
+	it('/ (GET)', () => {
+		const CreateBidsDatasetDto: CreateBidsDatasetDto = {
+			owner: `${process.env.USER}`,
+			database: 'mybidsdb',
+			path: '',
+			DatasetDescJSON: {
+				Name: 'my bids db',
+				BIDSVersion: '1.4.1',
+				License: 'MIT',
+				Authors: ['Manuel Spuhler'],
+				Acknowledgements: 'CHUV',
+				Funding: 'ME',
+				ReferencesAndLinks: 'http://me.com',
+				DatasetDOI: 'DOI'
+			}
+		}
 
-    return request(app.getHttpServer())
-      .post('/tools/bids/database')
-      .send(CreateBidsDatasetDto)
-      .expect(201)
-  })
+		return request(app.getHttpServer())
+			.post('/tools/bids/database')
+			.send(CreateBidsDatasetDto)
+			.expect(201)
+	})
 })

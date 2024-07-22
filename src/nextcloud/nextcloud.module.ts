@@ -6,6 +6,6 @@ import { NextcloudService } from './nextcloud.service'
 	imports: [HttpModule],
 	controllers: [],
 	providers: [NextcloudService],
-	exports: [NextcloudModule],
+	exports: [NextcloudModule]
 })
-export class NextcloudModule { }
+export class NextcloudModule {}

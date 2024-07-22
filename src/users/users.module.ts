@@ -11,7 +11,13 @@ import { UsersController } from './users.controller'
 @Module({
 	imports: [HttpModule, ToolsModule],
 	controllers: [UsersController],
-	providers: [NextcloudService, ProjectsService, CacheService, IamService, ToolsService],
-	exports: [UsersModule],
+	providers: [
+		NextcloudService,
+		ProjectsService,
+		CacheService,
+		IamService,
+		ToolsService
+	],
+	exports: [UsersModule]
 })
 export class UsersModule {}
