@@ -29,8 +29,8 @@ import { BIDSDataset, ToolsService } from './tools.service'
 export class ToolsController {
 	constructor(
 		private readonly toolsService: ToolsService,
-		private readonly nextcloudService: NextcloudService,
-	) { }
+		private readonly nextcloudService: NextcloudService
+	) {}
 
 	private logger = new Logger('ToolsController')
 
@@ -153,10 +153,12 @@ export class ToolsController {
 
 	@UsePipes(ValidationPipe)
 	@Get('/bids/datasets/publish')
-	async publish(@Req() req: Request, @Query('path') path: string,) {
-		return await this.nextcloudService.authUserIdFromRequest(req).then(async (userId) => {
-			return await this.toolsService.publishDatasetToPublicSpace(userId, path)
-		})
+	async publish(@Req() req: Request, @Query('path') path: string) {
+		return await this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(async userId => {
+				return await this.toolsService.publishDatasetToPublicSpace(userId, path)
+			})
 	}
 
 	@UsePipes(ValidationPipe)

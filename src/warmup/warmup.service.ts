@@ -3,26 +3,23 @@ import { ProjectsService } from 'src/projects/projects.service'
 
 @Injectable()
 export class WarmupService implements OnApplicationBootstrap {
-  private readonly logger = new Logger(WarmupService.name)
+	private readonly logger = new Logger(WarmupService.name)
 
-  constructor(
-    private readonly projectsService: ProjectsService
-  ) {
-  }
+	constructor(private readonly projectsService: ProjectsService) {}
 
-  async onApplicationBootstrap() {
-    this.logger.debug(`onApplicationBootstrap`)
+	async onApplicationBootstrap() {
+		this.logger.debug(`onApplicationBootstrap`)
 
-    try {
-      await this.projectsService.createProjectsGroup()
-    } catch (error) {
-      this.logger.error(error)
-    }
+		try {
+			await this.projectsService.createProjectsGroup()
+		} catch (error) {
+			this.logger.error(error)
+		}
 
-    try {
-      await this.projectsService.createProjectsAdminsGroup()
-    } catch (error) {
-      this.logger.error('409 IS OK, createProjectsAdminsGroup', error)
-    }
-  }
+		try {
+			await this.projectsService.createProjectsAdminsGroup()
+		} catch (error) {
+			this.logger.error('409 IS OK, createProjectsAdminsGroup', error)
+		}
+	}
 }

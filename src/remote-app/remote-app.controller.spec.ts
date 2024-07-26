@@ -6,7 +6,7 @@ describe('RemoteAppController', () => {
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
-			controllers: [RemoteAppController],
+			controllers: [RemoteAppController]
 		}).compile()
 
 		controller = module.get<RemoteAppController>(RemoteAppController)

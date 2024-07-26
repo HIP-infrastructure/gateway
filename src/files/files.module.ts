@@ -10,6 +10,6 @@ import { FilesService } from './files.service'
 	imports: [HttpModule, UsersModule, NextcloudModule],
 	controllers: [FilesController],
 	providers: [FilesService, NextcloudService],
-	exports: [FilesModule],
+	exports: [FilesModule]
 })
 export class FilesModule {}

@@ -1,5 +1,8 @@
 import { StateMachine, AnyEventObject, Interpreter } from 'xstate'
-import { BackendId as BackendId, WorkspaceType as WorkspaceType } from './remote-app.controller';
+import {
+	BackendId as BackendId,
+	WorkspaceType as WorkspaceType
+} from './remote-app.controller'
 
 export type ContainerStateMachine = StateMachine<
 	any,
@@ -10,7 +13,6 @@ export type ContainerStateMachine = StateMachine<
 		context: any
 	}
 >
-
 
 export interface ContainerContext {
 	id: string
@@ -38,8 +40,10 @@ export interface ContainerContext {
 	}
 }
 
-export type ResponseContext = Omit<ContainerContext, 
-"nextAction" | "dataSource" | "computeSource" >;
+export type ResponseContext = Omit<
+	ContainerContext,
+	'nextAction' | 'dataSource' | 'computeSource'
+>
 
 export enum ContainerState {
 	UNINITIALIZED = 'uninitialized',
@@ -51,12 +55,12 @@ export enum ContainerState {
 	PAUSED = 'paused',
 	STOPPING = 'stopping',
 	EXITED = 'exited',
-	DESTROYED = 'destroyed',
+	DESTROYED = 'destroyed'
 }
 
 export enum ContainerType {
 	SERVER = 'server',
-	APP = 'app',
+	APP = 'app'
 }
 
 export enum ContainerAction {
@@ -70,7 +74,7 @@ export enum ContainerAction {
 	REMOTE_STARTED = 'sync-started',
 	REMOTE_STOPPED = 'sync-stopped',
 	REMOTE_PAUSED = 'sync-paused',
-	REMOTE_CREATED = 'sync-created',
+	REMOTE_CREATED = 'sync-created'
 }
 
 export interface Error {

@@ -30,28 +30,32 @@ export const invokeRemoteContainer = (
 	const params =
 		type === ContainerType.APP
 			? {
-				sid: parentId,
-				aid: id,
-				hipuser: userId,
-				action,
-				...(startApp && {
-					nc: context.dataSource.fsUrl,
-					ab: context.dataSource.authUrl,
-					gf: JSON.stringify(context.dataSource.groupFolders.filter(({ label }) => label !== 'tutorial_data'))
-				}),
-				app: context.name,
-			}
+					sid: parentId,
+					aid: id,
+					hipuser: userId,
+					action,
+					...(startApp && {
+						nc: context.dataSource.fsUrl,
+						ab: context.dataSource.authUrl,
+						gf: JSON.stringify(
+							context.dataSource.groupFolders.filter(
+								({ label }) => label !== 'tutorial_data'
+							)
+						)
+					}),
+					app: context.name
+			  }
 			: {
-				sid: id,
-				hipuser: userId,
-				action,
-				groups: JSON.stringify(workspace === 'private' ? groupIds : groupIds.map(g => `group-${g}`)),
-			}
+					sid: id,
+					hipuser: userId,
+					action,
+					groups: JSON.stringify(
+						workspace === 'private' ? groupIds : groupIds.map(g => `group-${g}`)
+					)
+			  }
 
 	const config = backendConfig(context.computeSource.backendId)
-	const url = `${config.url}/control/${type}?${toParams(
-		params
-	)}`
+	const url = `${config.url}/control/${type}?${toParams(params)}`
 
 	if (action === ContainerAction.START) logger.debug(url)
 
@@ -59,8 +63,8 @@ export const invokeRemoteContainer = (
 		.get(url, {
 			headers: {
 				Authorization: config.auth,
-				'Cache-Control': 'no-cache',
-			},
+				'Cache-Control': 'no-cache'
+			}
 		})
 		.toPromise()
 		.then(axiosResponse => {
@@ -112,7 +116,7 @@ export const invokeRemoteContainer = (
 				const nextContext = {
 					url: `${data.location.url}`,
 					state: nextState,
-					error: null,
+					error: null
 				}
 
 				// logger.debug(nextState, `nextState-${id}`)
@@ -145,9 +149,9 @@ export const createContainerMachine = (
 						[ContainerAction.START]: ContainerState.CREATED,
 						[ContainerAction.REMOTE_STARTED]: {
 							target: ContainerState.RUNNING,
-							actions: ['updateContext'],
-						},
-					},
+							actions: ['updateContext']
+						}
+					}
 				},
 				[ContainerState.CREATED]: {
 					invoke: {
@@ -155,45 +159,45 @@ export const createContainerMachine = (
 						src: invokeRemoteContainer,
 						onDone: {
 							target: ContainerState.LOADING,
-							actions: ['updateContext'],
+							actions: ['updateContext']
 						},
 						onError: {
 							target: ContainerState.EXITED,
-							actions: ['updateContext'],
-						},
-					},
+							actions: ['updateContext']
+						}
+					}
 				},
 				[ContainerState.LOADING]: {
 					on: {
 						[ContainerAction.REMOTE_STARTED]: {
 							target: ContainerState.RUNNING,
-							actions: 'updateContext',
+							actions: 'updateContext'
 						},
 						[ContainerAction.REMOTE_STOPPED]: {
 							target: ContainerState.EXITED,
-							actions: 'updateContext',
-						},
-					},
+							actions: 'updateContext'
+						}
+					}
 				},
 				[ContainerState.RUNNING]: {
 					on: {
 						[ContainerAction.REMOTE_STOPPED]: {
 							target: ContainerState.EXITED,
-							actions: 'updateContext',
+							actions: 'updateContext'
 						},
 						[ContainerAction.STOP]: {
 							target: ContainerState.STOPPING,
-							actions: 'updateContext',
+							actions: 'updateContext'
 						},
 						[ContainerAction.PAUSE]: {
 							target: ContainerState.PAUSING,
-							actions: 'updateContext',
+							actions: 'updateContext'
 						},
 						[ContainerAction.RESTART]: {
 							target: ContainerState.CREATED,
-							actions: 'updateContext',
-						},
-					},
+							actions: 'updateContext'
+						}
+					}
 				},
 				[ContainerState.PAUSING]: {
 					invoke: {
@@ -201,25 +205,25 @@ export const createContainerMachine = (
 						src: invokeRemoteContainer,
 						onDone: {
 							target: ContainerState.PAUSED,
-							actions: ['updateContext'],
+							actions: ['updateContext']
 						},
 						onError: {
 							target: ContainerState.EXITED,
-							actions: ['updateContext'],
-						},
-					},
+							actions: ['updateContext']
+						}
+					}
 				},
 				[ContainerState.PAUSED]: {
 					on: {
 						[ContainerAction.REMOTE_STOPPED]: {
 							target: ContainerState.EXITED,
-							actions: 'updateContext',
+							actions: 'updateContext'
 						},
 						[ContainerAction.RESUME]: {
 							target: ContainerState.RESUMING,
-							actions: 'updateContext',
-						},
-					},
+							actions: 'updateContext'
+						}
+					}
 				},
 				[ContainerState.RESUMING]: {
 					invoke: {
@@ -227,13 +231,13 @@ export const createContainerMachine = (
 						src: invokeRemoteContainer,
 						onDone: {
 							target: ContainerState.RUNNING,
-							actions: ['updateContext'],
+							actions: ['updateContext']
 						},
 						onError: {
 							target: ContainerState.EXITED,
-							actions: ['updateContext'],
-						},
-					},
+							actions: ['updateContext']
+						}
+					}
 				},
 				[ContainerState.STOPPING]: {
 					invoke: {
@@ -241,27 +245,27 @@ export const createContainerMachine = (
 						src: invokeRemoteContainer,
 						onDone: {
 							target: ContainerState.EXITED,
-							actions: ['updateContext'],
+							actions: ['updateContext']
 						},
 						onError: {
 							target: ContainerState.RUNNING,
-							actions: ['updateContext'],
-						},
-					},
+							actions: ['updateContext']
+						}
+					}
 				},
 				[ContainerState.EXITED]: {
 					on: {
 						[ContainerAction.REMOTE_STARTED]: {
 							target: ContainerState.RUNNING,
-							actions: ['updateContext'],
+							actions: ['updateContext']
 						},
 						[ContainerAction.REMOTE_CREATED]: {
 							target: ContainerState.LOADING,
-							actions: ['updateContext'],
+							actions: ['updateContext']
 						},
 						[ContainerAction.DESTROY]: ContainerState.DESTROYED,
-						[ContainerAction.RESTART]: ContainerState.CREATED,
-					},
+						[ContainerAction.RESTART]: ContainerState.CREATED
+					}
 				},
 				[ContainerState.DESTROYED]: {
 					invoke: {
@@ -269,25 +273,28 @@ export const createContainerMachine = (
 						src: invokeRemoteContainer,
 						onDone: {
 							target: ContainerState.DESTROYED,
-							actions: ['updateContext'],
+							actions: ['updateContext']
 						},
 						onError: {
 							target: ContainerState.DESTROYED,
-							actions: ['updateContext'],
-						},
-					},
-				},
-			},
+							actions: ['updateContext']
+						}
+					}
+				}
+			}
 		},
 		{
 			actions: {
 				updateContext: assign((context: ContainerContext, event: any) => {
 					const { nextContext } = event
-					logger.debug(`${JSON.stringify(nextContext, null, 2)}`, 'updateContext')
+					logger.debug(
+						`${JSON.stringify(nextContext, null, 2)}`,
+						'updateContext'
+					)
 
 					return { ...context, ...nextContext }
-				}),
-			},
+				})
+			}
 		}
 	)
 }

@@ -20,13 +20,12 @@ export type BackendId = 'cpu1' | 'gpu1'
 const DEFAULT_BACKEND: BackendId = 'gpu1'
 @Controller('remote-app')
 export class RemoteAppController {
-	private readonly logger = new Logger('RemoteAppController');
+	private readonly logger = new Logger('RemoteAppController')
 
 	constructor(
 		private readonly remoteAppService: RemoteAppService,
 		private readonly nextcloudService: NextcloudService
-	) { }
-
+	) {}
 
 	@Get('/apps')
 	availableApps(@Query('backend') backendId: BackendId = DEFAULT_BACKEND) {
@@ -34,10 +33,7 @@ export class RemoteAppController {
 	}
 
 	@Get(':id')
-	async getContainer(
-		@Param('id') id: string,
-		@Req() req: Request
-	) {
+	async getContainer(@Param('id') id: string, @Req() req: Request) {
 		return this.nextcloudService
 			.authenticate(req)
 			.then(async () => this.remoteAppService.getContainer(id))
@@ -58,25 +54,27 @@ export class RemoteAppController {
 		}
 		if (!groupIds) groupIds = []
 
-		this.logger.debug(`getContainers: ${workspace} ${userId} ${groupIds} ${isAdmin}`)
+		this.logger.debug(
+			`getContainers: ${workspace} ${userId} ${groupIds} ${isAdmin}`
+		)
 
 		return isAdmin
 			? this.nextcloudService
-				.authenticate(req)
-				.then(() =>
-					this.nextcloudService
-						.user(userId)
-						.then(
-							({ groups }) =>
-								groups.includes('admin') &&
-								this.remoteAppService.getAllContainers()
-						)
-				)
+					.authenticate(req)
+					.then(() =>
+						this.nextcloudService
+							.user(userId)
+							.then(
+								({ groups }) =>
+									groups.includes('admin') &&
+									this.remoteAppService.getAllContainers()
+							)
+					)
 			: this.nextcloudService
-				.authenticate(req)
-				.then(async () =>
-					this.remoteAppService.getContainers(workspace, userId, groupIds)
-				)
+					.authenticate(req)
+					.then(async () =>
+						this.remoteAppService.getContainers(workspace, userId, groupIds)
+					)
 	}
 
 	/* Creating a server for the userId and groupId. */
@@ -86,7 +84,7 @@ export class RemoteAppController {
 		@Body('workspace') workspace: WorkspaceType,
 		@Body('userId') userId: string,
 		@Body('groupIds') groupIds: string[],
-		@Body('backend') backendId: BackendId = DEFAULT_BACKEND,
+		@Body('backend') backendId: BackendId = DEFAULT_BACKEND
 	) {
 		this.logger.debug(
 			`/createServer on ${workspace} for ${userId} and ${groupIds.join(', ')}`
@@ -122,14 +120,16 @@ export class RemoteAppController {
 	async removeAppsAndServer(
 		@Req() req: Request,
 		@Param('serverId') serverId: string,
-		@Query('force') force: boolean = false
+		@Query('force') force = false
 	) {
 		this.logger.debug(`/removeAppsAndSession at ${serverId}`)
-		return this.nextcloudService.authUserIdFromRequest(req).then(async userId => {
-			if (force) return this.remoteAppService.forceRemove(serverId)
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(async userId => {
+				if (force) return this.remoteAppService.forceRemove(serverId)
 
-			return this.remoteAppService.removeAppsAndServer(serverId, userId)
-		})
+				return this.remoteAppService.removeAppsAndServer(serverId, userId)
+			})
 	}
 
 	@Delete(':serverId/:appId')
