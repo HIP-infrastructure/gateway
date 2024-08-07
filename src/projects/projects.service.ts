@@ -210,6 +210,13 @@ function to change the ownership of the user's folder in the collab workspace to
 			const groupfolderPath = `${this.configService.get(
 				'collab.mountPoint'
 			)}/__groupfolders`
+
+			// Ensure the collab workspace is properly mounted.
+			if (!jetpack.exists(groupfolderPath)) {
+				this.logger.debug(`mount point seems missing. ${groupfolterPath}`)
+				throw new Error(`mount point is missing for group folders`)
+			}
+
 			const projectPath = `${groupfolderPath}/${name}`
 
 			jetpack.dir(projectPath)
