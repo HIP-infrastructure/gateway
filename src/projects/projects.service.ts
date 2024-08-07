@@ -213,7 +213,7 @@ function to change the ownership of the user's folder in the collab workspace to
 
 			// Ensure the collab workspace is properly mounted.
 			if (!jetpack.exists(groupfolderPath)) {
-				this.logger.debug(`mount point seems missing. ${groupfolterPath}`)
+				this.logger.debug(`mount point seems missing. ${groupfolderPath}`)
 				throw new Error(`mount point is missing for group folders`)
 			}
 
