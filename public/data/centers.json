@@ -1,8 +1,75 @@
 [
 	{
+		"label": "TUDelft",
+		"id": "tudelft",
+		"pi": "Arman Sharifi",
+		"country": "Netherlands",
+		"city": "Delft",
+		"logo": "media/256x256-tudelft__logo.png",
+		"description": "Delft University of Technology",
+		"website": "https://www.tudelft.nl/",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/@tudelft"
+		},
+		"community": {
+			"url": "/call/o6npmdzu"
+		}
+	},
+	{
+		"label": "EPFL-ESL",
+		"id": "epfl-esl",
+		"pi": "Professor David Atienza",
+		"country": "Switzerland",
+		"city": "Lausanne",
+		"logo": "media/256x256-epfl-esl__logo.png",
+		"description": "The Embedded Systems Laboratory (ESL) is a research laboratory at the Institute of Electrical Engineering (IEL) of the Swiss Federal Institute of Technology (EPFL) in Lausanne, Switzerland.",
+		"website": "https://www.epfl.ch/labs/esl/",
+		"socialnetwork": {
+			"youtube": "https://www.youtube.com/@eslepfl"
+		},
+		"community": {
+			"url": "/call/7a8b3m37"
+		}
+	},
+	{
+		"label": "Uniklinikum Aachen",
+		"id": "uka",
+		"pi": "Stefan Wolking",
+		"country": "Germany",
+		"city": "Aachen",
+		"logo": "media/256x256-uka__logo.png",
+		"description": "The University Hospital RWTH Aachen combines patient-oriented medicine, nursing, teaching, and research at an international level.",
+		"website": "https://www.ukaachen.de/en/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/UniklinikAachen"
+		},
+		"community": {
+			"url": "/call/dtp62mkp"
+		}
+	},
+	{
+		"label": "VR-VIS",
+		"id": "vr-vis",
+		"pi": "Dr. Katja Bühler",
+		"country": "Austria",
+		"city": "Wien",
+		"logo": "media/256x256-vrvis__logo.png",
+		"description": "VRVis Zentrum für Virtual Reality und Visualisierung Forschungs-GmbH",
+		"website": "https://www.vrvis.at/",
+		"socialnetwork": {
+			"twitter": "https://twitter.com/vrvis",
+			"youtube": "https://www.youtube.com/user/VRVis",
+			"facebook": "https://www.facebook.com/vrvisvienna",
+			"linkedin": "https://www.linkedin.com/company/vrvis-zentrum-f%C3%BCr-virtual-reality-und-visualisierung-forschungs-gmbh/"
+		},
+		"community": {
+			"url": "/call/fcad5mb5"
+		}
+	},
+	{
 		"label": "UCL",
 		"id": "ucl",
-		"pi": "Prof. Susana Ferrao Santos",
+		"pi": "Professor Susana Ferrao Santos",
 		"country": "Belgium",
 		"city": "Brussel",
 		"logo": "media/256x256-ucllouvain__logo.png",
@@ -202,7 +269,7 @@
 	{
 		"label": "HUS",
 		"id": "hus",
-		"pi": "Professor Eeeva-Liisa Metsähonkala",
+		"pi": "Professor Eeva-Liisa Metsähonkala",
 		"country": "Finland",
 		"city": "Helsinki",
 		"logo": "media/hus__logo.png",
@@ -213,10 +280,10 @@
 			"instagram": "https://www.instagram.com/hus_sairaala/",
 			"twitter": "https://twitter.com/HUS_fi",
 			"facebook": "https://www.facebook.com/HUS.fi",
-			"linkedin": "https://www.linkedin.com/company/huslinkedin/",
-			"community": {
-				"url": "/call/y88bty7s"
-			}
+			"linkedin": "https://www.linkedin.com/company/huslinkedin/"
+		},
+		"community": {
+			"url": "/call/y88bty7s"
 		}
 	},
 	{
@@ -281,7 +348,7 @@
 	{
 		"label": "UCBL",
 		"id": "ucbl",
-		"pi": "Dr. Jean-Philippe Lachaux ",
+		"pi": "Dr. Jean-Philippe Lachaux",
 		"country": "France",
 		"city": "Lyon",
 		"logo": "media/lyon1__logo.png",
@@ -308,6 +375,58 @@
 		"website": "https://www.umcutrecht.nl/en/",
 		"community": {
 			"url": "/call/hph8xdzp"
+		}
+	},
+	{
+		"label": "ABT",
+		"id": "abt",
+		"pi": "Mehrdad Seirafi",
+		"country": "Netherlands",
+		"city": "Maastricht",
+		"logo": "media/abt__logo.png",
+		"description": "Alpha Brain Technologies",
+		"website": "https://alphabrain.tech/",
+		"socialnetwork": {
+			"linkedin": "https://www.linkedin.com/company/alphabraintech/"
+		},
+		"community": {
+			"url": ""
+		}
+	},
+	{
+		"label": "UNIPD",
+		"id": "unipd",
+		"pi": "Professor Maurizio Corbetta",
+		"country": "Italy",
+		"city": "Padova",
+		"logo": "media/unipd__logo.png",
+		"description": "University of Padova",
+		"website": "https://www.unipd.it/en/",
+		"socialnetwork": {
+			"facebook": "https://www.facebook.com/universitapadova/",
+			"instagram": "https://www.instagram.com/unipd/",
+			"linkedin": "https://www.linkedin.com/school/university-of-padova/",
+			"twitter": "https://x.com/UniPadova",
+			"youtube": "https://www.youtube.com/channel/UCxzGb4RIi935BkRG1KFjcfA"
+		},
+		"community": {
+			"url": ""
+		}
+	},
+	{
+		"label": "DM",
+		"id": "dm",
+		"pi": "Faiçal Isbaine",
+		"country": "France",
+		"city": "Marchaux-Chaudefontaine",
+		"logo": "media/dixi-medical__logo.png",
+		"description": "DIXI Medical designs and manufactures medical devices for functional and stereotactic neurosurgery for the treatment of epilepsy",
+		"website": "https://diximedical.com/en/home",
+		"socialnetwork": {
+			"linkedin": "https://fr.linkedin.com/company/dixi-medical"
+		},
+		"community": {
+			"url": ""
 		}
 	}
 ]
