@@ -192,6 +192,23 @@ export class ProjectsController {
 			})
 	}
 
+	@Post(':projectName/documents')
+	importMultipleDocuments(
+		@Req() req: Request,
+		@Param('projectName') projectName: string,
+		@Body() importDocumentsDto: ImportDocumentDto[]
+	) {
+		return this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(async userId => {
+				this.logger.debug(`importMultipleDocuments(${userId})`)
+				const importPromises = importDocumentsDto.map(documentDto => 
+					this.importDocument(req, projectName, documentDto)
+				);
+				return Promise.all(importPromises);
+			});
+	}
+
 	@Get(':projectName/metadataTree')
 	metadataTree(
 		@Req() req: Request,
