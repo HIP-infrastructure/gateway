@@ -428,5 +428,24 @@
 		"community": {
 			"url": ""
 		}
+	},
+	{
+		"label": "CEA",
+		"id": "cea",
+		"pi": "Jean-François Mangin",
+		"country": "France",
+		"city": "Saclay",
+		"logo": "media/cea__logo.png",
+		"description": "The French Alternative Energies and Atomic Energy Commission (CEA) is a major player in research, development and innovation in four major areas: defense and security, low-carbon energies (nuclear and renewable), technological research for industry, and fundamental research in physical sciences and life sciences.",
+		"website": "https://www.cea.fr/",
+		"socialnetwork": {
+			"instagram": "https://www.instagram.com/cea_officiel/",
+			"linkedin": "https://www.linkedin.com/company/cea/",
+			"twitter": "https://x.com/cea_officiel",
+			"youtube": "https://www.youtube.com/@CEA"		
+		},
+		"community": {
+			"url": ""
+		}
 	}
 ]
