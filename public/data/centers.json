@@ -447,5 +447,25 @@
 		"community": {
 			"url": ""
 		}
+	},
+	{
+		"label": "HUG",
+		"id": "hug",
+		"pi": "Philippe Bijlenga",
+		"country": "Switzerland",
+		"city": "Genève",
+		"logo": "media/hug__logo.png",
+		"description": "Hôpitaux Universitaires Genève.",
+		"website": "https://www.hug.ch/",
+		"socialnetwork": {
+			"instagram": "https://www.instagram.com/hug_ge/",
+			"facebook": "https://www.facebook.com/hopitaux.universitaires.geneve",
+			"linkedin": "https://www.linkedin.com/company/hopitaux-universitaires-de-geneve/posts/?feedView=all",
+			"twitter": "https://x.com/hug_ge",
+			"youtube": "https://www.youtube.com/user/KIOSKVIDEOHUG"		
+		},
+		"community": {
+			"url": ""
+		}
 	}
 ]
