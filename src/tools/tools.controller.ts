@@ -34,20 +34,6 @@ export class ToolsController {
 
 	private logger = new Logger('ToolsController')
 
-	@Get('/bids/datasets/create_index')
-	createBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
-		return this.nextcloudService.authenticate(req).then(async () => {
-			return this.toolsService.createBIDSDatasetsIndex()
-		}) 
-	}
-
-	@Get('/bids/datasets/delete_index')
-	deleteBIDSDatasetsIndex(@Req() req: Request, @Res() res: Response) {
-		return this.nextcloudService.authenticate(req).then(async () => {
-			return this.toolsService.deleteBIDSDatasetsIndex()
-		})
-	}
-
 	@Get('/bids/dataset/index')
 	indexBIDSDataset(
 		@Query('owner') owner: string,
@@ -163,6 +149,16 @@ export class ToolsController {
 		return await this.nextcloudService.authenticate(req).then(async () => {
 			return this.toolsService.getDatasetsCount()
 		})
+	}
+
+	@UsePipes(ValidationPipe)
+	@Get('/bids/datasets/publish')
+	async publish(@Req() req: Request, @Query('path') path: string) {
+		return await this.nextcloudService
+			.authUserIdFromRequest(req)
+			.then(async userId => {
+				return await this.toolsService.publishDatasetToPublicSpace(userId, path)
+			})
 	}
 
 	@UsePipes(ValidationPipe)

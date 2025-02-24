@@ -26,7 +26,7 @@ export interface Group {
 	name: string
 	title: string
 	description: string
-	acceptMembershipRequest: boolean
+	isPublic: boolean
 }
 
 export interface GroupLists {
@@ -40,6 +40,7 @@ export class IamService {
 	private readonly logger = new Logger(IamService.name)
 	private apiUrl: string
 	private clientId: string
+	private realm: string
 
 	constructor(
 		private readonly httpService: HttpService,
@@ -48,6 +49,7 @@ export class IamService {
 	) {
 		this.apiUrl = this.configService.get<string>('iam.apiUrl')
 		this.clientId = this.configService.get<string>('iam.clientId')
+		this.realm = this.configService.get<string>('iam.realm')
 	}
 
 	private async getAuthToken() {
@@ -57,8 +59,7 @@ export class IamService {
 			const headers = { 'Content-Type': 'application/x-www-form-urlencoded' }
 			const body = {
 				grant_type: 'client_credentials',
-				scope:
-					'openid email roles team profile group',
+				scope: 'openid email roles team profile group',
 				client_id: this.clientId,
 				client_secret: this.configService.get<string>('iam.clientSecret')
 			}
@@ -111,25 +112,17 @@ export class IamService {
 		)
 	}
 
-	private async getGroupInfo(groupName: string): Promise<Project> {
-		this.logger.debug(`getGroupInfo(${groupName})`)
-		const url = `${this.apiUrl}/identity/groups/${groupName}?realm=hip`
+	public async getGroups(root: string): Promise<Project[]> {
+		this.logger.debug(`getGroups(${root})`)
+		const url = `${this.apiUrl}/identity/groups/${root}?realm=${this.realm}`
 		const { data } = await this.request(url, 'get', {})
 
 		return data
 	}
 
-	public async getGroups(): Promise<Project[]> {
-		this.logger.debug(`getGroups()`)
-		const url = `${this.apiUrl}/identity/groups?realm=hip`
-		const { data } = await this.request(url, 'get', {})
-
-		return data
-	}
-
-	public async getUser(username: string) {
+	public async getUser(username: string, root: string) {
 		this.logger.debug(`getUser(${username})`)
-		const url = `${this.apiUrl}/identity/users/${username}?realm=hip`
+		const url = `${this.apiUrl}/identity/projects/${root}/users/${username}?realm=${this.realm}`
 		const { data } = await this.request(url, 'get', {})
 
 		return data
@@ -146,31 +139,51 @@ export class IamService {
 		return data
 	}
 
-	public async getUserGroups(userName: string, role?: Role): Promise<Group[]> {
-		this.logger.debug(`getUserGroups(${userName})`)
-		const baseUrl = `${this.apiUrl}/projects/users/${userName}?realm=hip`
+	public async getUserGroups(
+		root,
+		userName: string,
+		role?: Role
+	): Promise<Group[]> {
+		this.logger.debug(`getUserGroups(${userName}, ${root})`)
+		const baseUrl = `${this.apiUrl}/projects/${root}/users/${userName}?realm=${this.realm}`
 		const url = role ? `${baseUrl}&role=${role}` : baseUrl
 		const { data } = await this.request(url, 'get', {})
+		this.logger.debug(
+			`getUserGroups(url: ${url}, data: ${JSON.stringify(data)}`
+		)
 
 		return data
 	}
 
-	public async createGroup(name: string, title: string, description: string, adminId?: string) {
-		this.logger.debug(`createGroup(${name})`)
+	public async createRootContainerGroup(name: string, description: string) {
+		this.logger.debug(`createRootContainerGroup(${name})`)
 
-		// sanitize name
-		const projectName = `${name.replace(/[^a-zA-Z0-9]+/g, '-')}`
-
-		const url = `${this.apiUrl}/identity/groups?realm=hip`
-		const body = { name: projectName, description, adminId }
+		const url = `${this.apiUrl}/identity/groupsroot?realm=${this.realm}`
+		const body = { name, description }
 		const { status } = await this.request(url, 'post', body)
 
-		return { data: projectName, status }
+		return { data: name, status }
 	}
 
-	public async deleteGroup(name: string) {
+	public async createGroup(
+		root: string,
+		name: string,
+		description: string,
+		adminId?: string,
+		isPublic = false
+	) {
+		this.logger.debug(`createGroup(${name})`)
+
+		const url = `${this.apiUrl}/identity/groups?realm=${this.realm}`
+		const body = { root, name, description, adminId, isPublic }
+		const { status } = await this.request(url, 'post', body)
+
+		return { data: name, status }
+	}
+
+	public async deleteGroup(root: string, name: string) {
 		this.logger.debug(`deleteGroup(${name})`)
-		const url = `${this.apiUrl}/identity/groups/${name}?realm=hip`
+		const url = `${this.apiUrl}/identity/groups/${root}/${name}?realm=${this.realm}`
 
 		const data = await this.request(url, 'delete')
 		const { status } = data
@@ -192,9 +205,22 @@ export class IamService {
 		return { data: 'Success', status }
 	}
 
-	public async addUserToGroup(userName: string, role: Role, groupName: string) {
+	public async addUserToGroup(
+		userName: string,
+		role: Role,
+		root: string,
+		groupName: string
+	) {
 		this.logger.debug(`addUserToGroup(${userName}, ${role}, ${groupName})`)
-		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}?realm=hip`
+		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}/${role}/users/${userName}?realm=${this.realm}`
+		const { status } = await this.request(url, 'put', {})
+
+		return { data: 'Success', status }
+	}
+
+	public async addUserToRootContainerGroup(userName: string, root: string) {
+		this.logger.debug(`addUserToGroup(${userName}, ${root})`)
+		const url = `${this.apiUrl}/identity/groups/${root}/users/${userName}?realm=${this.realm}`
 		const { status } = await this.request(url, 'put', {})
 
 		return { data: 'Success', status }
@@ -203,20 +229,26 @@ export class IamService {
 	public async removeUserFromGroup(
 		userName: string,
 		role: Role,
+		root: string,
 		groupName: string
 	) {
 		this.logger.debug(`removeUserFromGroup(${userName}, ${role}, ${groupName})`)
-		const url = `${this.apiUrl}/identity/groups/${groupName}/${role}/users/${userName}?realm=hip`
+		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}/${role}/users/${userName}?realm=${this.realm}`
 		const { status } = await this.request(url, 'delete', {})
 
 		return { data: 'Success', status }
 	}
 
 	public async getGroup(
+		root: string,
 		groupName: string
 	): Promise<Project & { members: GroupLists; administrators: GroupLists }> {
-		const group: any = await this.getGroupInfo(groupName)
+		this.logger.debug(`getGroup(root: ${root}, groupName: ${groupName})`)
 
-		return group
+		const url = `${this.apiUrl}/identity/groups/${root}/${groupName}?realm=${this.realm}`
+		const { data } = await this.request(url, 'get', {})
+
+		this.logger.debug(`getGroup(url: ${url}, data: ${JSON.stringify(data)}`)
+		return data
 	}
 }

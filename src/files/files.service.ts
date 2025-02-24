@@ -3,7 +3,7 @@ import {
 	Injectable,
 	Logger,
 	BadRequestException,
-	HttpException,
+	HttpException
 } from '@nestjs/common'
 import { firstValueFrom } from 'rxjs'
 import { NextcloudService } from 'src/nextcloud/nextcloud.service'
@@ -55,7 +55,7 @@ export class FilesService {
 	constructor(
 		private readonly httpService: HttpService,
 		private readonly nextcloudService: NextcloudService
-	) { }
+	) {}
 
 	private logger = new Logger('Files Service')
 
@@ -65,7 +65,7 @@ export class FilesService {
 	): Promise<ISearch> {
 		const headers = {
 			...tokens,
-			accept: 'application/json, text/plain, */*',
+			accept: 'application/json, text/plain, */*'
 		}
 
 		const response = this.httpService.get(
@@ -86,7 +86,7 @@ export class FilesService {
 					name: file.name,
 					parentPath: path,
 					path: `${path === '/' ? '' : path}/${file.name}`,
-					isDirectory: file.isDirectory(),
+					isDirectory: file.isDirectory()
 				}))
 			)
 		} catch (e) {
@@ -126,7 +126,7 @@ export class FilesService {
 		const fsPath = `${process.env.PRIVATE_FILESYSTEM}/${relativePath}`
 
 		this.logger.debug(`fsPath, ${fsPath}`)
-		return fsPath 
+		return fsPath
 	}
 
 	private async groupPath(name: string, userId: string) {

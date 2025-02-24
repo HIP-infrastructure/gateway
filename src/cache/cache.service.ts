@@ -1,14 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import { InjectRedis } from '@liaoliaots/nestjs-redis'
 import Redis from 'ioredis'
-
 
 @Injectable()
 export class CacheService {
 	private readonly logger = new Logger('CacheService')
 
-	constructor(@InjectRedis() private readonly client: Redis) {
-	}
+	constructor(@InjectRedis() private readonly client: Redis) {}
 
 	/**
 	 * @Description: Encapsulate the method of setting redis cache

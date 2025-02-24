@@ -14,8 +14,22 @@ import { RemoteAppController } from './remote-app.controller'
 import { RemoteAppService } from './remote-app.service'
 
 @Module({
-	imports: [IamModule, HttpModule, FilesModule, UsersModule, ProjectsModule, ToolsModule],
+	imports: [
+		IamModule,
+		HttpModule,
+		FilesModule,
+		UsersModule,
+		ProjectsModule,
+		ToolsModule
+	],
 	controllers: [RemoteAppController],
-	providers: [IamService, RemoteAppService, CacheService, NextcloudService, ProjectsService, ToolsService]
+	providers: [
+		IamService,
+		RemoteAppService,
+		CacheService,
+		NextcloudService,
+		ProjectsService,
+		ToolsService
+	]
 })
 export class RemoteAppModule {}

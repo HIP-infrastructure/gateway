@@ -1,23 +1,24 @@
-import { RedisModule } from '@liaoliaots/nestjs-redis';
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ScheduleModule } from '@nestjs/schedule';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import postgresConfig from './config/db.postgres.config';
-import redisConfig from './config/db.redis.config';
-import iamConfig from './config/api.iam.config';
-import collab from './config/collab.config';
-import instance from './config/instance.config';
-import { FilesModule } from './files/files.module';
-import { GroupsModule } from './groups/groups.module';
-import { NextcloudModule } from './nextcloud/nextcloud.module';
-import { RemoteAppModule } from './remote-app/remote-app.module';
-import { ToolsModule } from './tools/tools.module';
-import { UsersModule } from './users/users.module';
-import { ProjectsModule } from './projects/projects.module';
-import { IamModule } from './iam/iam.module';
-import { WarmupService } from './warmup/warmup.service';
+import { RedisModule } from '@liaoliaots/nestjs-redis'
+import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { ScheduleModule } from '@nestjs/schedule'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { AppController } from './app.controller'
+import postgresConfig from './config/db.postgres.config'
+import redisConfig from './config/db.redis.config'
+import iamConfig from './config/api.iam.config'
+import collab from './config/collab.config'
+import instance from './config/instance.config'
+import publicWorkspace from './config/public.config'
+import { FilesModule } from './files/files.module'
+import { GroupsModule } from './groups/groups.module'
+import { NextcloudModule } from './nextcloud/nextcloud.module'
+import { RemoteAppModule } from './remote-app/remote-app.module'
+import { ToolsModule } from './tools/tools.module'
+import { UsersModule } from './users/users.module'
+import { ProjectsModule } from './projects/projects.module'
+import { IamModule } from './iam/iam.module'
+import { WarmupService } from './warmup/warmup.service'
 import { ProjectsService } from './projects/projects.service'
 import { HttpModule } from '@nestjs/axios'
 import { CacheService } from './cache/cache.service'
@@ -30,7 +31,14 @@ import { IamService } from './iam/iam.service'
 		ConfigModule.forRoot({
 			isGlobal: true,
 			envFilePath: ['.env'],
-			load: [collab, iamConfig, postgresConfig, redisConfig, instance],
+			load: [
+				collab,
+				publicWorkspace,
+				iamConfig,
+				postgresConfig,
+				redisConfig,
+				instance
+			]
 		}),
 		FilesModule,
 		RemoteAppModule,
@@ -43,7 +51,7 @@ import { IamService } from './iam/iam.service'
 					name: config.get('REDIS_NAME'),
 					db: config.get('REDIS_DATABASE')
 				}
-			}),
+			})
 		}),
 		// TypeOrmModule.forRootAsync({
 		// 	inject: [ConfigService],
@@ -62,6 +70,14 @@ import { IamService } from './iam/iam.service'
 		HttpModule
 	],
 	controllers: [AppController],
-	providers: [CacheService, IamService, NextcloudService, ConfigService, ToolsService, ProjectsService, WarmupService],
+	providers: [
+		CacheService,
+		IamService,
+		NextcloudService,
+		ConfigService,
+		ToolsService,
+		ProjectsService,
+		WarmupService
+	]
 })
-export class AppModule { }
+export class AppModule {}

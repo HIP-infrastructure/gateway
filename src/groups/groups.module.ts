@@ -6,6 +6,6 @@ import { GroupsController } from './groups.controller'
 @Module({
 	imports: [HttpModule],
 	controllers: [GroupsController],
-	providers: [NextcloudService],
+	providers: [NextcloudService]
 })
 export class GroupsModule {}

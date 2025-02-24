@@ -5,6 +5,6 @@ export default registerAs('instance', () => {
 		hostname: process.env.HOSTNAME || 'hip.local',
 		logLevel: process.env.LOG_LEVEL || 'debug',
 		pollingInterval: process.env.POLLING_INTERVAL || 5,
-		dataUser: process.env.DATA_USER || 'www-data',
+		dataUser: process.env.DATA_USER || 'www-data'
 	}
 })

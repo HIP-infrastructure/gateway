@@ -57,8 +57,8 @@ export const fsConfig = (workspace: WorkspaceType) => {
 const INTERVAL = Number(process.env.POLLING_INTERVAL) || 5
 @Injectable()
 export class RemoteAppService {
-	private readonly logger = new Logger('RemoteAppService');
-	private containerServices: any[] = [];
+	private readonly logger = new Logger('RemoteAppService')
+	private containerServices: any[] = []
 
 	constructor(
 		private readonly cacheService: CacheService,
@@ -88,7 +88,7 @@ export class RemoteAppService {
 				}
 			}
 		})
-	};
+	}
 
 	/**
 	 * @Description: Remove and stop service and its apps services
@@ -112,7 +112,7 @@ export class RemoteAppService {
 			) || []
 		this.containerServices = nextServices
 		this.removeCacheContainer(id)
-	};
+	}
 
 	private stopService = (id: string) => {
 		const servicesToStop =
@@ -122,7 +122,7 @@ export class RemoteAppService {
 		servicesToStop.forEach(s => {
 			s.stop()
 		})
-	};
+	}
 
 	/**
 	 * @Description: Persist a container in cache
@@ -137,7 +137,7 @@ export class RemoteAppService {
 	}): Promise<any> => {
 		this.cacheService.set(`container:${context.id}`, context)
 		this.cacheService.sadd(`containers`, context.id)
-	};
+	}
 
 	/**
 	 * @Description: Remove a container from cache
@@ -148,7 +148,7 @@ export class RemoteAppService {
 	private removeCacheContainer = containerId => {
 		this.cacheService.del(`container:${containerId}`)
 		this.cacheService.srem(`containers`, containerId)
-	};
+	}
 
 	/**
 	 * @Description: Restore all containers in cache to services
@@ -174,7 +174,7 @@ export class RemoteAppService {
 
 			return service
 		})
-	};
+	}
 
 	/**
 	 * @Description: Poll remote api to update the status of all containers
@@ -314,8 +314,17 @@ export class RemoteAppService {
 	async forceRemove(id: string): Promise<ResponseContext[]> {
 		this.removeService(id)
 		return this.containerServices.map(service => {
-			const { id, name, userId, groupIds, url, error, type, parentId, workspace } =
-				service.state.context
+			const {
+				id,
+				name,
+				userId,
+				groupIds,
+				url,
+				error,
+				type,
+				parentId,
+				workspace
+			} = service.state.context
 			return {
 				id,
 				name,
@@ -326,7 +335,7 @@ export class RemoteAppService {
 				type,
 				parentId,
 				state: service.state.value as ContainerState,
-				workspace,
+				workspace
 			}
 		})
 	}
@@ -338,23 +347,31 @@ export class RemoteAppService {
 
 	async getAllContainers(): Promise<ResponseContext[]> {
 		return (
-			this.containerServices
-				.map(service => {
-					const { id, name, userId, groupIds, url, error, type, parentId, workspace } =
-						service.state.context
-					return {
-						id,
-						name,
-						userId,
-						groupIds,
-						url,
-						error,
-						type,
-						parentId,
-						state: service.state.value as ContainerState,
-						workspace
-					}
-				}) ?? []
+			this.containerServices.map(service => {
+				const {
+					id,
+					name,
+					userId,
+					groupIds,
+					url,
+					error,
+					type,
+					parentId,
+					workspace
+				} = service.state.context
+				return {
+					id,
+					name,
+					userId,
+					groupIds,
+					url,
+					error,
+					type,
+					parentId,
+					state: service.state.value as ContainerState,
+					workspace
+				}
+			}) ?? []
 		)
 	}
 
@@ -397,17 +414,34 @@ export class RemoteAppService {
 	 * @return ContainerContext[]
 	 */
 
-	getContainers(workspace: WorkspaceType, userId: string, groupIds: string[]): ResponseContext[] {
-		this.logger.debug(`Get containers for ${userId} and group ${groupIds} in ${workspace} workspace`)
+	getContainers(
+		workspace: WorkspaceType,
+		userId: string,
+		groupIds: string[]
+	): ResponseContext[] {
+		this.logger.debug(
+			`Get containers for ${userId} and group ${groupIds} in ${workspace} workspace`
+		)
 		return (
 			this.containerServices
-				.filter(service => workspace === 'private'
-					? service.state.context.userId === userId && service.state.context.workspace === workspace
-					: service.state.context.groupIds?.some(id => groupIds.includes(id))
+				.filter(service =>
+					workspace === 'private'
+						? service.state.context.userId === userId &&
+						  service.state.context.workspace === workspace
+						: service.state.context.groupIds?.some(id => groupIds.includes(id))
 				)
 				.map(service => {
-					const { id, name, userId, groupIds, url, error, type, parentId, workspace } =
-						service.state.context
+					const {
+						id,
+						name,
+						userId,
+						groupIds,
+						url,
+						error,
+						type,
+						parentId,
+						workspace
+					} = service.state.context
 
 					return {
 						id,
@@ -436,7 +470,7 @@ export class RemoteAppService {
 		backendId: BackendId,
 		workspace: WorkspaceType,
 		userId: string,
-		groupIds: string[],
+		groupIds: string[]
 	): Promise<ResponseContext[]> {
 		const serverId = uniq()
 		let groupFolders: ContainerContext['dataSource']['groupFolders']
@@ -445,7 +479,6 @@ export class RemoteAppService {
 		if (workspace === 'private') {
 			oidcGroupIds = await this.nextcloudService.oidcGroupsForUser(userId)
 			groupFolders = await this.nextcloudService.groupFoldersForUserId(userId)
-
 		} else {
 			oidcGroupIds = groupIds
 			groupFolders = groupIds.map(group => ({
@@ -454,7 +487,6 @@ export class RemoteAppService {
 				path: `__groupfolders/${group}`
 			}))
 		}
-
 
 		// Forge a name for the container
 		// That's pretty stupid btw, FIXME
@@ -471,7 +503,7 @@ export class RemoteAppService {
 			id: serverId,
 			name,
 			userId,
-			groupIds: oidcGroupIds,
+			groupIds: oidcGroupIds.filter(id => id !== 'tutorial_data'),
 			url: '',
 			state: ContainerState.UNINITIALIZED,
 			error: null,
@@ -484,7 +516,7 @@ export class RemoteAppService {
 			},
 			computeSource: {
 				backendId
-			},
+			}
 		}
 
 		const serverMachine = createContainerMachine(context)
@@ -507,7 +539,7 @@ export class RemoteAppService {
 	async createApp(
 		serverId: string,
 		appName: string,
-		userId: string,
+		userId: string
 	): Promise<ResponseContext[]> {
 		this.logger.debug(`createApp ${serverId}, ${appName} ${userId}`)
 
@@ -524,7 +556,8 @@ export class RemoteAppService {
 
 		// check if an existing app already exists on that server
 		const serviceWithSameApp: any = this.containerServices.find(
-			s => s.state.context.parentId === serverService.id &&
+			s =>
+				s.state.context.parentId === serverService.id &&
 				s.state.context.name === appName
 		)
 
@@ -533,12 +566,8 @@ export class RemoteAppService {
 		}
 
 		const appId = uniq('app')
-		const { groupIds,
-			workspace,
-			dataSource,
-			computeSource
-		} = serverService.state.context
-
+		const { groupIds, workspace, dataSource, computeSource } =
+			serverService.state.context
 
 		const context: ContainerContext = {
 			id: appId,
@@ -583,8 +612,9 @@ export class RemoteAppService {
 			throw new Error('Container is not available')
 		}
 
-		let appService = this.containerServices.find(s => s.machine.id === appId &&
-			s.state.context.userId === userId)
+		const appService = this.containerServices.find(
+			s => s.machine.id === appId && s.state.context.userId === userId
+		)
 
 		appService.send({
 			type: ContainerAction.STOP,
@@ -595,7 +625,11 @@ export class RemoteAppService {
 			}
 		})
 
-		return this.getContainers(appService.state.context.workspace, userId, service.state.context.groupIds)
+		return this.getContainers(
+			appService.state.context.workspace,
+			userId,
+			service.state.context.groupIds
+		)
 	}
 
 	/**
@@ -607,7 +641,8 @@ export class RemoteAppService {
 	removeAppsAndServer(serverId: string, userId: string): ResponseContext[] {
 		const service = this.containerServices.find(s => s.machine.id === serverId)
 		const appServices = this.containerServices.filter(
-			s => s.state.context.parentId === service.machine.id &&
+			s =>
+				s.state.context.parentId === service.machine.id &&
 				s.state.context.userId === userId
 		)
 		if (!service) {
@@ -656,12 +691,17 @@ export class RemoteAppService {
 			})
 		}
 
-		return this.getContainers(currentContext.workspace, userId, currentContext.groupIds)
+		return this.getContainers(
+			currentContext.workspace,
+			userId,
+			currentContext.groupIds
+		)
 	}
 
 	pauseAppsAndServer(userId: string, serverId: string): ResponseContext[] {
-		const service = this.containerServices.find(s => s.machine.id === serverId &&
-			s.state.context.userId === userId)
+		const service = this.containerServices.find(
+			s => s.machine.id === serverId && s.state.context.userId === userId
+		)
 
 		if (!service) {
 			throw new Error('Container is not available')
@@ -674,12 +714,17 @@ export class RemoteAppService {
 				s.send({ type: ContainerAction.PAUSE })
 			})
 
-		return this.getContainers(service.state.context.workspace, userId, service.state.context.groupIds)
+		return this.getContainers(
+			service.state.context.workspace,
+			userId,
+			service.state.context.groupIds
+		)
 	}
 
 	resumeAppsAndServer(userId: string, serverId: string): ResponseContext[] {
-		const service = this.containerServices.find(s => s.machine.id === serverId &&
-			s.state.context.userId === userId)
+		const service = this.containerServices.find(
+			s => s.machine.id === serverId && s.state.context.userId === userId
+		)
 
 		if (!service) {
 			throw new Error('Container is not available')
@@ -693,6 +738,10 @@ export class RemoteAppService {
 				s.send({ type: ContainerAction.RESUME })
 			})
 
-		return this.getContainers(service.state.context.workspace, userId, service.state.context.groupIds)
+		return this.getContainers(
+			service.state.context.workspace,
+			userId,
+			service.state.context.groupIds
+		)
 	}
 }
