@@ -467,5 +467,20 @@
 		"community": {
 			"url": ""
 		}
+	},
+	{
+		"label": "CRER",
+		"id": "crer",
+		"pi": "Carla Bentes",
+		"country": "Portugal",
+		"city": "Lisbon",
+		"logo": "media/crer__logo.jpg",
+		"description": "CRER is a center dedicated to evaluating people with refractory and complex epilepsies, including people referenced for epilepsy surgery. The center is included in the european reference network EPICARE, that as the same scope of activities",
+		"website": "https://www.ulssm.min-saude.pt/",
+		"socialnetwork": {
+		},
+		"community": {
+			"url": ""
+		}
 	}
 ]
