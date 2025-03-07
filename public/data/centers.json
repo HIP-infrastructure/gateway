@@ -482,5 +482,24 @@
 		"community": {
 			"url": ""
 		}
-	}
+	},
+        {
+                "label": "UCF",
+                "id": "ucf",
+                "pi": "Refaat El-Said",
+                "country": "USA",
+                "city": "Orlando",
+                "logo": "media/ucf__logo.png",
+                "description": "UCF is a medical school",
+                "website": "https://www.ucf.edu/",
+                "socialnetwork": {
+                    "facebook": "https://www.facebook.com/UCF",
+                    "twitter": "https://x.com/UCF",
+                    "youtube": "https://www.youtube.com/user/UCF",
+                    "instagram": "https://www.instagram.com/ucf.edu/"
+                },
+                "community": {
+                    "url": ""
+                }
+        }
 ]
