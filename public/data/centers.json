@@ -501,5 +501,22 @@
                 "community": {
                     "url": ""
                 }
-        }
+        },
+	{
+               "label": "NR",
+               "id": "nr",
+               "pi": "Henri Lorach",
+               "country": "Switzerland",
+               "city": "Lausanne",
+               "logo": "media/nr__logo.png",
+               "description": "NeuroRestore is a research centre with the aim of developing innovative therapeutic strategies including bioengineering and neurosurgical interventions to restore neurological functions",
+               "website": "https://www.neurorestore.swiss/",
+               "socialnetwork": {
+                   "twitter": "https://x.com/_NeuroRestore",
+                   "linkedin": "https://www.linkedin.com/company/neurorestore"
+               },
+               "community": {
+                   "url": ""
+               }
+           }
 ]
