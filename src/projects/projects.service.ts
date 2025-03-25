@@ -176,7 +176,7 @@ function to change the ownership of the user's folder in the collab workspace to
 			`create createProjectDto=${JSON.stringify(createProjectDto)}`
 		)
 
-		const { title, description, adminId } = createProjectDto
+		const { title, shortDescription, description, adminId } = createProjectDto
 		const name = sanitize(title)
 
 		try {
@@ -196,7 +196,7 @@ function to change the ownership of the user's folder in the collab workspace to
 				await this.iamService.createGroup(
 					this.PROJECTS_GROUP,
 					name,
-					description,
+					shortDescription,
 					adminId
 				)
 
@@ -234,6 +234,13 @@ function to change the ownership of the user's folder in the collab workspace to
 						dataset
 					)
 				})
+
+			// create a project description file
+			const projectDescriptionPath = `${this.configService.get(
+				'collab.mountPoint'
+			)}/__groupfolders/${name}/description.md`
+			jetpack.write(projectDescriptionPath, description)
+			
 			return this.findProjectsForUser(adminId)
 		} catch (error) {
 			this.logger.debug(error)
