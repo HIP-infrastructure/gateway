@@ -120,6 +120,10 @@ export class FilesService {
 			const filePath = path.split('/').slice(2)
 			const groupPath = await this.groupPath(filePath[0], userId)
 			relativePath = `${groupPath}/${filePath.slice(1).join('/')}`
+		} else if (/COLLAB_DESCRIPTION/.test(path)) {
+			// TODO : see if GROUP_FOLDER just above is used by something else, if not remove it
+			relativePath = path.replace('/COLLAB_DESCRIPTION/', '__groupfolders/')
+			return `${process.env.COLLAB_MOUNT}/${relativePath}`
 		} else {
 			relativePath = `${userId}/files${path}`
 		}
