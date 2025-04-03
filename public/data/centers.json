@@ -518,5 +518,23 @@
                "community": {
                    "url": ""
                }
-           }
+        },
+	{
+               "label": "DukeMed",
+               "id": "dukemed",
+               "pi": "Birgit Frauscher",
+               "country": "USA",
+               "city": "Durham",
+               "logo": "media/dukemed__logo.png",
+               "description": "Duke University School of Medicine is an institution for health professions and biomedical education, clinical care, biomedical research, and community partnership.",
+               "website": " https://medschool.duke.edu/",
+               "socialnetwork": {
+                   "youtube": "https://www.youtube.com/user/DukeMedSchool",
+                   "twitter": "https://x.com/DukeMedSchool",
+                   "linkedin": "https://www.linkedin.com/school/duke-med-school/"
+               },
+               "community": {
+                   "url": ""
+               }
+        }
 ]
