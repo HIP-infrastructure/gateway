@@ -29,8 +29,7 @@ export interface Project extends Group {
 }
 
 const CACHE_KEY_PROJECTS = 'projects'
-const sanitize = (title: string) =>
-	`HIP-${title.replace(/[^a-zA-Z0-9]+/g, '-')}`
+const sanitize = (title: string) => `${title.replace(/[^a-zA-Z0-9]+/g, '-')}`
 
 @Injectable()
 export class ProjectsService {
@@ -50,13 +49,13 @@ export class ProjectsService {
 		this.dataUserId = id
 
 		const suffix = this.configService.get<string>('collab.suffix')
-		this.PROJECTS_GROUP = `HIP-${suffix}-projects`
-		this.PROJECTS_ADMINS_GROUP = `HIP-${suffix}-projects-administrators`
+		this.PROJECTS_GROUP = `${suffix}-projects`
+		this.PROJECTS_ADMINS_GROUP = `${suffix}-projects-administrators`
 	}
 
 	/* The `chownr` function changes recursively the ownership of a file or directory specified by the `path` parameter
-to the user and group specified by `this.dataUserId`. This is used in the `createUserFolder`
-function to change the ownership of the user's folder in the collab workspace to the data user. */
+	to the user and group specified by `this.dataUserId`. This is used in the `createUserFolder`
+	function to change the ownership of the user's folder in the collab workspace to the data user. */
 	private async chown(path: string) {
 		this.logger.debug(`${path} ownership changed to ${this.dataUserId}`)
 		return await chownr(path, this.dataUserId, this.dataUserId, error => {
