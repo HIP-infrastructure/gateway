@@ -536,5 +536,21 @@
                "community": {
                    "url": ""
                }
-        }
+        },
+	{
+               "label": "KLI",
+               "id": "kli",
+               "pi": "Christoph Baumgartner",
+               "country": "Austria",
+               "city": "Vienna",
+               "logo": "media/kli__logo.png",
+               "description": "The Karl Landsteiner Institute for Clinical Epilepsy Research and Cognitive Neurology is a specialized research institution focusing on the clinical and cognitive dimensions of epilepsy",
+               "website": "https://www.karl-landsteiner.at/institute-epilepsieforschung.html",
+               "socialnetwork": {
+               },
+               "community": {
+		   "url": ""
+               }
+           }
+
 ]
