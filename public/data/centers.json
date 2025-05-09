@@ -546,10 +546,28 @@
                "logo": "media/kli__logo.png",
                "description": "The Karl Landsteiner Institute for Clinical Epilepsy Research and Cognitive Neurology is a specialized research institution focusing on the clinical and cognitive dimensions of epilepsy",
                "website": "https://www.karl-landsteiner.at/institute-epilepsieforschung.html",
-               "socialnetwork": {
-               },
+               "socialnetwork": { },
                "community": {
 		   "url": ""
+               }
+           },
+	   {
+               "label": "UPM",
+               "id": "upm",
+               "pi": "Guillermo Velasco",
+               "country": "Spain",
+               "city": "Madrid",
+               "logo": "media/upm__logo.png",
+               "description": "Universidad Politécnica de Madrid",
+               "website": "https://www.upm.es/",
+               "socialnetwork": {
+                   "youtube": "https://www.youtube.com/user/UPM",
+                   "linkedin": "https://www.linkedin.com/school/universidad-politecnica-de-madrid/?originalSubdomain=es",
+                   "instagram": "https://www.instagram.com/somosupm/",
+                   "facebook": "https://www.facebook.com/universidadpolitecnicademadrid"
+               },
+               "community": {
+                   "url": ""
                }
            }
 
