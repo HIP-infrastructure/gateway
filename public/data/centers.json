@@ -18,7 +18,7 @@
 	{
 		"label": "EPFL-ESL",
 		"id": "epfl-esl",
-		"pi": "Professor David Atienza",
+		"pi": "David Atienza",
 		"country": "Switzerland",
 		"city": "Lausanne",
 		"logo": "media/256x256-epfl-esl__logo.png",
@@ -50,7 +50,7 @@
 	{
 		"label": "VR-VIS",
 		"id": "vr-vis",
-		"pi": "Dr. Katja Bühler",
+		"pi": "Katja Bühler",
 		"country": "Austria",
 		"city": "Wien",
 		"logo": "media/256x256-vrvis__logo.png",
@@ -69,7 +69,7 @@
 	{
 		"label": "UCL",
 		"id": "ucl",
-		"pi": "Professor Susana Ferrao Santos",
+		"pi": "Susana Ferrao Santos",
 		"country": "Belgium",
 		"city": "Brussel",
 		"logo": "media/256x256-ucllouvain__logo.png",
@@ -102,7 +102,7 @@
 	{
 		"label": "AMU-NS",
 		"id": "amu-ns",
-		"pi": "Dr. Olivier David",
+		"pi": "Olivier David",
 		"country": "France",
 		"city": "Marseille",
 		"logo": "media/256x256-amu__logo.png",
@@ -122,7 +122,7 @@
 	{
 		"label": "CHUV",
 		"id": "chuv",
-		"pi": "Professor Philippe Ryvlin",
+		"pi": "Philippe Ryvlin",
 		"country": "Switzerland",
 		"city": "Lausanne",
 		"logo": "media/chuv__logo.png",
@@ -141,7 +141,7 @@
 	{
 		"label": "AMU-TNG",
 		"id": "amu-tng",
-		"pi": "Dr. Viktor Jirsa",
+		"pi": "Viktor Jirsa",
 		"country": "France",
 		"city": "Marseille",
 		"logo": "media/amu-tng__logo.jpeg",
@@ -161,7 +161,7 @@
 	{
 		"label": "APHM",
 		"id": "aphm",
-		"pi": "Professor Fabrice Bartolomei",
+		"pi": "Fabrice Bartolomei",
 		"country": "France",
 		"city": "Marseille",
 		"logo": "media/amu-tng__logo.jpeg",
@@ -181,7 +181,7 @@
 	{
 		"label": "CHRU-LILLE",
 		"id": "chru-lille",
-		"pi": "Professor Philippe Derambure",
+		"pi": "Philippe Derambure",
 		"country": "France",
 		"city": "Lille",
 		"logo": "media/chru-lille__logo.png",
@@ -200,7 +200,7 @@
 	{
 		"label": "CHM",
 		"id": "chm",
-		"pi": "Professor Carmen Barba",
+		"pi": "Carmen Barba",
 		"country": "Italy",
 		"city": "Florence",
 		"logo": "media/chm__logo.png",
@@ -219,7 +219,7 @@
 	{
 		"label": "CHUGA",
 		"id": "chuga",
-		"pi": "Professor Philippe Kahane",
+		"pi": "Philippe Kahane",
 		"country": "France",
 		"city": "Grenoble",
 		"logo": "media/chuga__logo.png",
@@ -236,7 +236,7 @@
 	{
 		"label": "CHU-LYON",
 		"id": "chu-lyon",
-		"pi": "Professor Alexis Arzimanoglou",
+		"pi": "Alexis Arzimanoglou",
 		"country": "France",
 		"city": "Lyon",
 		"logo": "media/chu-lyon__logo.png",
@@ -256,7 +256,7 @@
 	{
 		"label": "FNUSA",
 		"id": "fnusa",
-		"pi": "Professor Milan Brazdil",
+		"pi": "Milan Brazdil",
 		"country": "Czech Republic",
 		"city": "BRNO",
 		"logo": "media/fnusa__logo.png",
@@ -269,7 +269,7 @@
 	{
 		"label": "HUS",
 		"id": "hus",
-		"pi": "Professor Eeva-Liisa Metsähonkala",
+		"pi": "Eeva-Liisa Metsähonkala",
 		"country": "Finland",
 		"city": "Helsinki",
 		"logo": "media/hus__logo.png",
@@ -289,7 +289,7 @@
 	{
 		"label": "CHRU-S",
 		"id": "chru-s",
-		"pi": "Professor Edouard Hirsch",
+		"pi": "Edouard Hirsch",
 		"country": "France",
 		"city": "Strasbourg",
 		"logo": "media/chru-s__logo.png",
@@ -309,7 +309,7 @@
 	{
 		"label": "OU-SSE",
 		"id": "ou-sse",
-		"pi": "Professor Morten Lossius",
+		"pi": "Morten Lossius",
 		"country": "Norway",
 		"city": "Oslo",
 		"logo": "media/ou-sse__logo.png",
@@ -329,7 +329,7 @@
 	{
 		"label": "PSMAR",
 		"id": "psmar",
-		"pi": "Professor Rodrigo Rocamora Zuniga",
+		"pi": "Rodrigo Rocamora Zuniga",
 		"country": "Spain",
 		"city": "Barcelona",
 		"logo": "media/psmar__logo.png",
@@ -348,7 +348,7 @@
 	{
 		"label": "UCBL",
 		"id": "ucbl",
-		"pi": "Dr. Jean-Philippe Lachaux",
+		"pi": "Jean-Philippe Lachaux",
 		"country": "France",
 		"city": "Lyon",
 		"logo": "media/lyon1__logo.png",
@@ -367,7 +367,7 @@
 	{
 		"label": "UMCU",
 		"id": "umcu",
-		"pi": "Professor Kees Braun",
+		"pi": "Kees Braun",
 		"country": "Netherlands",
 		"city": "Utrecht",
 		"logo": "media/umcu__logo.png",
@@ -396,7 +396,7 @@
 	{
 		"label": "UNIPD",
 		"id": "unipd",
-		"pi": "Professor Maurizio Corbetta",
+		"pi": "Maurizio Corbetta",
 		"country": "Italy",
 		"city": "Padova",
 		"logo": "media/unipd__logo.png",
