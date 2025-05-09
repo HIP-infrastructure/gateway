@@ -22,7 +22,7 @@
 		"country": "Switzerland",
 		"city": "Lausanne",
 		"logo": "media/256x256-epfl-esl__logo.png",
-		"description": "The Embedded Systems Laboratory (ESL) is a research laboratory at the Institute of Electrical Engineering (IEL) of the Swiss Federal Institute of Technology (EPFL) in Lausanne, Switzerland.",
+		"description": "Embedded Systems Laboratory at EPFL",
 		"website": "https://www.epfl.ch/labs/esl/",
 		"socialnetwork": {
 			"youtube": "https://www.youtube.com/@eslepfl"
@@ -38,7 +38,7 @@
 		"country": "Germany",
 		"city": "Aachen",
 		"logo": "media/256x256-uka__logo.png",
-		"description": "The University Hospital RWTH Aachen combines patient-oriented medicine, nursing, teaching, and research at an international level.",
+		"description": "University Hospital RWTH Aachen",
 		"website": "https://www.ukaachen.de/en/",
 		"socialnetwork": {
 			"twitter": "https://twitter.com/UniklinikAachen"
@@ -273,7 +273,7 @@
 		"country": "Finland",
 		"city": "Helsinki",
 		"logo": "media/hus__logo.png",
-		"description": "Helsinki University Hospital (HUS), Hospital District of Helsinki and Uusimaa",
+		"description": "Helsinki University Hospital (HUS)",
 		"website": "https://www.hus.fi/en",
 		"socialnetwork": {
 			"youtube": "https://www.youtube.com/channel/UChHLhcahbu3iv-2rN7Rg6Sw",
@@ -436,7 +436,7 @@
 		"country": "France",
 		"city": "Saclay",
 		"logo": "media/cea__logo.png",
-		"description": "The French Alternative Energies and Atomic Energy Commission (CEA) is a major player in research, development and innovation in four major areas: defense and security, low-carbon energies (nuclear and renewable), technological research for industry, and fundamental research in physical sciences and life sciences.",
+		"description": "Commissariat à l'Énergie Atomique et aux Énergies Alternatives",
 		"website": "https://www.cea.fr/",
 		"socialnetwork": {
 			"instagram": "https://www.instagram.com/cea_officiel/",
@@ -475,7 +475,7 @@
 		"country": "Portugal",
 		"city": "Lisbon",
 		"logo": "media/crer__logo.jpg",
-		"description": "CRER is a center dedicated to evaluating people with refractory and complex epilepsies, including people referenced for epilepsy surgery. The center is included in the european reference network EPICARE, that as the same scope of activities",
+		"description": "Centro de Referência de Epilepsias Refratárias",
 		"website": "https://www.ulssm.min-saude.pt/",
 		"socialnetwork": {
 		},
@@ -490,7 +490,7 @@
                 "country": "USA",
                 "city": "Orlando",
                 "logo": "media/ucf__logo.png",
-                "description": "UCF is a medical school",
+                "description": "University of Central Florida",
                 "website": "https://www.ucf.edu/",
                 "socialnetwork": {
                     "facebook": "https://www.facebook.com/UCF",
@@ -509,7 +509,7 @@
                "country": "Switzerland",
                "city": "Lausanne",
                "logo": "media/nr__logo.png",
-               "description": "NeuroRestore is a research centre with the aim of developing innovative therapeutic strategies including bioengineering and neurosurgical interventions to restore neurological functions",
+               "description": "NeuroRestore at EPFL",
                "website": "https://www.neurorestore.swiss/",
                "socialnetwork": {
                    "twitter": "https://x.com/_NeuroRestore",
@@ -526,7 +526,7 @@
                "country": "USA",
                "city": "Durham",
                "logo": "media/dukemed__logo.png",
-               "description": "Duke University School of Medicine is an institution for health professions and biomedical education, clinical care, biomedical research, and community partnership.",
+               "description": "Duke University School of Medicine",
                "website": " https://medschool.duke.edu/",
                "socialnetwork": {
                    "youtube": "https://www.youtube.com/user/DukeMedSchool",
@@ -544,7 +544,7 @@
                "country": "Austria",
                "city": "Vienna",
                "logo": "media/kli__logo.png",
-               "description": "The Karl Landsteiner Institute for Clinical Epilepsy Research and Cognitive Neurology is a specialized research institution focusing on the clinical and cognitive dimensions of epilepsy",
+               "description": "The Karl Landsteiner Institute for Clinical Epilepsy Research and Cognitive Neurology",
                "website": "https://www.karl-landsteiner.at/institute-epilepsieforschung.html",
                "socialnetwork": { },
                "community": {
