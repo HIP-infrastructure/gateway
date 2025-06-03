@@ -569,6 +569,24 @@
                "community": {
                    "url": ""
                }
+           },
+	   {
+               "label": "CEITEC",
+               "id": "ceitec",
+               "pi": "Milan Brázdil",
+               "country": "Czech Republic",
+               "city": "Brno",
+               "logo": "media/ceitec__logo.png",
+               "description": "Central European Institute of Technology, Masaryk University",
+               "website": "https://www.ceitec.muni.cz",
+               "socialnetwork": {
+                   "facebook": "https://www.facebook.com/CEITEC",
+                   "twitter": "https://twitter.com/CEITEC",
+                   "linkedin": "https://www.linkedin.com/company/ceitec---central-european-institute-of-technology"
+               },
+               "community": {
+                   "url": ""
+               }
            }
 
 ]
