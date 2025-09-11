@@ -27,6 +27,8 @@ export interface Group {
 	title: string
 	description: string
 	isPublic: boolean
+	hasDta?: boolean
+	hasEthics?: boolean
 }
 
 export interface GroupLists {
@@ -170,12 +172,14 @@ export class IamService {
 		name: string,
 		description: string,
 		adminId?: string,
-		isPublic = false
+		isPublic = false,
+		hasDta?: boolean,
+		hasEthics?: boolean
 	) {
 		this.logger.debug(`createGroup(${name})`)
 
 		const url = `${this.apiUrl}/identity/groups?realm=${this.realm}`
-		const body = { root, name, description, adminId, isPublic }
+		const body = { root, name, description, adminId, isPublic, hasDta, hasEthics }
 		const { status } = await this.request(url, 'post', body)
 
 		return { data: name, status }

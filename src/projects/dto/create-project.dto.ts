@@ -6,5 +6,7 @@ export class CreateProjectDto {
 	readonly shortDescription: string
 	readonly description: string
 	readonly adminId: string
+	readonly hasDta?: boolean
+	readonly hasEthics?: boolean
 	readonly datasetDescription: DatasetDescription
 }

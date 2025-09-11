@@ -175,7 +175,7 @@ export class ProjectsService {
 			`create createProjectDto=${JSON.stringify(createProjectDto)}`
 		)
 
-		const { title, shortDescription, description, adminId } = createProjectDto
+		const { title, shortDescription, description, adminId, hasDta, hasEthics } = createProjectDto
 		const name = sanitize(title)
 
 		try {
@@ -196,7 +196,10 @@ export class ProjectsService {
 					this.PROJECTS_GROUP,
 					name,
 					shortDescription,
-					adminId
+					adminId,
+					false, // isPublic
+					hasDta,
+					hasEthics
 				)
 
 				await this.createUserFolder(adminId)
