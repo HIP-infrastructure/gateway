@@ -587,6 +587,26 @@
                "community": {
                    "url": ""
                }
+           },
+           {
+               "label": "UNICATT",
+               "id": "unicatt",
+               "pi": "Marco Perulli",
+               "country": "Italy",
+               "city": "Rome",
+               "logo": "media/unicatt__logo.png",
+               "description": "Università Cattolica del Sacro Cuore",
+               "website": "https://www.unicatt.it/en.html",
+               "socialnetwork": {
+                   "youtube": "https://www.youtube.com/user/younicatt",
+                   "linkedin": "https://www.linkedin.com/school/unicatt/",
+                   "instagram": "https://www.instagram.com/unicatt/",
+                   "facebook": "https://www.facebook.com/unicatt",
+                   "twitter": "https://x.com/unicatt"
+               },
+               "community": {
+                   "url": ""        
+               }
            }
 
 ]
