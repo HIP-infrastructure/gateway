@@ -605,8 +605,39 @@
                    "twitter": "https://x.com/unicatt"
                },
                "community": {
-                   "url": ""        
+                   "url": ""
+               }
+           },
+           {
+               "label": "UMFCD",
+               "id": "umfcd",
+               "pi": "Ioana Mindruta",
+               "country": "Romania",
+               "city": "Bucharest",
+               "logo": "media/umfcd__logo.png",
+               "description": "University of Medicine and Pharmacy Carol Davila",
+               "website": "https://umfcd.ro/",
+               "socialnetwork": {
+                   "facebook": "https://www.facebook.com/UMFCD"
+               },
+               "community": {
+                   "url": ""
+               }
+           },
+           {
+               "label": "UMBAL",
+               "id": "umbal",
+               "pi": "Krasimir Minkin",
+               "country": "Bulgaria",
+               "city": "Sofia",
+               "logo": "media/umbal__logo.png",
+               "description": "St. Ivan Rilski University Hospital",
+               "website": "https://www.rilski.com",
+               "socialnetwork": {
+                   "facebook": "https://www.facebook.com/UMBALSvetiIvanRilski/"
+               },
+               "community": {
+                   "url": ""
                }
            }
-
 ]
