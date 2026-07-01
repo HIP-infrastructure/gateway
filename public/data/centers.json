@@ -639,5 +639,19 @@
                "community": {
                    "url": ""
                }
+           },
+           {
+               "label": "SU",
+               "id": "su",
+               "pi": "Tatjana Liakina",
+               "country": "Sweden",
+               "city": "Gothenburg",
+               "logo": "media/su__logo.png",
+               "description": "Sahlgrenska University Hospital",
+               "website": "https://www.sahlgrenska.se",
+               "socialnetwork": {},
+               "community": {
+                   "url": ""
+               }
            }
 ]
