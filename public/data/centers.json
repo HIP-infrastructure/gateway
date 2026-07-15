@@ -1,689 +1,688 @@
 [
-	{
-		"label": "TUDelft",
-		"id": "tudelft",
-		"pi": "Arman Sharifi",
-		"country": "Netherlands",
-		"city": "Delft",
-		"logo": "media/256x256-tudelft__logo.png",
-		"description": "Delft University of Technology",
-		"website": "https://www.tudelft.nl/",
-		"socialnetwork": {
-			"youtube": "https://www.youtube.com/@tudelft"
-		},
-		"community": {
-			"url": "/call/o6npmdzu"
-		}
-	},
-	{
-		"label": "EPFL-ESL",
-		"id": "epfl-esl",
-		"pi": "David Atienza",
-		"country": "Switzerland",
-		"city": "Lausanne",
-		"logo": "media/256x256-epfl-esl__logo.png",
-		"description": "Embedded Systems Laboratory at EPFL",
-		"website": "https://www.epfl.ch/labs/esl/",
-		"socialnetwork": {
-			"youtube": "https://www.youtube.com/@eslepfl"
-		},
-		"community": {
-			"url": "/call/7a8b3m37"
-		}
-	},
-	{
-		"label": "Uniklinikum Aachen",
-		"id": "uka",
-		"pi": "Stefan Wolking",
-		"country": "Germany",
-		"city": "Aachen",
-		"logo": "media/256x256-uka__logo.png",
-		"description": "University Hospital RWTH Aachen",
-		"website": "https://www.ukaachen.de/en/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/UniklinikAachen"
-		},
-		"community": {
-			"url": "/call/dtp62mkp"
-		}
-	},
-	{
-		"label": "VR-VIS",
-		"id": "vr-vis",
-		"pi": "Katja Bühler",
-		"country": "Austria",
-		"city": "Wien",
-		"logo": "media/256x256-vrvis__logo.png",
-		"description": "VRVis Zentrum für Virtual Reality und Visualisierung Forschungs-GmbH",
-		"website": "https://www.vrvis.at/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/vrvis",
-			"youtube": "https://www.youtube.com/user/VRVis",
-			"facebook": "https://www.facebook.com/vrvisvienna",
-			"linkedin": "https://www.linkedin.com/company/vrvis-zentrum-f%C3%BCr-virtual-reality-und-visualisierung-forschungs-gmbh/"
-		},
-		"community": {
-			"url": "/call/fcad5mb5"
-		}
-	},
-	{
-		"label": "UCL",
-		"id": "ucl",
-		"pi": "Susana Ferrao Santos",
-		"country": "Belgium",
-		"city": "Brussel",
-		"logo": "media/256x256-ucllouvain__logo.png",
-		"description": "Cliniques Universitaires St-Luc (BRACE)",
-		"website": "https://www.saintluc.be/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/ClinUnivStLuc",
-			"youtube": "https://www.youtube.com/user/cliniquesuclsaintluc",
-			"facebook": "https://www.facebook.com/CliniquesUniversitairesSaintLuc",
-			"instagram": "https://www.instagram.com/cliniques_saint_luc/",
-			"linkedin": "https://www.linkedin.com/company/cliniques-universitaires-saint-luc/"
-		},
-		"community": {
-			"url": "/call/wcrcmohh"
-		}
-	},
-	{
-		"label": "CHUC",
-		"id": "chuc",
-		"pi": "Francisco Sales",
-		"country": "Portugal",
-		"city": "Coimbra",
-		"logo": "media/256x256-chuc__logo.png",
-		"description": "Centro Hospitalar e Universitario de Coimbra",
-		"website": "https://www.chuc.min-saude.pt/",
-		"community": {
-			"url": "/call/rwq6t7jc"
-		}
-	},
-	{
-		"label": "AMU-NS",
-		"id": "amu-ns",
-		"pi": "Olivier David",
-		"country": "France",
-		"city": "Marseille",
-		"logo": "media/256x256-amu__logo.png",
-		"description": "Aix-Marseille University",
-		"website": "https://www.univ-amu.fr/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/univamu",
-			"youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
-			"facebook": "https://www.facebook.com/aixmarseilleuniversite/",
-			"linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
-			"researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
-		},
-		"community": {
-			"url": "/call/syqenpjc"
-		}
-	},
-	{
-		"label": "CHUV",
-		"id": "chuv",
-		"pi": "Philippe Ryvlin",
-		"country": "Switzerland",
-		"city": "Lausanne",
-		"logo": "media/chuv__logo.png",
-		"description": "Centre Hospitalier Universitaire de Lausanne (CHUV)",
-		"website": "https://www.chuv.ch/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/CHUVLausanne",
-			"instagram": "https://www.instagram.com/chuvlausanne/",
-			"facebook": "https://www.facebook.com/CHUVLausanne",
-			"linkedin": "https://www.linkedin.com/company/chuv/"
-		},
-		"community": {
-			"url": "/call/zwk3g4ra"
-		}
-	},
-	{
-		"label": "AMU-TNG",
-		"id": "amu-tng",
-		"pi": "Viktor Jirsa",
-		"country": "France",
-		"city": "Marseille",
-		"logo": "media/amu-tng__logo.jpeg",
-		"description": "Aix-Marseille University",
-		"website": "https://www.univ-amu.fr/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/univamu",
-			"youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
-			"facebook": "https://www.facebook.com/aixmarseilleuniversite/",
-			"linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
-			"researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
-		},
-		"community": {
-			"url": "/call/ptn4xq7v"
-		}
-	},
-	{
-		"label": "APHM",
-		"id": "aphm",
-		"pi": "Fabrice Bartolomei",
-		"country": "France",
-		"city": "Marseille",
-		"logo": "media/amu-tng__logo.jpeg",
-		"description": "University Hospitals of Marseille, Epilepsy Dpt.",
-		"website": "https://www.univ-amu.fr/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/univamu",
-			"youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
-			"facebook": "https://www.facebook.com/aixmarseilleuniversite/",
-			"linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
-			"researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
-		},
-		"community": {
-			"url": "/call/wb8zmpx8"
-		}
-	},
-	{
-		"label": "CHRU-LILLE",
-		"id": "chru-lille",
-		"pi": "Philippe Derambure",
-		"country": "France",
-		"city": "Lille",
-		"logo": "media/chru-lille__logo.png",
-		"description": "CHRU LILLE, Epilepsy Unit",
-		"website": "https://www.chu-lille.fr/",
-		"socialnetwork": {
-			"youtube": "https://www.youtube.com/channel/UCvB81CdUUKNpaGCTaJFkNVQ",
-			"instagram": "https://www.instagram.com/chulille/",
-			"twitter": "https://twitter.com/CHU_Lille",
-			"facebook": "https://www.facebook.com/chulille"
-		},
-		"community": {
-			"url": "/call/aprczohz"
-		}
-	},
-	{
-		"label": "CHM",
-		"id": "chm",
-		"pi": "Carmen Barba",
-		"country": "Italy",
-		"city": "Florence",
-		"logo": "media/chm__logo.png",
-		"description": "Children's Hospital Meyer",
-		"website": "https://www.meyer.it/index.php/en/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/fondazionemeyer",
-			"youtube": "",
-			"facebook": "https://www.facebook.com/fondazione.meyer",
-			"instagram": "https://www.instagram.com/fondazionemeyer/"
-		},
-		"community": {
-			"url": "/call/gosbe3ix"
-		}
-	},
-	{
-		"label": "CHUGA",
-		"id": "chuga",
-		"pi": "Philippe Kahane",
-		"country": "France",
-		"city": "Grenoble",
-		"logo": "media/chuga__logo.png",
-		"description": "Le CHU Grenoble Alpes",
-		"website": "https://www.chu-grenoble.fr/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/chu_grenoble",
-			"youtube": "https://www.youtube.com/user/CHUGrenoble"
-		},
-		"community": {
-			"url": "/call/ifp8s389"
-		}
-	},
-	{
-		"label": "CHU-LYON",
-		"id": "chu-lyon",
-		"pi": "Alexis Arzimanoglou",
-		"country": "France",
-		"city": "Lyon",
-		"logo": "media/chu-lyon__logo.png",
-		"description": "Hospices Civils de Lyon (GHE-HCL)",
-		"website": "https://www.chu-lyon.fr/",
-		"socialnetwork": {
-			"youtube": "https://www.youtube.com/ChudeLyon",
-			"instagram": "https://www.instagram.com/hospicescivilslyon/",
-			"twitter": "https://twitter.com/chudelyon",
-			"facebook": "https://www.facebook.com/CHUdeLyon/",
-			"linkedin": "https://www.linkedin.com/company/hospices-civils-de-lyon/"
-		},
-		"community": {
-			"url": "/call/9kdsiosv"
-		}
-	},
-	{
-		"label": "FNUSA",
-		"id": "fnusa",
-		"pi": "Milan Brazdil",
-		"country": "Czech Republic",
-		"city": "BRNO",
-		"logo": "media/fnusa__logo.png",
-		"description": "St. Anne's University Hospital Czech Republic",
-		"website": "https://www.fnusa.cz/en/hp/",
-		"community": {
-			"url": "/call/kkj5uxdr"
-		}
-	},
-	{
-		"label": "HUS",
-		"id": "hus",
-		"pi": "Eeva-Liisa Metsähonkala",
-		"country": "Finland",
-		"city": "Helsinki",
-		"logo": "media/hus__logo.png",
-		"description": "Helsinki University Hospital (HUS)",
-		"website": "https://www.hus.fi/en",
-		"socialnetwork": {
-			"youtube": "https://www.youtube.com/channel/UChHLhcahbu3iv-2rN7Rg6Sw",
-			"instagram": "https://www.instagram.com/hus_sairaala/",
-			"twitter": "https://twitter.com/HUS_fi",
-			"facebook": "https://www.facebook.com/HUS.fi",
-			"linkedin": "https://www.linkedin.com/company/huslinkedin/"
-		},
-		"community": {
-			"url": "/call/y88bty7s"
-		}
-	},
-	{
-		"label": "CHRU-S",
-		"id": "chru-s",
-		"pi": "Edouard Hirsch",
-		"country": "France",
-		"city": "Strasbourg",
-		"logo": "media/chru-s__logo.png",
-		"description": "Les Hôpitaux Universitaires de Strasbourg",
-		"website": "https://www.chru-strasbourg.fr/",
-		"socialnetwork": {
-			"twitter": "https://twitter.com/CHRUStrasbourg",
-			"instagram": "https://www.instagram.com/chrustrasbourg/",
-			"facebook": "https://www.facebook.com/CHRUStrasbourg/",
-			"linkedin": "https://www.linkedin.com/company/hopitaux-universitaires-de-strasbourg/",
-			"youtube": "https://www.youtube.com/channel/UCmi2NODbFOehHubjQamZtAQ"
-		},
-		"community": {
-			"url": "/call/krryfvt4"
-		}
-	},
-	{
-		"label": "OU-SSE",
-		"id": "ou-sse",
-		"pi": "Morten Lossius",
-		"country": "Norway",
-		"city": "Oslo",
-		"logo": "media/ou-sse__logo.png",
-		"description": "The Norwegian National Unit for Epilepsy, Oslo universitetssykehus",
-		"website": "https://oslo-universitetssykehus.no/",
-		"socialnetwork": {
-			"youtube": "https://www.youtube.com/channel/UCRkdLJ014TTOXh8r8k6SciA",
-			"instagram": "https://www.instagram.com/oushf/",
-			"twitter": "https://twitter.com/oslounivsykehus",
-			"facebook": "https://www.facebook.com/oslouniversitetssykehus",
-			"linkedin": "https://www.linkedin.com/company/oslo-universitetssykehus/"
-		},
-		"community": {
-			"url": "/call/avkmkup8"
-		}
-	},
-	{
-		"label": "PSMAR",
-		"id": "psmar",
-		"pi": "Rodrigo Rocamora Zuniga",
-		"country": "Spain",
-		"city": "Barcelona",
-		"logo": "media/psmar__logo.png",
-		"description": "Hospital del Mar-Parc de Salut Mar",
-		"website": "https://www.parcdesalutmar.cat/en/",
-		"socialnetwork": {
-			"youtube": "https://www.youtube.com/HospitaldelMarIMAS",
-			"instagram": "https://www.instagram.com/hospitaldelmar/?hl=es",
-			"twitter": "https://twitter.com/hospitaldelmar",
-			"linkedin": "https://www.linkedin.com/company/hospital-del-mar--parc-de-salut-mar/?originalSubdomain=es"
-		},
-		"community": {
-			"url": "/call/8wccb3ye"
-		}
-	},
-	{
-		"label": "UCBL",
-		"id": "ucbl",
-		"pi": "Jean-Philippe Lachaux",
-		"country": "France",
-		"city": "Lyon",
-		"logo": "media/lyon1__logo.png",
-		"description": "Université Claude Bernard Lyon 1",
-		"website": "https://www.univ-lyon1.fr/",
-		"socialnetwork": {
-			"youtube": "https://www.youtube.com/UnivLyon1",
-			"instagram": "https://www.instagram.com/univlyon1/",
-			"twitter": "https://twitter.com/UnivLyon1",
-			"facebook": "https://www.facebook.com/UnivLyon1"
-		},
-		"community": {
-			"url": "/call/fkzbc29m"
-		}
-	},
-	{
-		"label": "UMCU",
-		"id": "umcu",
-		"pi": "Kees Braun",
-		"country": "Netherlands",
-		"city": "Utrecht",
-		"logo": "media/umcu__logo.png",
-		"description": "University Medical Center Utrecht (Brain Center Rudolf Magnus)",
-		"website": "https://www.umcutrecht.nl/en/",
-		"community": {
-			"url": "/call/hph8xdzp"
-		}
-	},
-	{
-		"label": "ABT",
-		"id": "abt",
-		"pi": "Mehrdad Seirafi",
-		"country": "Netherlands",
-		"city": "Maastricht",
-		"logo": "media/abt__logo.png",
-		"description": "Alpha Brain Technologies",
-		"website": "https://alphabrain.tech/",
-		"socialnetwork": {
-			"linkedin": "https://www.linkedin.com/company/alphabraintech/"
-		},
-		"community": {
-			"url": ""
-		}
-	},
-	{
-		"label": "UNIPD",
-		"id": "unipd",
-		"pi": "Maurizio Corbetta",
-		"country": "Italy",
-		"city": "Padova",
-		"logo": "media/unipd__logo.png",
-		"description": "University of Padova",
-		"website": "https://www.unipd.it/en/",
-		"socialnetwork": {
-			"facebook": "https://www.facebook.com/universitapadova/",
-			"instagram": "https://www.instagram.com/unipd/",
-			"linkedin": "https://www.linkedin.com/school/university-of-padova/",
-			"twitter": "https://x.com/UniPadova",
-			"youtube": "https://www.youtube.com/channel/UCxzGb4RIi935BkRG1KFjcfA"
-		},
-		"community": {
-			"url": ""
-		}
-	},
-	{
-		"label": "DM",
-		"id": "dm",
-		"pi": "Faiçal Isbaine",
-		"country": "France",
-		"city": "Marchaux-Chaudefontaine",
-		"logo": "media/dixi-medical__logo.png",
-		"description": "DIXI Medical",
-		"website": "https://diximedical.com/en/home",
-		"socialnetwork": {
-			"linkedin": "https://fr.linkedin.com/company/dixi-medical"
-		},
-		"community": {
-			"url": ""
-		}
-	},
-	{
-		"label": "CEA",
-		"id": "cea",
-		"pi": "Jean-François Mangin",
-		"country": "France",
-		"city": "Saclay",
-		"logo": "media/cea__logo.png",
-		"description": "Commissariat à l'Énergie Atomique et aux Énergies Alternatives",
-		"website": "https://www.cea.fr/",
-		"socialnetwork": {
-			"instagram": "https://www.instagram.com/cea_officiel/",
-			"linkedin": "https://www.linkedin.com/company/cea/",
-			"twitter": "https://x.com/cea_officiel",
-			"youtube": "https://www.youtube.com/@CEA"
-		},
-		"community": {
-			"url": ""
-		}
-	},
-	{
-		"label": "HUG",
-		"id": "hug",
-		"pi": "Philippe Bijlenga",
-		"country": "Switzerland",
-		"city": "Genève",
-		"logo": "media/hug__logo.png",
-		"description": "Hôpitaux Universitaires Genève.",
-		"website": "https://www.hug.ch/",
-		"socialnetwork": {
-			"instagram": "https://www.instagram.com/hug_ge/",
-			"facebook": "https://www.facebook.com/hopitaux.universitaires.geneve",
-			"linkedin": "https://www.linkedin.com/company/hopitaux-universitaires-de-geneve/posts/?feedView=all",
-			"twitter": "https://x.com/hug_ge",
-			"youtube": "https://www.youtube.com/user/KIOSKVIDEOHUG"
-		},
-		"community": {
-			"url": ""
-		}
-	},
-	{
-		"label": "CRER",
-		"id": "crer",
-		"pi": "Carla Bentes",
-		"country": "Portugal",
-		"city": "Lisbon",
-		"logo": "media/crer__logo.jpg",
-		"description": "Centro de Referência de Epilepsias Refratárias",
-		"website": "https://www.ulssm.min-saude.pt/",
-		"socialnetwork": {
-		},
-		"community": {
-			"url": ""
-		}
-	},
-        {
-                "label": "UCF",
-                "id": "ucf",
-                "pi": "Refaat El-Said",
-                "country": "USA",
-                "city": "Orlando",
-                "logo": "media/ucf__logo.png",
-                "description": "University of Central Florida",
-                "website": "https://www.ucf.edu/",
-                "socialnetwork": {
-                    "facebook": "https://www.facebook.com/UCF",
-                    "twitter": "https://x.com/UCF",
-                    "youtube": "https://www.youtube.com/user/UCF",
-                    "instagram": "https://www.instagram.com/ucf.edu/"
-                },
-                "community": {
-                    "url": ""
-                }
-        },
-	{
-               "label": "NR",
-               "id": "nr",
-               "pi": "Henri Lorach",
-               "country": "Switzerland",
-               "city": "Lausanne",
-               "logo": "media/nr__logo.png",
-               "description": "NeuroRestore at EPFL",
-               "website": "https://www.neurorestore.swiss/",
-               "socialnetwork": {
-                   "twitter": "https://x.com/_NeuroRestore",
-                   "linkedin": "https://www.linkedin.com/company/neurorestore"
-               },
-               "community": {
-                   "url": ""
-               }
-        },
-	{
-               "label": "DukeMed",
-               "id": "dukemed",
-               "pi": "Birgit Frauscher",
-               "country": "USA",
-               "city": "Durham",
-               "logo": "media/dukemed__logo.png",
-               "description": "Duke University School of Medicine",
-               "website": " https://medschool.duke.edu/",
-               "socialnetwork": {
-                   "youtube": "https://www.youtube.com/user/DukeMedSchool",
-                   "twitter": "https://x.com/DukeMedSchool",
-                   "linkedin": "https://www.linkedin.com/school/duke-med-school/"
-               },
-               "community": {
-                   "url": ""
-               }
-        },
-	{
-               "label": "KLI",
-               "id": "kli",
-               "pi": "Christoph Baumgartner",
-               "country": "Austria",
-               "city": "Vienna",
-               "logo": "media/kli__logo.png",
-               "description": "The Karl Landsteiner Institute for Clinical Epilepsy Research and Cognitive Neurology",
-               "website": "https://www.karl-landsteiner.at/institute-epilepsieforschung.html",
-               "socialnetwork": { },
-               "community": {
-		   "url": ""
-               }
-           },
-	   {
-               "label": "UPM",
-               "id": "upm",
-               "pi": "Guillermo Velasco",
-               "country": "Spain",
-               "city": "Madrid",
-               "logo": "media/upm__logo.png",
-               "description": "Universidad Politécnica de Madrid",
-               "website": "https://www.upm.es/",
-               "socialnetwork": {
-                   "youtube": "https://www.youtube.com/user/UPM",
-                   "linkedin": "https://www.linkedin.com/school/universidad-politecnica-de-madrid/?originalSubdomain=es",
-                   "instagram": "https://www.instagram.com/somosupm/",
-                   "facebook": "https://www.facebook.com/universidadpolitecnicademadrid"
-               },
-               "community": {
-                   "url": ""
-               }
-           },
-	   {
-               "label": "CEITEC",
-               "id": "ceitec",
-               "pi": "Milan Brázdil",
-               "country": "Czech Republic",
-               "city": "Brno",
-               "logo": "media/ceitec__logo.png",
-               "description": "Central European Institute of Technology, Masaryk University",
-               "website": "https://www.ceitec.muni.cz",
-               "socialnetwork": {
-                   "facebook": "https://www.facebook.com/CEITEC",
-                   "twitter": "https://twitter.com/CEITEC",
-                   "linkedin": "https://www.linkedin.com/company/ceitec---central-european-institute-of-technology"
-               },
-               "community": {
-                   "url": ""
-               }
-           },
-           {
-               "label": "UNICATT",
-               "id": "unicatt",
-               "pi": "Marco Perulli",
-               "country": "Italy",
-               "city": "Rome",
-               "logo": "media/unicatt__logo.png",
-               "description": "Università Cattolica del Sacro Cuore",
-               "website": "https://www.unicatt.it/en.html",
-               "socialnetwork": {
-                   "youtube": "https://www.youtube.com/user/younicatt",
-                   "linkedin": "https://www.linkedin.com/school/unicatt/",
-                   "instagram": "https://www.instagram.com/unicatt/",
-                   "facebook": "https://www.facebook.com/unicatt",
-                   "twitter": "https://x.com/unicatt"
-               },
-               "community": {
-                   "url": ""
-               }
-           },
-           {
-               "label": "UMFCD",
-               "id": "umfcd",
-               "pi": "Ioana Mindruta",
-               "country": "Romania",
-               "city": "Bucharest",
-               "logo": "media/umfcd__logo.png",
-               "description": "University of Medicine and Pharmacy Carol Davila",
-               "website": "https://umfcd.ro/",
-               "socialnetwork": {
-                   "facebook": "https://www.facebook.com/UMFCD"
-               },
-               "community": {
-                   "url": ""
-               }
-           },
-           {
-               "label": "UMBAL",
-               "id": "umbal",
-               "pi": "Krasimir Minkin",
-               "country": "Bulgaria",
-               "city": "Sofia",
-               "logo": "media/umbal__logo.png",
-               "description": "St. Ivan Rilski University Hospital",
-               "website": "https://www.rilski.com",
-               "socialnetwork": {
-                   "facebook": "https://www.facebook.com/UMBALSvetiIvanRilski/"
-               },
-               "community": {
-                   "url": ""
-               }
-           },
-           {
-               "label": "SU",
-               "id": "su",
-               "pi": "Tatjana Liakina",
-               "country": "Sweden",
-               "city": "Gothenburg",
-               "logo": "media/su__logo.png",
-               "description": "Sahlgrenska University Hospital",
-               "website": "https://www.sahlgrenska.se",
-               "socialnetwork": {},
-               "community": {
-                   "url": ""
-               }
-           },
-           {
-               "label": "McGill",
-               "id": "mcgill",
-               "pi": "Suresh Krishna",
-               "country": "Canada",
-               "city": "Montreal",
-               "logo": "media/mcgill__logo.png",
-               "description": "McGill University",
-               "website": "https://www.mcgill.ca/",
-               "socialnetwork": {
-				  "linkedin": "https://www.linkedin.com/school/mcgill-university/"
-			   },
-               "community": {
-                   "url": ""
-               }
-           },
-           {
-               "label": "BCH",
-               "id": "bch",
-               "pi": "Tobias Loddenkemper",
-               "country": "USA",
-               "city": "Boston",
-               "logo": "media/bch__logo.png",
-               "description": "Boston Children's Hospital",
-               "website": "https://www.childrenshospital.org/",
-               "socialnetwork": {
-				  "linkedin": "https://www.linkedin.com/company/bostonchildrenshospital/"
-			   },
-               "community": {
-                   "url": ""
-               }
-           }
+  {
+    "label": "TUDelft",
+    "id": "tudelft",
+    "pi": "Arman Sharifi",
+    "country": "Netherlands",
+    "city": "Delft",
+    "logo": "media/256x256-tudelft__logo.png",
+    "description": "Delft University of Technology",
+    "website": "https://www.tudelft.nl/",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/@tudelft"
+    },
+    "community": {
+      "url": "/call/o6npmdzu"
+    }
+  },
+  {
+    "label": "EPFL-ESL",
+    "id": "epfl-esl",
+    "pi": "David Atienza",
+    "country": "Switzerland",
+    "city": "Lausanne",
+    "logo": "media/256x256-epfl-esl__logo.png",
+    "description": "Embedded Systems Laboratory at EPFL",
+    "website": "https://www.epfl.ch/labs/esl/",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/@eslepfl"
+    },
+    "community": {
+      "url": "/call/7a8b3m37"
+    }
+  },
+  {
+    "label": "Uniklinikum Aachen",
+    "id": "uka",
+    "pi": "Stefan Wolking",
+    "country": "Germany",
+    "city": "Aachen",
+    "logo": "media/256x256-uka__logo.png",
+    "description": "University Hospital RWTH Aachen",
+    "website": "https://www.ukaachen.de/en/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/UniklinikAachen"
+    },
+    "community": {
+      "url": "/call/dtp62mkp"
+    }
+  },
+  {
+    "label": "VR-VIS",
+    "id": "vr-vis",
+    "pi": "Katja Bühler",
+    "country": "Austria",
+    "city": "Wien",
+    "logo": "media/256x256-vrvis__logo.png",
+    "description": "VRVis Zentrum für Virtual Reality und Visualisierung Forschungs-GmbH",
+    "website": "https://www.vrvis.at/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/vrvis",
+      "youtube": "https://www.youtube.com/user/VRVis",
+      "facebook": "https://www.facebook.com/vrvisvienna",
+      "linkedin": "https://www.linkedin.com/company/vrvis-zentrum-f%C3%BCr-virtual-reality-und-visualisierung-forschungs-gmbh/"
+    },
+    "community": {
+      "url": "/call/fcad5mb5"
+    }
+  },
+  {
+    "label": "UCL",
+    "id": "ucl",
+    "pi": "Susana Ferrao Santos",
+    "country": "Belgium",
+    "city": "Brussel",
+    "logo": "media/256x256-ucllouvain__logo.png",
+    "description": "Cliniques Universitaires St-Luc (BRACE)",
+    "website": "https://www.saintluc.be/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/ClinUnivStLuc",
+      "youtube": "https://www.youtube.com/user/cliniquesuclsaintluc",
+      "facebook": "https://www.facebook.com/CliniquesUniversitairesSaintLuc",
+      "instagram": "https://www.instagram.com/cliniques_saint_luc/",
+      "linkedin": "https://www.linkedin.com/company/cliniques-universitaires-saint-luc/"
+    },
+    "community": {
+      "url": "/call/wcrcmohh"
+    }
+  },
+  {
+    "label": "CHUC",
+    "id": "chuc",
+    "pi": "Francisco Sales",
+    "country": "Portugal",
+    "city": "Coimbra",
+    "logo": "media/256x256-chuc__logo.png",
+    "description": "Centro Hospitalar e Universitario de Coimbra",
+    "website": "https://www.chuc.min-saude.pt/",
+    "community": {
+      "url": "/call/rwq6t7jc"
+    }
+  },
+  {
+    "label": "AMU-NS",
+    "id": "amu-ns",
+    "pi": "Olivier David",
+    "country": "France",
+    "city": "Marseille",
+    "logo": "media/256x256-amu__logo.png",
+    "description": "Aix-Marseille University",
+    "website": "https://www.univ-amu.fr/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/univamu",
+      "youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
+      "facebook": "https://www.facebook.com/aixmarseilleuniversite/",
+      "linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
+      "researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
+    },
+    "community": {
+      "url": "/call/syqenpjc"
+    }
+  },
+  {
+    "label": "CHUV",
+    "id": "chuv",
+    "pi": "Philippe Ryvlin",
+    "country": "Switzerland",
+    "city": "Lausanne",
+    "logo": "media/chuv__logo.png",
+    "description": "Centre Hospitalier Universitaire de Lausanne (CHUV)",
+    "website": "https://www.chuv.ch/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/CHUVLausanne",
+      "instagram": "https://www.instagram.com/chuvlausanne/",
+      "facebook": "https://www.facebook.com/CHUVLausanne",
+      "linkedin": "https://www.linkedin.com/company/chuv/"
+    },
+    "community": {
+      "url": "/call/zwk3g4ra"
+    }
+  },
+  {
+    "label": "AMU-TNG",
+    "id": "amu-tng",
+    "pi": "Viktor Jirsa",
+    "country": "France",
+    "city": "Marseille",
+    "logo": "media/amu-tng__logo.jpeg",
+    "description": "Aix-Marseille University",
+    "website": "https://www.univ-amu.fr/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/univamu",
+      "youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
+      "facebook": "https://www.facebook.com/aixmarseilleuniversite/",
+      "linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
+      "researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
+    },
+    "community": {
+      "url": "/call/ptn4xq7v"
+    }
+  },
+  {
+    "label": "APHM",
+    "id": "aphm",
+    "pi": "Fabrice Bartolomei",
+    "country": "France",
+    "city": "Marseille",
+    "logo": "media/amu-tng__logo.jpeg",
+    "description": "University Hospitals of Marseille, Epilepsy Dpt.",
+    "website": "https://www.univ-amu.fr/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/univamu",
+      "youtube": "https://www.youtube.com/channel/UCqAJ4nmwJdjEweR1cNYPbmA",
+      "facebook": "https://www.facebook.com/aixmarseilleuniversite/",
+      "linkedin": "https://www.linkedin.com/school/aix-marseille-university/",
+      "researchgate": "https://www.researchgate.net/institution/Aix-Marseille-University"
+    },
+    "community": {
+      "url": "/call/wb8zmpx8"
+    }
+  },
+  {
+    "label": "CHRU-LILLE",
+    "id": "chru-lille",
+    "pi": "Philippe Derambure",
+    "country": "France",
+    "city": "Lille",
+    "logo": "media/chru-lille__logo.png",
+    "description": "CHRU LILLE, Epilepsy Unit",
+    "website": "https://www.chu-lille.fr/",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/channel/UCvB81CdUUKNpaGCTaJFkNVQ",
+      "instagram": "https://www.instagram.com/chulille/",
+      "twitter": "https://twitter.com/CHU_Lille",
+      "facebook": "https://www.facebook.com/chulille"
+    },
+    "community": {
+      "url": "/call/aprczohz"
+    }
+  },
+  {
+    "label": "CHM",
+    "id": "chm",
+    "pi": "Carmen Barba",
+    "country": "Italy",
+    "city": "Florence",
+    "logo": "media/chm__logo.png",
+    "description": "Children's Hospital Meyer",
+    "website": "https://www.meyer.it/index.php/en/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/fondazionemeyer",
+      "youtube": "",
+      "facebook": "https://www.facebook.com/fondazione.meyer",
+      "instagram": "https://www.instagram.com/fondazionemeyer/"
+    },
+    "community": {
+      "url": "/call/gosbe3ix"
+    }
+  },
+  {
+    "label": "CHUGA",
+    "id": "chuga",
+    "pi": "Philippe Kahane",
+    "country": "France",
+    "city": "Grenoble",
+    "logo": "media/chuga__logo.png",
+    "description": "Le CHU Grenoble Alpes",
+    "website": "https://www.chu-grenoble.fr/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/chu_grenoble",
+      "youtube": "https://www.youtube.com/user/CHUGrenoble"
+    },
+    "community": {
+      "url": "/call/ifp8s389"
+    }
+  },
+  {
+    "label": "CHU-LYON",
+    "id": "chu-lyon",
+    "pi": "Alexis Arzimanoglou",
+    "country": "France",
+    "city": "Lyon",
+    "logo": "media/chu-lyon__logo.png",
+    "description": "Hospices Civils de Lyon (GHE-HCL)",
+    "website": "https://www.chu-lyon.fr/",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/ChudeLyon",
+      "instagram": "https://www.instagram.com/hospicescivilslyon/",
+      "twitter": "https://twitter.com/chudelyon",
+      "facebook": "https://www.facebook.com/CHUdeLyon/",
+      "linkedin": "https://www.linkedin.com/company/hospices-civils-de-lyon/"
+    },
+    "community": {
+      "url": "/call/9kdsiosv"
+    }
+  },
+  {
+    "label": "FNUSA",
+    "id": "fnusa",
+    "pi": "Milan Brazdil",
+    "country": "Czech Republic",
+    "city": "BRNO",
+    "logo": "media/fnusa__logo.png",
+    "description": "St. Anne's University Hospital Czech Republic",
+    "website": "https://www.fnusa.cz/en/hp/",
+    "community": {
+      "url": "/call/kkj5uxdr"
+    }
+  },
+  {
+    "label": "HUS",
+    "id": "hus",
+    "pi": "Eeva-Liisa Metsähonkala",
+    "country": "Finland",
+    "city": "Helsinki",
+    "logo": "media/hus__logo.png",
+    "description": "Helsinki University Hospital (HUS)",
+    "website": "https://www.hus.fi/en",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/channel/UChHLhcahbu3iv-2rN7Rg6Sw",
+      "instagram": "https://www.instagram.com/hus_sairaala/",
+      "twitter": "https://twitter.com/HUS_fi",
+      "facebook": "https://www.facebook.com/HUS.fi",
+      "linkedin": "https://www.linkedin.com/company/huslinkedin/"
+    },
+    "community": {
+      "url": "/call/y88bty7s"
+    }
+  },
+  {
+    "label": "CHRU-S",
+    "id": "chru-s",
+    "pi": "Edouard Hirsch",
+    "country": "France",
+    "city": "Strasbourg",
+    "logo": "media/chru-s__logo.png",
+    "description": "Les Hôpitaux Universitaires de Strasbourg",
+    "website": "https://www.chru-strasbourg.fr/",
+    "socialnetwork": {
+      "twitter": "https://twitter.com/CHRUStrasbourg",
+      "instagram": "https://www.instagram.com/chrustrasbourg/",
+      "facebook": "https://www.facebook.com/CHRUStrasbourg/",
+      "linkedin": "https://www.linkedin.com/company/hopitaux-universitaires-de-strasbourg/",
+      "youtube": "https://www.youtube.com/channel/UCmi2NODbFOehHubjQamZtAQ"
+    },
+    "community": {
+      "url": "/call/krryfvt4"
+    }
+  },
+  {
+    "label": "OU-SSE",
+    "id": "ou-sse",
+    "pi": "Morten Lossius",
+    "country": "Norway",
+    "city": "Oslo",
+    "logo": "media/ou-sse__logo.png",
+    "description": "The Norwegian National Unit for Epilepsy, Oslo universitetssykehus",
+    "website": "https://oslo-universitetssykehus.no/",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/channel/UCRkdLJ014TTOXh8r8k6SciA",
+      "instagram": "https://www.instagram.com/oushf/",
+      "twitter": "https://twitter.com/oslounivsykehus",
+      "facebook": "https://www.facebook.com/oslouniversitetssykehus",
+      "linkedin": "https://www.linkedin.com/company/oslo-universitetssykehus/"
+    },
+    "community": {
+      "url": "/call/avkmkup8"
+    }
+  },
+  {
+    "label": "PSMAR",
+    "id": "psmar",
+    "pi": "Rodrigo Rocamora Zuniga",
+    "country": "Spain",
+    "city": "Barcelona",
+    "logo": "media/psmar__logo.png",
+    "description": "Hospital del Mar-Parc de Salut Mar",
+    "website": "https://www.parcdesalutmar.cat/en/",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/HospitaldelMarIMAS",
+      "instagram": "https://www.instagram.com/hospitaldelmar/?hl=es",
+      "twitter": "https://twitter.com/hospitaldelmar",
+      "linkedin": "https://www.linkedin.com/company/hospital-del-mar--parc-de-salut-mar/?originalSubdomain=es"
+    },
+    "community": {
+      "url": "/call/8wccb3ye"
+    }
+  },
+  {
+    "label": "UCBL",
+    "id": "ucbl",
+    "pi": "Jean-Philippe Lachaux",
+    "country": "France",
+    "city": "Lyon",
+    "logo": "media/lyon1__logo.png",
+    "description": "Université Claude Bernard Lyon 1",
+    "website": "https://www.univ-lyon1.fr/",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/UnivLyon1",
+      "instagram": "https://www.instagram.com/univlyon1/",
+      "twitter": "https://twitter.com/UnivLyon1",
+      "facebook": "https://www.facebook.com/UnivLyon1"
+    },
+    "community": {
+      "url": "/call/fkzbc29m"
+    }
+  },
+  {
+    "label": "UMCU",
+    "id": "umcu",
+    "pi": "Kees Braun",
+    "country": "Netherlands",
+    "city": "Utrecht",
+    "logo": "media/umcu__logo.png",
+    "description": "University Medical Center Utrecht (Brain Center Rudolf Magnus)",
+    "website": "https://www.umcutrecht.nl/en/",
+    "community": {
+      "url": "/call/hph8xdzp"
+    }
+  },
+  {
+    "label": "ABT",
+    "id": "abt",
+    "pi": "Mehrdad Seirafi",
+    "country": "Netherlands",
+    "city": "Maastricht",
+    "logo": "media/abt__logo.png",
+    "description": "Alpha Brain Technologies",
+    "website": "https://alphabrain.tech/",
+    "socialnetwork": {
+      "linkedin": "https://www.linkedin.com/company/alphabraintech/"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "UNIPD",
+    "id": "unipd",
+    "pi": "Maurizio Corbetta",
+    "country": "Italy",
+    "city": "Padova",
+    "logo": "media/unipd__logo.png",
+    "description": "University of Padova",
+    "website": "https://www.unipd.it/en/",
+    "socialnetwork": {
+      "facebook": "https://www.facebook.com/universitapadova/",
+      "instagram": "https://www.instagram.com/unipd/",
+      "linkedin": "https://www.linkedin.com/school/university-of-padova/",
+      "twitter": "https://x.com/UniPadova",
+      "youtube": "https://www.youtube.com/channel/UCxzGb4RIi935BkRG1KFjcfA"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "DM",
+    "id": "dm",
+    "pi": "Faiçal Isbaine",
+    "country": "France",
+    "city": "Marchaux-Chaudefontaine",
+    "logo": "media/dixi-medical__logo.png",
+    "description": "DIXI Medical",
+    "website": "https://diximedical.com/en/home",
+    "socialnetwork": {
+      "linkedin": "https://fr.linkedin.com/company/dixi-medical"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "CEA",
+    "id": "cea",
+    "pi": "Jean-François Mangin",
+    "country": "France",
+    "city": "Saclay",
+    "logo": "media/cea__logo.png",
+    "description": "Commissariat à l'Énergie Atomique et aux Énergies Alternatives",
+    "website": "https://www.cea.fr/",
+    "socialnetwork": {
+      "instagram": "https://www.instagram.com/cea_officiel/",
+      "linkedin": "https://www.linkedin.com/company/cea/",
+      "twitter": "https://x.com/cea_officiel",
+      "youtube": "https://www.youtube.com/@CEA"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "HUG",
+    "id": "hug",
+    "pi": "Philippe Bijlenga",
+    "country": "Switzerland",
+    "city": "Genève",
+    "logo": "media/hug__logo.png",
+    "description": "Hôpitaux Universitaires Genève.",
+    "website": "https://www.hug.ch/",
+    "socialnetwork": {
+      "instagram": "https://www.instagram.com/hug_ge/",
+      "facebook": "https://www.facebook.com/hopitaux.universitaires.geneve",
+      "linkedin": "https://www.linkedin.com/company/hopitaux-universitaires-de-geneve/posts/?feedView=all",
+      "twitter": "https://x.com/hug_ge",
+      "youtube": "https://www.youtube.com/user/KIOSKVIDEOHUG"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "CRER",
+    "id": "crer",
+    "pi": "Carla Bentes",
+    "country": "Portugal",
+    "city": "Lisbon",
+    "logo": "media/crer__logo.jpg",
+    "description": "Centro de Referência de Epilepsias Refratárias",
+    "website": "https://www.ulssm.min-saude.pt/",
+    "socialnetwork": {},
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "UCF",
+    "id": "ucf",
+    "pi": "Refaat El-Said",
+    "country": "USA",
+    "city": "Orlando",
+    "logo": "media/ucf__logo.png",
+    "description": "University of Central Florida",
+    "website": "https://www.ucf.edu/",
+    "socialnetwork": {
+      "facebook": "https://www.facebook.com/UCF",
+      "twitter": "https://x.com/UCF",
+      "youtube": "https://www.youtube.com/user/UCF",
+      "instagram": "https://www.instagram.com/ucf.edu/"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "NR",
+    "id": "nr",
+    "pi": "Henri Lorach",
+    "country": "Switzerland",
+    "city": "Lausanne",
+    "logo": "media/nr__logo.png",
+    "description": "NeuroRestore at EPFL",
+    "website": "https://www.neurorestore.swiss/",
+    "socialnetwork": {
+      "twitter": "https://x.com/_NeuroRestore",
+      "linkedin": "https://www.linkedin.com/company/neurorestore"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "DukeMed",
+    "id": "dukemed",
+    "pi": "Birgit Frauscher",
+    "country": "USA",
+    "city": "Durham",
+    "logo": "media/dukemed__logo.png",
+    "description": "Duke University School of Medicine",
+    "website": " https://medschool.duke.edu/",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/user/DukeMedSchool",
+      "twitter": "https://x.com/DukeMedSchool",
+      "linkedin": "https://www.linkedin.com/school/duke-med-school/"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "KLI",
+    "id": "kli",
+    "pi": "Christoph Baumgartner",
+    "country": "Austria",
+    "city": "Vienna",
+    "logo": "media/kli__logo.png",
+    "description": "The Karl Landsteiner Institute for Clinical Epilepsy Research and Cognitive Neurology",
+    "website": "https://www.karl-landsteiner.at/institute-epilepsieforschung.html",
+    "socialnetwork": {},
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "UPM",
+    "id": "upm",
+    "pi": "Guillermo Velasco",
+    "country": "Spain",
+    "city": "Madrid",
+    "logo": "media/upm__logo.png",
+    "description": "Universidad Politécnica de Madrid",
+    "website": "https://www.upm.es/",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/user/UPM",
+      "linkedin": "https://www.linkedin.com/school/universidad-politecnica-de-madrid/?originalSubdomain=es",
+      "instagram": "https://www.instagram.com/somosupm/",
+      "facebook": "https://www.facebook.com/universidadpolitecnicademadrid"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "CEITEC",
+    "id": "ceitec",
+    "pi": "Milan Brázdil",
+    "country": "Czech Republic",
+    "city": "Brno",
+    "logo": "media/ceitec__logo.png",
+    "description": "Central European Institute of Technology, Masaryk University",
+    "website": "https://www.ceitec.muni.cz",
+    "socialnetwork": {
+      "facebook": "https://www.facebook.com/CEITEC",
+      "twitter": "https://twitter.com/CEITEC",
+      "linkedin": "https://www.linkedin.com/company/ceitec---central-european-institute-of-technology"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "UNICATT",
+    "id": "unicatt",
+    "pi": "Marco Perulli",
+    "country": "Italy",
+    "city": "Rome",
+    "logo": "media/unicatt__logo.png",
+    "description": "Università Cattolica del Sacro Cuore",
+    "website": "https://www.unicatt.it/en.html",
+    "socialnetwork": {
+      "youtube": "https://www.youtube.com/user/younicatt",
+      "linkedin": "https://www.linkedin.com/school/unicatt/",
+      "instagram": "https://www.instagram.com/unicatt/",
+      "facebook": "https://www.facebook.com/unicatt",
+      "twitter": "https://x.com/unicatt"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "UMFCD",
+    "id": "umfcd",
+    "pi": "Ioana Mindruta",
+    "country": "Romania",
+    "city": "Bucharest",
+    "logo": "media/umfcd__logo.png",
+    "description": "University of Medicine and Pharmacy Carol Davila",
+    "website": "https://umfcd.ro/",
+    "socialnetwork": {
+      "facebook": "https://www.facebook.com/UMFCD"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "UMBAL",
+    "id": "umbal",
+    "pi": "Krasimir Minkin",
+    "country": "Bulgaria",
+    "city": "Sofia",
+    "logo": "media/umbal__logo.png",
+    "description": "St. Ivan Rilski University Hospital",
+    "website": "https://www.rilski.com",
+    "socialnetwork": {
+      "facebook": "https://www.facebook.com/UMBALSvetiIvanRilski/"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "SU",
+    "id": "su",
+    "pi": "Tatjana Liakina",
+    "country": "Sweden",
+    "city": "Gothenburg",
+    "logo": "media/su__logo.png",
+    "description": "Sahlgrenska University Hospital",
+    "website": "https://www.sahlgrenska.se",
+    "socialnetwork": {},
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "McGill",
+    "id": "mcgill",
+    "pi": "Suresh Krishna",
+    "country": "Canada",
+    "city": "Montreal",
+    "logo": "media/mcgill__logo.png",
+    "description": "McGill University",
+    "website": "https://www.mcgill.ca/",
+    "socialnetwork": {
+      "linkedin": "https://www.linkedin.com/school/mcgill-university/"
+    },
+    "community": {
+      "url": ""
+    }
+  },
+  {
+    "label": "BCH",
+    "id": "bch",
+    "pi": "Tobias Loddenkemper",
+    "country": "USA",
+    "city": "Boston",
+    "logo": "media/bch__logo.png",
+    "description": "Boston Children's Hospital",
+    "website": "https://www.childrenshospital.org/",
+    "socialnetwork": {
+      "linkedin": "https://www.linkedin.com/company/bostonchildrenshospital/"
+    },
+    "community": {
+      "url": ""
+    }
+  }
 ]
