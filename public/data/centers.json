@@ -442,7 +442,7 @@
 			"instagram": "https://www.instagram.com/cea_officiel/",
 			"linkedin": "https://www.linkedin.com/company/cea/",
 			"twitter": "https://x.com/cea_officiel",
-			"youtube": "https://www.youtube.com/@CEA"		
+			"youtube": "https://www.youtube.com/@CEA"
 		},
 		"community": {
 			"url": ""
@@ -462,7 +462,7 @@
 			"facebook": "https://www.facebook.com/hopitaux.universitaires.geneve",
 			"linkedin": "https://www.linkedin.com/company/hopitaux-universitaires-de-geneve/posts/?feedView=all",
 			"twitter": "https://x.com/hug_ge",
-			"youtube": "https://www.youtube.com/user/KIOSKVIDEOHUG"		
+			"youtube": "https://www.youtube.com/user/KIOSKVIDEOHUG"
 		},
 		"community": {
 			"url": ""
@@ -650,6 +650,38 @@
                "description": "Sahlgrenska University Hospital",
                "website": "https://www.sahlgrenska.se",
                "socialnetwork": {},
+               "community": {
+                   "url": ""
+               }
+           },
+           {
+               "label": "McGill",
+               "id": "mcgill",
+               "pi": "Suresh Krishna",
+               "country": "Canada",
+               "city": "Montreal",
+               "logo": "media/mcgill__logo.png",
+               "description": "McGill University",
+               "website": "https://www.mcgill.ca/",
+               "socialnetwork": {
+				  "linkedin": "https://www.linkedin.com/school/mcgill-university/"
+			   },
+               "community": {
+                   "url": ""
+               }
+           },
+           {
+               "label": "BCH",
+               "id": "bch",
+               "pi": "Tobias Loddenkemper",
+               "country": "USA",
+               "city": "Boston",
+               "logo": "media/bch__logo.png",
+               "description": "Boston Children's Hospital",
+               "website": "https://www.childrenshospital.org/",
+               "socialnetwork": {
+				  "linkedin": "https://www.linkedin.com/company/bostonchildrenshospital/"
+			   },
                "community": {
                    "url": ""
                }
