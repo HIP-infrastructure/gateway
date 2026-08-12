@@ -684,5 +684,19 @@
     "community": {
       "url": ""
     }
+  },
+  {
+    "label": "BFT",
+    "id": "bft",
+    "pi": "Christina Giavasi",
+    "country": "United Kingdom",
+    "city": "Bristol",
+    "logo": "media/bft__logo.png",
+    "description": "Bristol NHS Foundation Trust ",
+    "website": "https://www.bristolft.nhs.uk/",
+    "socialnetwork": {},
+    "community": {
+        "url": ""
+    }
   }
 ]
