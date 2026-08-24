@@ -698,5 +698,33 @@
     "community": {
         "url": ""
     }
+  },
+  {
+    "label": "LMU",
+    "id": "lmu",
+    "pi": "Solveig Vieluf",
+    "country": "Germany",
+    "city": "Munich",
+    "logo": "media/lmu__logo.png",
+    "description": "Ludwig-Maximilians-Universität München",
+    "website": "https://www.med.lmu.de/",
+    "socialnetwork": {},
+    "community": {
+        "url": ""
+    }
+  },
+  {
+    "label": "UPB",
+    "id": "upb",
+    "pi": "Tanuj Hasija",
+    "country": "Germany",
+    "city": "Paderborn",
+    "logo": "media/upb__logo.png",
+    "description": "Universität Paderborn",
+    "website": "https://www.uni-paderborn.de/",
+    "socialnetwork": {},
+    "community": {
+        "url": ""
+    }
   }
 ]
