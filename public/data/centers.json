@@ -726,5 +726,19 @@
     "community": {
         "url": ""
     }
+  },
+  {
+    "label": "BWH",
+    "id": "bwh",
+    "pi": "John Rolston",
+    "country": "USA",
+    "city": "Boston",
+    "logo": "media/bwh__logo.png",
+    "description": "Brigham and Women's Hospital",
+    "website": "https://www.massgeneralbrigham.org/en/about/brigham-and-womens-hospital",
+    "socialnetwork": {},
+    "community": {
+        "url": ""
+    }
   }
 ]
