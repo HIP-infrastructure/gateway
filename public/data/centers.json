@@ -5,7 +5,7 @@
     "pi": "Arman Sharifi",
     "country": "Netherlands",
     "city": "Delft",
-    "logo": "media/256x256-tudelft__logo.png",
+    "logo": "media/tudelft.png",
     "description": "Delft University of Technology",
     "website": "https://www.tudelft.nl/",
     "socialnetwork": {
@@ -21,7 +21,7 @@
     "pi": "David Atienza",
     "country": "Switzerland",
     "city": "Lausanne",
-    "logo": "media/256x256-epfl-esl__logo.png",
+    "logo": "media/epfl-esl.png",
     "description": "Embedded Systems Laboratory at EPFL",
     "website": "https://www.epfl.ch/labs/esl/",
     "socialnetwork": {
@@ -37,7 +37,7 @@
     "pi": "Stefan Wolking",
     "country": "Germany",
     "city": "Aachen",
-    "logo": "media/256x256-uka__logo.png",
+    "logo": "media/uka.png",
     "description": "University Hospital RWTH Aachen",
     "website": "https://www.ukaachen.de/en/",
     "socialnetwork": {
@@ -53,7 +53,7 @@
     "pi": "Katja Bühler",
     "country": "Austria",
     "city": "Wien",
-    "logo": "media/256x256-vrvis__logo.png",
+    "logo": "media/vr-vis.png",
     "description": "VRVis Zentrum für Virtual Reality und Visualisierung Forschungs-GmbH",
     "website": "https://www.vrvis.at/",
     "socialnetwork": {
@@ -72,7 +72,7 @@
     "pi": "Susana Ferrao Santos",
     "country": "Belgium",
     "city": "Brussel",
-    "logo": "media/256x256-ucllouvain__logo.png",
+    "logo": "media/ucl.png",
     "description": "Cliniques Universitaires St-Luc (BRACE)",
     "website": "https://www.saintluc.be/",
     "socialnetwork": {
@@ -92,7 +92,7 @@
     "pi": "Francisco Sales",
     "country": "Portugal",
     "city": "Coimbra",
-    "logo": "media/256x256-chuc__logo.png",
+    "logo": "media/chuc.png",
     "description": "Centro Hospitalar e Universitario de Coimbra",
     "website": "https://www.chuc.min-saude.pt/",
     "community": {
@@ -105,7 +105,7 @@
     "pi": "Olivier David",
     "country": "France",
     "city": "Marseille",
-    "logo": "media/256x256-amu__logo.png",
+    "logo": "media/amu-ns.png",
     "description": "Aix-Marseille University",
     "website": "https://www.univ-amu.fr/",
     "socialnetwork": {
@@ -125,7 +125,7 @@
     "pi": "Philippe Ryvlin",
     "country": "Switzerland",
     "city": "Lausanne",
-    "logo": "media/chuv__logo.png",
+    "logo": "media/chuv.png",
     "description": "Centre Hospitalier Universitaire de Lausanne (CHUV)",
     "website": "https://www.chuv.ch/",
     "socialnetwork": {
@@ -144,7 +144,7 @@
     "pi": "Viktor Jirsa",
     "country": "France",
     "city": "Marseille",
-    "logo": "media/amu-tng__logo.jpeg",
+    "logo": "media/amu-tng.png",
     "description": "Aix-Marseille University",
     "website": "https://www.univ-amu.fr/",
     "socialnetwork": {
@@ -164,7 +164,7 @@
     "pi": "Fabrice Bartolomei",
     "country": "France",
     "city": "Marseille",
-    "logo": "media/aphm__logo.png",
+    "logo": "media/aphm.png",
     "description": "University Hospitals of Marseille, Epilepsy Dpt.",
     "website": "https://www.univ-amu.fr/",
     "socialnetwork": {
@@ -184,7 +184,7 @@
     "pi": "Philippe Derambure",
     "country": "France",
     "city": "Lille",
-    "logo": "media/chru-lille__logo.png",
+    "logo": "media/chru-lille.png",
     "description": "CHRU LILLE, Epilepsy Unit",
     "website": "https://www.chu-lille.fr/",
     "socialnetwork": {
@@ -203,7 +203,7 @@
     "pi": "Carmen Barba",
     "country": "Italy",
     "city": "Florence",
-    "logo": "media/chm__logo.png",
+    "logo": "media/chm.png",
     "description": "Children's Hospital Meyer",
     "website": "https://www.meyer.it/index.php/en/",
     "socialnetwork": {
@@ -222,7 +222,7 @@
     "pi": "Philippe Kahane",
     "country": "France",
     "city": "Grenoble",
-    "logo": "media/chuga__logo.png",
+    "logo": "media/chuga.png",
     "description": "Le CHU Grenoble Alpes",
     "website": "https://www.chu-grenoble.fr/",
     "socialnetwork": {
@@ -239,7 +239,7 @@
     "pi": "Alexis Arzimanoglou",
     "country": "France",
     "city": "Lyon",
-    "logo": "media/chu-lyon__logo.png",
+    "logo": "media/chu-lyon.png",
     "description": "Hospices Civils de Lyon (GHE-HCL)",
     "website": "https://www.chu-lyon.fr/",
     "socialnetwork": {
@@ -259,7 +259,7 @@
     "pi": "Milan Brazdil",
     "country": "Czech Republic",
     "city": "BRNO",
-    "logo": "media/fnusa__logo.png",
+    "logo": "media/fnusa.png",
     "description": "St. Anne's University Hospital Czech Republic",
     "website": "https://www.fnusa.cz/en/hp/",
     "community": {
@@ -272,7 +272,7 @@
     "pi": "Eeva-Liisa Metsähonkala",
     "country": "Finland",
     "city": "Helsinki",
-    "logo": "media/hus__logo.png",
+    "logo": "media/hus.png",
     "description": "Helsinki University Hospital (HUS)",
     "website": "https://www.hus.fi/en",
     "socialnetwork": {
@@ -292,7 +292,7 @@
     "pi": "Edouard Hirsch",
     "country": "France",
     "city": "Strasbourg",
-    "logo": "media/chru-s__logo.png",
+    "logo": "media/chru-s.png",
     "description": "Les Hôpitaux Universitaires de Strasbourg",
     "website": "https://www.chru-strasbourg.fr/",
     "socialnetwork": {
@@ -312,7 +312,7 @@
     "pi": "Morten Lossius",
     "country": "Norway",
     "city": "Oslo",
-    "logo": "media/ou-sse__logo.png",
+    "logo": "media/ou-sse.png",
     "description": "The Norwegian National Unit for Epilepsy, Oslo universitetssykehus",
     "website": "https://oslo-universitetssykehus.no/",
     "socialnetwork": {
@@ -332,7 +332,7 @@
     "pi": "Rodrigo Rocamora Zuniga",
     "country": "Spain",
     "city": "Barcelona",
-    "logo": "media/psmar__logo.png",
+    "logo": "media/psmar.png",
     "description": "Hospital del Mar-Parc de Salut Mar",
     "website": "https://www.parcdesalutmar.cat/en/",
     "socialnetwork": {
@@ -351,7 +351,7 @@
     "pi": "Jean-Philippe Lachaux",
     "country": "France",
     "city": "Lyon",
-    "logo": "media/lyon1__logo.png",
+    "logo": "media/ucbl.png",
     "description": "Université Claude Bernard Lyon 1",
     "website": "https://www.univ-lyon1.fr/",
     "socialnetwork": {
@@ -370,7 +370,7 @@
     "pi": "Kees Braun",
     "country": "Netherlands",
     "city": "Utrecht",
-    "logo": "media/umcu__logo.png",
+    "logo": "media/umcu.png",
     "description": "University Medical Center Utrecht (Brain Center Rudolf Magnus)",
     "website": "https://www.umcutrecht.nl/en/",
     "community": {
@@ -383,7 +383,7 @@
     "pi": "Mehrdad Seirafi",
     "country": "Netherlands",
     "city": "Maastricht",
-    "logo": "media/abt__logo.png",
+    "logo": "media/abt.png",
     "description": "Alpha Brain Technologies",
     "website": "https://alphabrain.tech/",
     "socialnetwork": {
@@ -399,7 +399,7 @@
     "pi": "Maurizio Corbetta",
     "country": "Italy",
     "city": "Padova",
-    "logo": "media/unipd__logo.png",
+    "logo": "media/unipd.png",
     "description": "University of Padova",
     "website": "https://www.unipd.it/en/",
     "socialnetwork": {
@@ -419,7 +419,7 @@
     "pi": "Faiçal Isbaine",
     "country": "France",
     "city": "Marchaux-Chaudefontaine",
-    "logo": "media/dixi-medical__logo.png",
+    "logo": "media/dm.png",
     "description": "DIXI Medical",
     "website": "https://diximedical.com/en/home",
     "socialnetwork": {
@@ -435,7 +435,7 @@
     "pi": "Jean-François Mangin",
     "country": "France",
     "city": "Saclay",
-    "logo": "media/cea__logo.png",
+    "logo": "media/cea.png",
     "description": "Commissariat à l'Énergie Atomique et aux Énergies Alternatives",
     "website": "https://www.cea.fr/",
     "socialnetwork": {
@@ -454,7 +454,7 @@
     "pi": "Philippe Bijlenga",
     "country": "Switzerland",
     "city": "Genève",
-    "logo": "media/hug__logo.png",
+    "logo": "media/hug.png",
     "description": "Hôpitaux Universitaires Genève.",
     "website": "https://www.hug.ch/",
     "socialnetwork": {
@@ -474,7 +474,7 @@
     "pi": "Carla Bentes",
     "country": "Portugal",
     "city": "Lisbon",
-    "logo": "media/crer__logo.jpg",
+    "logo": "media/crer.png",
     "description": "Centro de Referência de Epilepsias Refratárias",
     "website": "https://www.ulssm.min-saude.pt/",
     "socialnetwork": {},
@@ -488,7 +488,7 @@
     "pi": "Refaat El-Said",
     "country": "USA",
     "city": "Orlando",
-    "logo": "media/ucf__logo.png",
+    "logo": "media/ucf.png",
     "description": "University of Central Florida",
     "website": "https://www.ucf.edu/",
     "socialnetwork": {
@@ -507,7 +507,7 @@
     "pi": "Henri Lorach",
     "country": "Switzerland",
     "city": "Lausanne",
-    "logo": "media/nr__logo.png",
+    "logo": "media/nr.png",
     "description": "NeuroRestore at EPFL",
     "website": "https://www.neurorestore.swiss/",
     "socialnetwork": {
@@ -524,9 +524,9 @@
     "pi": "Birgit Frauscher",
     "country": "USA",
     "city": "Durham",
-    "logo": "media/dukemed__logo.png",
+    "logo": "media/dukemed.png",
     "description": "Duke University School of Medicine",
-    "website": " https://medschool.duke.edu/",
+    "website": "https://medschool.duke.edu/",
     "socialnetwork": {
       "youtube": "https://www.youtube.com/user/DukeMedSchool",
       "twitter": "https://x.com/DukeMedSchool",
@@ -542,7 +542,7 @@
     "pi": "Christoph Baumgartner",
     "country": "Austria",
     "city": "Vienna",
-    "logo": "media/kli__logo.png",
+    "logo": "media/kli.png",
     "description": "The Karl Landsteiner Institute for Clinical Epilepsy Research and Cognitive Neurology",
     "website": "https://www.karl-landsteiner.at/institute-epilepsieforschung.html",
     "socialnetwork": {},
@@ -556,7 +556,7 @@
     "pi": "Guillermo Velasco",
     "country": "Spain",
     "city": "Madrid",
-    "logo": "media/upm__logo.png",
+    "logo": "media/upm.png",
     "description": "Universidad Politécnica de Madrid",
     "website": "https://www.upm.es/",
     "socialnetwork": {
@@ -575,7 +575,7 @@
     "pi": "Milan Brázdil",
     "country": "Czech Republic",
     "city": "Brno",
-    "logo": "media/ceitec__logo.png",
+    "logo": "media/ceitec.png",
     "description": "Central European Institute of Technology, Masaryk University",
     "website": "https://www.ceitec.muni.cz",
     "socialnetwork": {
@@ -593,7 +593,7 @@
     "pi": "Marco Perulli",
     "country": "Italy",
     "city": "Rome",
-    "logo": "media/unicatt__logo.png",
+    "logo": "media/unicatt.png",
     "description": "Università Cattolica del Sacro Cuore",
     "website": "https://www.unicatt.it/en.html",
     "socialnetwork": {
@@ -613,7 +613,7 @@
     "pi": "Ioana Mindruta",
     "country": "Romania",
     "city": "Bucharest",
-    "logo": "media/umfcd__logo.png",
+    "logo": "media/umfcd.png",
     "description": "University of Medicine and Pharmacy Carol Davila",
     "website": "https://umfcd.ro/",
     "socialnetwork": {
@@ -629,7 +629,7 @@
     "pi": "Krasimir Minkin",
     "country": "Bulgaria",
     "city": "Sofia",
-    "logo": "media/umbal__logo.png",
+    "logo": "media/umbal.png",
     "description": "St. Ivan Rilski University Hospital",
     "website": "https://www.rilski.com",
     "socialnetwork": {
@@ -645,7 +645,7 @@
     "pi": "Tatjana Liakina",
     "country": "Sweden",
     "city": "Gothenburg",
-    "logo": "media/su__logo.png",
+    "logo": "media/su.png",
     "description": "Sahlgrenska University Hospital",
     "website": "https://www.sahlgrenska.se",
     "socialnetwork": {},
@@ -659,7 +659,7 @@
     "pi": "Suresh Krishna",
     "country": "Canada",
     "city": "Montreal",
-    "logo": "media/mcgill__logo.png",
+    "logo": "media/mcgill.png",
     "description": "McGill University",
     "website": "https://www.mcgill.ca/",
     "socialnetwork": {
@@ -675,7 +675,7 @@
     "pi": "Tobias Loddenkemper",
     "country": "USA",
     "city": "Boston",
-    "logo": "media/bch__logo.png",
+    "logo": "media/bch.png",
     "description": "Boston Children's Hospital",
     "website": "https://www.childrenshospital.org/",
     "socialnetwork": {
@@ -691,8 +691,8 @@
     "pi": "Christina Giavasi",
     "country": "United Kingdom",
     "city": "Bristol",
-    "logo": "media/bft__logo.png",
-    "description": "Bristol NHS Foundation Trust ",
+    "logo": "media/bft.png",
+    "description": "Bristol NHS Foundation Trust",
     "website": "https://www.bristolft.nhs.uk/",
     "socialnetwork": {},
     "community": {
@@ -705,7 +705,7 @@
     "pi": "Solveig Vieluf",
     "country": "Germany",
     "city": "Munich",
-    "logo": "media/lmu__logo.png",
+    "logo": "media/lmu.png",
     "description": "Ludwig-Maximilians-Universität München",
     "website": "https://www.med.lmu.de/",
     "socialnetwork": {},
@@ -719,7 +719,7 @@
     "pi": "Tanuj Hasija",
     "country": "Germany",
     "city": "Paderborn",
-    "logo": "media/upb__logo.png",
+    "logo": "media/upb.png",
     "description": "Universität Paderborn",
     "website": "https://www.uni-paderborn.de/",
     "socialnetwork": {},
@@ -733,7 +733,7 @@
     "pi": "John Rolston",
     "country": "USA",
     "city": "Boston",
-    "logo": "media/bwh__logo.png",
+    "logo": "media/bwh.png",
     "description": "Brigham and Women's Hospital",
     "website": "https://www.massgeneralbrigham.org/en/about/brigham-and-womens-hospital",
     "socialnetwork": {},
